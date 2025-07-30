@@ -1,0 +1,169 @@
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Landing from "./pages/Landing";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import NoteView from "./pages/NoteView";
+import NoteEdit from "./pages/NoteEdit";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import EmailVerification from "./pages/EmailVerification";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+function AppContent() {
+  const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  // Routes where navbar and footer should be hidden
+  const hideNavbarFooter =
+    [
+      "/login",
+      "/signup",
+      "/dashboard",
+      "/forgot-password", 
+      "/reset-password",
+      "/verify-email",
+    ].includes(location.pathname) || location.pathname.startsWith("/notes/");
+
+  return (
+    <div className="min-h-screen bg-scribly-black">
+      {!hideNavbarFooter && (
+        <Navbar 
+          isAuthenticated={isAuthenticated} 
+          user={user} 
+          onLogout={logout} 
+        />
+      )}
+
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<EmailVerification />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+            <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notes/view/:id"
+          element={
+            <ProtectedRoute>
+            <NoteView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notes/edit/:id"
+          element={
+            <ProtectedRoute>
+            <NoteEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notes/new"
+          element={
+            <ProtectedRoute>
+            <NoteEdit />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Legacy routes for backward compatibility */}
+        <Route
+          path="/notes/:id"
+          element={
+            <ProtectedRoute>
+            <NoteView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notes/:id/edit"
+          element={
+            <ProtectedRoute>
+            <NoteEdit />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+
+      {!hideNavbarFooter && <Footer />}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#1f2937",
+              color: "#f3f4f6",
+              border: "1px solid #374151",
+              borderRadius: "12px",
+              fontSize: "14px",
+              fontFamily: "Inter, sans-serif",
+              boxShadow:
+                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            },
+            success: {
+              style: {
+                border: "1px solid #10b981",
+                background: "#064e3b",
+                color: "#d1fae5",
+              },
+              iconTheme: {
+                primary: "#10b981",
+                secondary: "#d1fae5",
+              },
+            },
+            error: {
+              style: {
+                border: "1px solid #ef4444",
+                background: "#7f1d1d",
+                color: "#fee2e2",
+              },
+              iconTheme: {
+                primary: "#ef4444",
+                secondary: "#fee2e2",
+              },
+            },
+          }}
+        />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
