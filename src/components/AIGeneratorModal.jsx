@@ -65,7 +65,7 @@ const AIGeneratorModal = ({
       const noteData = await aiService.generateNote(prompt, noteOptions);
       setGeneratedNote(noteData);
     } catch (error) {
-      console.error('Error generating note:', error);
+
       // Handle error (you might want to show a toast or error message)
     } finally {
       setIsGenerating(false);
@@ -306,3 +306,4 @@ const AIGeneratorModal = ({
 };
 
 export default AIGeneratorModal;
+

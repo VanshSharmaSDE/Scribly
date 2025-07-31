@@ -56,6 +56,7 @@ import TagManager from "../components/TagManager";
 import { useAuth } from "../contexts/AuthContext";
 import notesService from "../services/notesService";
 import aiService from "../services/aiService";
+import settingsService from "../services/settingsService";
 import { parseMarkdown } from "../utils/markdown";
 
 const NoteEdit = () => {
@@ -88,11 +89,25 @@ const NoteEdit = () => {
   const [lastAutoSave, setLastAutoSave] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiSearchTerm, setEmojiSearchTerm] = useState("");
+  const [autoSaveSettings, setAutoSaveSettings] = useState({ enabled: true, interval: 30 });
+  const [currentNoteId, setCurrentNoteId] = useState(id);
 
-  // Debug tags changes
+  // Load auto-save settings on component mount
   useEffect(() => {
-    console.log("NoteEdit: Tags state changed:", tags);
-  }, [tags]);
+    const loadAutoSaveSettings = async () => {
+      try {
+        const settings = await settingsService.getAutoSaveSettings();
+        setAutoSaveSettings(settings);
+      } catch (error) {
+        // Fallback to default settings if error
+        setAutoSaveSettings({ enabled: true, interval: 30 });
+      }
+    };
+
+    if (user) {
+      loadAutoSaveSettings();
+    }
+  }, [user]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -151,11 +166,8 @@ const NoteEdit = () => {
 
   // Auto-save functionality
   useEffect(() => {
-    const isAutoSaveEnabled =
-      localStorage.getItem("scribly_auto_save") === "true";
-
     if (
-      isAutoSaveEnabled &&
+      autoSaveSettings.enabled &&
       user &&
       (title.trim() || content.trim()) &&
       title.trim()
@@ -165,7 +177,7 @@ const NoteEdit = () => {
         clearTimeout(autoSaveTimeout);
       }
 
-      // Set new timeout for auto-save
+      // Set new timeout for auto-save using settings from Appwrite
       const timeout = setTimeout(async () => {
         try {
           const noteData = {
@@ -178,12 +190,13 @@ const NoteEdit = () => {
           };
 
           let savedNote;
-          if (id) {
+          if (currentNoteId) {
             // Update existing note
-            savedNote = await notesService.updateNote(id, noteData);
+            savedNote = await notesService.updateNote(currentNoteId, noteData);
           } else {
-            // Create new note and update URL
+            // Create new note and update current note ID
             savedNote = await notesService.createNote(noteData);
+            setCurrentNoteId(savedNote.$id);
             // Update the URL to reflect the new note ID
             window.history.replaceState(
               null,
@@ -206,10 +219,9 @@ const NoteEdit = () => {
             },
           });
         } catch (error) {
-          console.error("Auto-save failed:", error);
           // Don't show error toast for auto-save failures to avoid spam
         }
-      }, 2000);
+      }, autoSaveSettings.interval * 1000); // Convert seconds to milliseconds
 
       setAutoSaveTimeout(timeout);
     }
@@ -220,7 +232,7 @@ const NoteEdit = () => {
         clearTimeout(autoSaveTimeout);
       }
     };
-  }, [title, content, emoji, tags, customStyle, user, id]);
+  }, [title, content, emoji, tags, customStyle, user, currentNoteId, autoSaveSettings]);
 
   // Cleanup auto-save timeout on unmount
   useEffect(() => {
@@ -239,10 +251,10 @@ const NoteEdit = () => {
       if (!shouldLeave) return;
     }
 
-    if (!id) {
+    if (!currentNoteId) {
       navigate("/dashboard");
     } else {
-      navigate(`/notes/view/${id}`);
+      navigate(`/notes/view/${currentNoteId}`);
     }
   };
 
@@ -303,6 +315,9 @@ const NoteEdit = () => {
   ];
 
   useEffect(() => {
+    // Set current note ID for auto-save functionality
+    setCurrentNoteId(id);
+
     // Check if we have AI-generated note data from navigation state
     if (location.state?.aiGeneratedNote) {
       const aiNote = location.state.aiGeneratedNote;
@@ -343,7 +358,6 @@ const NoteEdit = () => {
       );
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error("Error loading note:", error);
       toast.error("Failed to load note");
       navigate("/dashboard");
     } finally {
@@ -366,7 +380,7 @@ const NoteEdit = () => {
 
     // Show loading toast
     const loadingToast = toast.loading(
-      !id ? "Creating note..." : "Saving changes..."
+      !currentNoteId ? "Creating note..." : "Saving changes..."
     );
 
     try {
@@ -380,12 +394,13 @@ const NoteEdit = () => {
       };
 
       let savedNote;
-      if (id) {
+      if (currentNoteId) {
         // Update existing note
-        savedNote = await notesService.updateNote(id, noteData);
+        savedNote = await notesService.updateNote(currentNoteId, noteData);
       } else {
         // Create new note
         savedNote = await notesService.createNote(noteData);
+        setCurrentNoteId(savedNote.$id);
       }
 
       setHasUnsavedChanges(false); // Clear unsaved changes flag
@@ -393,7 +408,7 @@ const NoteEdit = () => {
       // Show success toast
       toast.dismiss(loadingToast);
       toast.success(
-        !id ? "Note created successfully!" : "Note saved successfully!",
+        !currentNoteId || !id ? "Note created successfully!" : "Note saved successfully!",
         {
           duration: 3000,
         }
@@ -404,7 +419,6 @@ const NoteEdit = () => {
         navigate(`/notes/view/${savedNote.$id}`);
       }, 1000);
     } catch (error) {
-      console.error("Error saving note:", error);
       toast.dismiss(loadingToast);
       toast.error("Failed to save note");
     } finally {
@@ -413,94 +427,84 @@ const NoteEdit = () => {
   };
 
   const handleGenerateTags = async () => {
-    console.log("AI Tags: Starting tag generation...");
-    console.log("AI Tags: Title:", title);
-    console.log("AI Tags: Content length:", content.length);
-
     if (!title.trim() && !content.trim()) {
       toast.error("Please add a title or content first");
       return;
     }
 
-    const userApiKey = localStorage.getItem("scribly_gemini_api_key");
-    console.log("AI Tags: API key exists:", !!userApiKey);
-
-    if (!userApiKey) {
-      toast.error("Please set your Google Gemini API key in settings");
-      return;
-    }
-
     setGeneratingTags(true);
 
-    // Show loading toast
-    const loadingToast = toast.loading("Generating AI tags...");
-
     try {
-      console.log("AI Tags: Initializing AI service...");
+      const userApiKey = await settingsService.getGeminiApiKey();
 
-      // Initialize AI service
-      aiService.initialize(userApiKey);
+      if (!userApiKey) {
+        toast.error("Please set your Google Gemini API key in settings");
+        return;
+      }
 
-      console.log("AI Tags: Calling generateTagsForNote...");
+      // Show loading toast
+      const loadingToast = toast.loading("Generating AI tags...");
 
-      // Generate tags based on title and content
-      const generatedTags = await aiService.generateTagsForNote(title, content);
+      try {
+        // Initialize AI service
+        aiService.initialize(userApiKey);
 
-      console.log("AI Tags: Generated tags:", generatedTags);
+        // Generate tags based on title and content
+        const generatedTags = await aiService.generateTagsForNote(title, content);
 
-      if (generatedTags && generatedTags.length > 0) {
-        // Merge with existing tags, avoiding duplicates
-        const newTags = [...new Set([...tags, ...generatedTags])];
-        console.log("AI Tags: Current tags:", tags);
-        console.log("AI Tags: New tags to set:", newTags);
-        setTags(newTags);
+        if (generatedTags && generatedTags.length > 0) {
+          // Merge with existing tags, avoiding duplicates
+          const newTags = [...new Set([...tags, ...generatedTags])];
+          setTags(newTags);
 
-        // Dismiss loading toast and show success
+          // Dismiss loading toast and show success
+          toast.dismiss(loadingToast);
+          toast.success(
+            `Generated ${generatedTags.length} new tags: ${generatedTags.join(
+              ", "
+            )}`,
+            {
+              duration: 4000,
+            }
+          );
+        } else {
+          toast.dismiss(loadingToast);
+          toast.error("No tags could be generated for this content");
+        }
+      } catch (error) {
         toast.dismiss(loadingToast);
-        toast.success(
-          `Generated ${generatedTags.length} new tags: ${generatedTags.join(
-            ", "
-          )}`,
-          {
-            duration: 4000,
-          }
-        );
-      } else {
-        toast.dismiss(loadingToast);
-        toast.error("No tags could be generated for this content");
+
+        // More specific error messages
+        if (error.message?.includes("API key")) {
+          toast.error(
+            "Invalid API key. Please check your Google Gemini API key in settings."
+          );
+        } else if (error.message?.includes("quota")) {
+          toast.error("API quota exceeded. Please try again later.");
+        } else if (error.message?.includes("network")) {
+          toast.error("Network error. Please check your internet connection.");
+        } else {
+          toast.error(`Failed to generate tags: ${error.message}`);
+        }
       }
     } catch (error) {
-      console.error("AI Tags: Error generating tags:", error);
-      toast.dismiss(loadingToast);
-
-      // More specific error messages
-      if (error.message?.includes("API key")) {
-        toast.error(
-          "Invalid API key. Please check your Google Gemini API key in settings."
-        );
-      } else if (error.message?.includes("quota")) {
-        toast.error("API quota exceeded. Please try again later.");
-      } else if (error.message?.includes("network")) {
-        toast.error("Network error. Please check your internet connection.");
-      } else {
-        toast.error(`Failed to generate tags: ${error.message}`);
-      }
+      toast.error("Failed to get API key from settings");
     } finally {
       setGeneratingTags(false);
     }
   };
 
   const handleManualAIGeneration = async (prompt) => {
-    const userApiKey = localStorage.getItem("scribly_gemini_api_key");
-    if (!userApiKey) {
-      toast.error(
-        "Please set your Google Gemini API key in Dashboard settings"
-      );
-      return;
-    }
-
     setGeneratingNote(true);
+
     try {
+      const userApiKey = await settingsService.getGeminiApiKey();
+
+      if (!userApiKey) {
+        toast.error("Please set your Google Gemini API key in settings");
+        return;
+      }
+
       // Initialize AI service
       aiService.initialize(userApiKey);
 
@@ -520,8 +524,11 @@ const NoteEdit = () => {
 
       toast.success("Note generated successfully!");
     } catch (error) {
-      console.error("Error generating note:", error);
-      toast.error("Failed to generate note. Please check your API key.");
+      if (error.message?.includes("get API key")) {
+        toast.error("Failed to get API key from settings");
+      } else {
+        toast.error("Failed to generate note. Please check your API key.");
+      }
     } finally {
       setGeneratingNote(false);
     }
@@ -533,16 +540,16 @@ const NoteEdit = () => {
       return;
     }
 
-    const userApiKey = localStorage.getItem("scribly_gemini_api_key");
-    if (!userApiKey) {
-      toast.error(
-        "Please set your Google Gemini API key in Dashboard settings"
-      );
-      return;
-    }
-
     setGeneratingNote(true);
+
     try {
+      const userApiKey = await settingsService.getGeminiApiKey();
+
+      if (!userApiKey) {
+        toast.error("Please set your Google Gemini API key in settings");
+        return;
+      }
+
       // Initialize AI service
       aiService.initialize(userApiKey);
 
@@ -559,8 +566,11 @@ const NoteEdit = () => {
 
       toast.success("Content generated successfully!");
     } catch (error) {
-      console.error("Error generating content:", error);
-      toast.error(`Error generating content: ${error.message}`);
+      if (error.message?.includes("get API key")) {
+        toast.error("Failed to get API key from settings");
+      } else {
+        toast.error(`Error generating content: ${error.message}`);
+      }
     } finally {
       setGeneratingNote(false);
     }
@@ -2895,3 +2905,4 @@ Brief description of what you're researching
 };
 
 export default NoteEdit;
+

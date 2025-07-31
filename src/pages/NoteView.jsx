@@ -69,7 +69,7 @@ const NoteView = () => {
         
         setNote(fetchedNote);
       } catch (error) {
-        console.error('Error fetching note:', error);
+
         toast.error('Failed to load note');
         navigate('/dashboard');
       } finally {
@@ -103,7 +103,7 @@ const NoteView = () => {
       setShowDeleteModal(false);
       navigate('/dashboard', { state: { refresh: true } });
     } catch (error) {
-      console.error('Error deleting note:', error);
+
       toast.error('Failed to delete note');
     } finally {
       setDeleteLoading(false);
@@ -132,7 +132,7 @@ const NoteView = () => {
         });
       }
     } catch (error) {
-      console.error('Error toggling star:', error);
+
       toast.error('Failed to update favorite status');
     }
   };

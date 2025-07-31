@@ -5,7 +5,6 @@ import toast from 'react-hot-toast';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Grid, 
   List, 
   Edit3, 
@@ -13,10 +12,8 @@ import {
   Star,
   Tag,
   Calendar,
-  MoreVertical,
   Eye,
   Sparkles,
-  Settings,
   Wand2,
   Share
 } from 'lucide-react';
@@ -30,7 +27,6 @@ import ProfileDropdown from '../components/ProfileDropdown';
 import Breadcrumb from '../components/Breadcrumb';
 import ConfirmationModal from '../components/ConfirmationModal';
 import AIGeneratorModal from '../components/AIGeneratorModal';
-import APIKeyModal from '../components/APIKeyModal';
 import AIFeaturesGuide from '../components/AIFeaturesGuide';
 import SharedLinksManager from '../components/SharedLinksManager';
 import aiService from '../services/aiService';
@@ -274,7 +270,6 @@ const Dashboard = () => {
   
   // AI-related states
   const [showAIModal, setShowAIModal] = useState(false);
-  const [showAPIKeyModal, setShowAPIKeyModal] = useState(false);
   const [showAIGuide, setShowAIGuide] = useState(false);
   const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
   const [userApiKey, setUserApiKey] = useState(() => {
@@ -330,12 +325,9 @@ const Dashboard = () => {
     
     try {
       setLoading(true);
-      console.log('Dashboard: Fetching notes for user:', user.$id);
       const response = await notesService.getUserNotes(user.$id);
-      console.log('Dashboard: Notes response:', response);
       setNotes(response.documents || []);
     } catch (error) {
-      console.error('Dashboard: Error fetching notes:', error);
       toast.error('Failed to load notes');
       setNotes([]); // Set empty array on error
     } finally {
@@ -367,7 +359,6 @@ const Dashboard = () => {
       setShowDeleteModal(false);
       setNoteToDelete(null);
     } catch (error) {
-      console.error('Error deleting note:', error);
       toast.error('Failed to delete note');
     } finally {
       setDeleteLoading(false);
@@ -402,7 +393,6 @@ const Dashboard = () => {
         });
       }
     } catch (error) {
-      console.error('Error toggling star:', error);
       toast.error('Failed to update favorite status');
     }
   };
@@ -418,20 +408,6 @@ const Dashboard = () => {
       return;
     }
     setShowAIModal(true);
-  };
-
-  const handleSaveAPIKey = (apiKey) => {
-    setUserApiKey(apiKey);
-    localStorage.setItem('scribly_gemini_api_key', apiKey);
-    
-    // Initialize AI service with the new key
-    if (apiKey) {
-      try {
-        aiService.initialize(apiKey);
-      } catch (error) {
-        console.error('Error initializing AI service:', error);
-      }
-    }
   };
 
   const handleSaveAINote = async (noteData) => {
@@ -451,7 +427,6 @@ const Dashboard = () => {
       setNotes(prevNotes => [savedNote, ...prevNotes]);
       toast.success('AI-generated note saved successfully!');
     } catch (error) {
-      console.error('Error saving AI note:', error);
       toast.error('Failed to save note');
     }
   };
@@ -592,16 +567,6 @@ const Dashboard = () => {
                     <Sparkles className="h-4 w-4" />
                     <span>How to Use AI</span>
                   </button>
-                  
-                  <span className="text-gray-600 hidden sm:block">•</span>
-                  
-                  <button
-                    onClick={() => setShowAPIKeyModal(true)}
-                    className="text-gray-400 hover:text-gray-200 text-sm flex items-center space-x-2 transition-colors hover:underline"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Configure AI API Key</span>
-                  </button>
                 </div>
               </div>
             </motion.div>
@@ -631,19 +596,10 @@ const Dashboard = () => {
           userApiKey={userApiKey}
         />
 
-        {/* API Key Settings Modal */}
-        <APIKeyModal
-          isOpen={showAPIKeyModal}
-          onClose={() => setShowAPIKeyModal(false)}
-          currentApiKey={userApiKey}
-          onSave={handleSaveAPIKey}
-        />
-
         {/* AI Features Guide */}
         {showAIGuide && (
           <AIFeaturesGuide
             onClose={() => setShowAIGuide(false)}
-            onSetupAPI={() => setShowAPIKeyModal(true)}
           />
         )}
       </>
@@ -730,14 +686,6 @@ const Dashboard = () => {
                   >
                     How to Use AI
                   </button>
-                  
-                  {/* <button
-                    onClick={() => setShowAPIKeyModal(true)}
-                    className="p-3 bg-gray-800/60 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-xl text-gray-400 hover:text-gray-200 transition-all duration-300 hover:scale-105"
-                    title="Configure API Key"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </button> */}
                 </div>
               </div>
             </div>
@@ -902,19 +850,10 @@ const Dashboard = () => {
         userApiKey={userApiKey}
       />
 
-      {/* API Key Settings Modal */}
-      <APIKeyModal
-        isOpen={showAPIKeyModal}
-        onClose={() => setShowAPIKeyModal(false)}
-        currentApiKey={userApiKey}
-        onSave={handleSaveAPIKey}
-      />
-
       {/* AI Features Guide */}
       {showAIGuide && (
         <AIFeaturesGuide
           onClose={() => setShowAIGuide(false)}
-          onSetupAPI={() => setShowAPIKeyModal(true)}
         />
       )}
 
@@ -929,3 +868,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

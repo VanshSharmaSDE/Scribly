@@ -3,9 +3,8 @@ import { motion } from 'framer-motion';
 import { Sparkles, Wand2, Settings, Tag, ArrowRight, CheckCircle } from 'lucide-react';
 import Button from './Button';
 
-const AIFeaturesGuide = ({ onClose, onSetupAPI }) => {
+const AIFeaturesGuide = ({ onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [apiKeySetup, setApiKeySetup] = useState(false);
 
   const steps = [
     {
@@ -34,41 +33,41 @@ const AIFeaturesGuide = ({ onClose, onSetupAPI }) => {
       )
     },
     {
-      title: "Step 1: Set Up Your API Key 🔑",
-      description: "You'll need a Google Gemini API key to use AI features",
+      title: "Step 1: Configure Your API Key 🔑",
+      description: "Set up your Google Gemini API key through Settings",
       content: (
         <div className="space-y-6">
-          {apiKeySetup && (
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-400" />
-                <h4 className="font-semibold text-green-300">API Key Setup in Progress!</h4>
-              </div>
-              <p className="text-sm text-gray-300 mt-2">
-                The API key modal should have opened. Once you've saved your key, click "Next" to continue.
-              </p>
-            </div>
-          )}
-          
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-300 mb-2">Why do I need an API key?</h4>
-            <ul className="text-sm text-gray-300 space-y-1">
-              <li>• Your API key stays completely private (stored locally)</li>
-              <li>• Direct connection to Google's AI (no middleman)</li>
-              <li>• You control your usage and costs</li>
-              <li>• Better performance and reliability</li>
-            </ul>
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-300 mb-2">How to configure your API key:</h4>
+            <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+              <li>Click your profile picture in the top-right corner</li>
+              <li>Select "Settings" from the dropdown menu</li>
+              <li>Go to the "AI Settings" tab</li>
+              <li>Enter your Google Gemini API key</li>
+              <li>Click "Save API Key"</li>
+            </ol>
           </div>
           
-          <div className="space-y-3">
-            <h4 className="font-semibold text-white">How to get your API key:</h4>
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+            <h4 className="font-semibold text-yellow-300 mb-2">How to get your API key:</h4>
             <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
               <li>Visit <a href="https://ai.google.dev/api/rest" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Google AI Studio</a></li>
               <li>Sign in with your Google account</li>
               <li>Click "Create API Key"</li>
               <li>Copy the key (starts with "AIza...")</li>
-              <li>Paste it in Scribly's API settings</li>
+              <li>Paste it in Scribly's Settings</li>
             </ol>
+          </div>
+          
+          <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+            <h4 className="font-semibold text-green-300 mb-2">Why do you need an API key?</h4>
+            <ul className="text-sm text-gray-300 space-y-1">
+              <li>• Your API key stays completely private and secure</li>
+              <li>• Direct connection to Google's AI (no middleman)</li>
+              <li>• You control your usage and costs</li>
+              <li>• Better performance and reliability</li>
+              <li>• Syncs across all your devices when logged in</li>
+            </ul>
           </div>
         </div>
       )
@@ -111,7 +110,7 @@ const AIFeaturesGuide = ({ onClose, onSetupAPI }) => {
                 <h4 className="font-semibold text-white">API Settings</h4>
               </div>
               <p className="text-sm text-gray-300">
-                Click the gear icon ⚙️ on Dashboard to manage your API key
+                Click your profile picture → Settings to manage your API key and auto-save preferences
               </p>
             </div>
           </div>
@@ -217,38 +216,14 @@ const AIFeaturesGuide = ({ onClose, onSetupAPI }) => {
               </Button>
             )}
             
-            {/* Setup API Key button */}
-            {currentStep === 1 && !apiKeySetup && (
-              <Button
-                onClick={() => {
-                  onSetupAPI();
-                  setApiKeySetup(true); // Mark as setup completed
-                }}
-                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700"
-              >
-                Set Up API Key
-              </Button>
-            )}
-            
-            {/* Show Next button after API key setup OR for other steps */}
-            {(currentStep === 1 && apiKeySetup) || (currentStep < steps.length - 1 && currentStep !== 1) ? (
+            {/* Next button */}
+            {currentStep < steps.length - 1 && (
               <Button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 variant="primary"
                 className="px-4 py-2"
               >
                 Next
-              </Button>
-            ) : null}
-            
-            {/* Alternative: Skip API setup */}
-            {currentStep === 1 && !apiKeySetup && (
-              <Button
-                onClick={() => setCurrentStep(currentStep + 1)}
-                variant="outline"
-                className="px-4 py-2"
-              >
-                Skip for Now
               </Button>
             )}
             
@@ -270,3 +245,4 @@ const AIFeaturesGuide = ({ onClose, onSetupAPI }) => {
 };
 
 export default AIFeaturesGuide;
+

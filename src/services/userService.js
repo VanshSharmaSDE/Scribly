@@ -6,7 +6,7 @@ class UserService {
     try {
       return await account.updateName(name);
     } catch (error) {
-      console.error('Update name error:', error);
+
       throw error;
     }
   }
@@ -16,7 +16,7 @@ class UserService {
     try {
       return await account.updateEmail(email, password);
     } catch (error) {
-      console.error('Update email error:', error);
+
       throw error;
     }
   }
@@ -26,7 +26,7 @@ class UserService {
     try {
       return await account.updatePassword(newPassword, oldPassword);
     } catch (error) {
-      console.error('Update password error:', error);
+
       throw error;
     }
   }
@@ -36,7 +36,7 @@ class UserService {
     try {
       return await account.get();
     } catch (error) {
-      console.error('Get current user error:', error);
+
       throw error;
     }
   }
@@ -59,7 +59,7 @@ class UserService {
             // Don't expose email in public contexts for privacy
           };
         } catch (error) {
-          console.log('User profile not found in collection');
+
         }
       }
       
@@ -73,7 +73,7 @@ class UserService {
           };
         }
       } catch (error) {
-        console.log('Cannot access account service for public request');
+
       }
       
       // Final fallback
@@ -82,7 +82,7 @@ class UserService {
         avatar: null
       };
     } catch (error) {
-      console.error('Get public user info error:', error);
+
       return {
         name: 'Scribly User',
         avatar: null
@@ -94,7 +94,7 @@ class UserService {
   async createOrUpdateProfile(userData) {
     try {
       if (!USERS_COLLECTION_ID) {
-        console.log('No users collection configured');
+
         return null;
       }
 
@@ -114,7 +114,7 @@ class UserService {
           userData.$id,
           userProfile
         );
-        console.log('User profile created:', result);
+
         return result;
       } catch (createError) {
         if (createError.message?.includes('already exists')) {
@@ -131,13 +131,13 @@ class UserService {
             userData.$id,
             updateData
           );
-          console.log('User profile updated:', result);
+
           return result;
         }
         throw createError;
       }
     } catch (error) {
-      console.error('Create/Update user profile error:', error);
+
       return null;
     }
   }
@@ -145,3 +145,4 @@ class UserService {
 
 const userService = new UserService();
 export default userService;
+

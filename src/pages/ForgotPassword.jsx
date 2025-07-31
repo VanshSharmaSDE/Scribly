@@ -47,7 +47,7 @@ const ForgotPassword = () => {
       setEmailSent(true);
       
     } catch (error) {
-      console.error('Send recovery error:', error);
+
       toast.error('Failed to send recovery email. Please try again.');
       setErrors({ general: 'Failed to send recovery email. Please try again.' });
     } finally {
@@ -194,3 +194,4 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
+

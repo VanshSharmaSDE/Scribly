@@ -36,3 +36,4 @@ export const searchEmojis = (query) => {
   
   return getAllEmojis().slice(0, 20);
 };
+

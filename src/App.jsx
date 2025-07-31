@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
@@ -139,9 +140,10 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-        <Toaster
+      <SettingsProvider>
+        <Router>
+          <AppContent />
+          <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
@@ -179,9 +181,11 @@ function App() {
             },
           }}
         />
-      </Router>
+        </Router>
+      </SettingsProvider>
     </AuthProvider>
   );
 }
 
 export default App;
+

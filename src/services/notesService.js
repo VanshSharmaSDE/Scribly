@@ -19,12 +19,10 @@ class NotesService {
         try {
           tagsToSave = JSON.parse(tagsToSave);
         } catch (e) {
-          console.warn('Tags is a string but not valid JSON, treating as empty array');
           tagsToSave = [];
         }
       }
       if (!Array.isArray(tagsToSave)) {
-        console.warn('Tags is not an array, converting to empty array');
         tagsToSave = [];
       }
 
@@ -47,7 +45,6 @@ class NotesService {
         documentData
       );
     } catch (error) {
-      console.error('Create note error:', error);
       throw error;
     }
   }
@@ -55,7 +52,6 @@ class NotesService {
   // Get user's notes
   async getUserNotes(userId) {
     try {
-      console.log('Fetching notes for user:', userId);
       const result = await databases.listDocuments(
         DATABASE_ID,
         NOTES_COLLECTION_ID,
@@ -64,14 +60,12 @@ class NotesService {
           Query.orderDesc('updatedAt')
         ]
       );
-      console.log('Notes fetched successfully:', result.documents.length, 'notes found');
       
       // Parse data for each note
       result.documents = result.documents.map(note => this.parseNoteData(note));
       
       return result;
     } catch (error) {
-      console.error('Get user notes error:', error);
       throw error;
     }
   }
@@ -79,17 +73,14 @@ class NotesService {
   // Get single note
   async getNote(noteId) {
     try {
-      console.log('Fetching note with ID:', noteId);
       const note = await databases.getDocument(
         DATABASE_ID,
         NOTES_COLLECTION_ID,
         noteId
       );
-      console.log('Note fetched successfully:', note);
       
       return this.parseNoteData(note);
     } catch (error) {
-      console.error('Get note error:', error);
       if (error.message?.includes('Document with the requested ID could not be found')) {
         throw new Error(`Note not found. The note may have been deleted or you don't have permission to access it.`);
       }
@@ -120,17 +111,14 @@ class NotesService {
             if (Array.isArray(parsed)) {
               tagsToSave = parsed;
             } else {
-              console.warn('Parsed tags is not an array, converting to empty array');
               tagsToSave = [];
             }
           } catch (e) {
-            console.warn('Tags is a string but not valid JSON, treating as empty array');
             tagsToSave = [];
           }
         }
         
         if (!Array.isArray(tagsToSave)) {
-          console.warn('Tags is not an array, converting to empty array');
           tagsToSave = [];
         }
         
@@ -149,7 +137,6 @@ class NotesService {
         updateData
       );
     } catch (error) {
-      console.error('Update note error:', error);
       throw error;
     }
   }
@@ -157,16 +144,13 @@ class NotesService {
   // Delete note
   async deleteNote(noteId) {
     try {
-      console.log('Deleting note with ID:', noteId);
       const result = await databases.deleteDocument(
         DATABASE_ID,
         NOTES_COLLECTION_ID,
         noteId
       );
-      console.log('Note deleted successfully:', noteId);
       return result;
     } catch (error) {
-      console.error('Delete note error:', error);
       throw error;
     }
   }
@@ -184,7 +168,6 @@ class NotesService {
         }
       );
     } catch (error) {
-      console.error('Toggle star error:', error);
       throw error;
     }
   }
@@ -196,7 +179,6 @@ class NotesService {
       try {
         note.customStyle = JSON.parse(note.customStyle);
       } catch (parseError) {
-        console.warn('Failed to parse customStyle for note', note.$id, parseError);
         note.customStyle = {
           backgroundColor: '#1e3a8a',
           textColor: '#ffffff',
@@ -212,11 +194,9 @@ class NotesService {
         try {
           note.tags = JSON.parse(note.tags);
         } catch (parseError) {
-          console.warn('Failed to parse tags for note', note.$id, parseError);
           note.tags = [];
         }
       } else if (!Array.isArray(note.tags)) {
-        console.warn('Tags is not an array or string for note', note.$id);
         note.tags = [];
       }
     } else {
@@ -248,7 +228,6 @@ class NotesService {
       
       return result;
     } catch (error) {
-      console.error('Search notes error:', error);
       throw error;
     }
   }
@@ -270,7 +249,6 @@ class NotesService {
       
       return result;
     } catch (error) {
-      console.error('Get notes by tag error:', error);
       throw error;
     }
   }
@@ -339,7 +317,6 @@ class NotesService {
         shareLinks
       };
     } catch (error) {
-      console.error('Generate share token error:', error);
       throw error;
     }
   }
@@ -429,7 +406,6 @@ class NotesService {
       
       return this.parseNoteData(note);
     } catch (error) {
-      console.error('Get shared note error:', error);
       throw error;
     }
   }
@@ -450,7 +426,6 @@ class NotesService {
         }
       );
     } catch (error) {
-      console.error('Revoke sharing error:', error);
       throw error;
     }
   }
@@ -498,7 +473,6 @@ class NotesService {
         );
       }
     } catch (error) {
-      console.error('Revoke share link error:', error);
       throw error;
     }
   }
@@ -537,7 +511,6 @@ class NotesService {
         isExpired: new Date(link.expiresAt) < new Date()
       }));
     } catch (error) {
-      console.error('Get share links error:', error);
       throw error;
     }
   }
@@ -581,7 +554,6 @@ class NotesService {
         );
       }
     } catch (error) {
-      console.error('Update share link name error:', error);
       throw error;
     }
   }
@@ -591,7 +563,6 @@ class NotesService {
     try {
       return await userService.getPublicUserInfo(userId);
     } catch (error) {
-      console.error('Get creator info error:', error);
       return {
         name: 'Scribly User',
         avatar: null
@@ -601,3 +572,4 @@ class NotesService {
 }
 
 export default new NotesService();
+

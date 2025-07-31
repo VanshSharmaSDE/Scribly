@@ -85,8 +85,7 @@ const ResetPassword = () => {
       }, 3000);
       
     } catch (error) {
-      console.error('Reset password error:', error);
-      
+
       let errorMessage = 'Failed to reset password. Please try again.';
       
       if (error.message?.includes('expired') || error.message?.includes('invalid')) {
@@ -265,3 +264,4 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+

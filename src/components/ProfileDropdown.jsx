@@ -55,7 +55,7 @@ const ProfileDropdown = () => {
       setShowLogoutModal(false);
       navigate("/", { replace: true });
     } catch (error) {
-      console.error("Logout failed:", error);
+
       toast.error("Failed to logout. Please try again.");
     } finally {
       setLogoutLoading(false);
@@ -95,7 +95,7 @@ const ProfileDropdown = () => {
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
-      console.error("Profile update failed:", error);
+
       toast.dismiss(loadingToast);
       toast.error("Failed to update profile");
     } finally {
@@ -386,3 +386,4 @@ const ProfileDropdown = () => {
 };
 
 export default ProfileDropdown;
+

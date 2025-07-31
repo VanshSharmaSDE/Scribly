@@ -194,3 +194,4 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
 };
 
 export default Navbar;
+

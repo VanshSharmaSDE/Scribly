@@ -18,25 +18,19 @@ const EmailVerification = () => {
 
   useEffect(() => {
     // Debug the full URL first
-    console.log('=== EMAIL VERIFICATION URL ANALYSIS ===');
-    console.log('Current URL:', window.location.href);
-    console.log('All URL search params:', window.location.search);
-    
+
     // Get the secret from URL - Appwrite typically uses 'secret' parameter
     const secret = searchParams.get('secret');
     const userId = searchParams.get('userId');
-    
-    console.log('Extracted parameters:', { userId, secret });
-    
+
     // If we have a secret from URL, use it for verification
     if (secret) {
-      console.log('Secret found in URL, starting verification...');
+
       handleVerification(userId, secret);
     } else {
-      console.log('=== NO SECRET PARAMETER FOUND ===');
-      console.log('Available parameters:');
+
       for (const [key, value] of searchParams.entries()) {
-        console.log(`  ${key}: ${value}`);
+
       }
       setStatus('error');
     }
@@ -45,15 +39,10 @@ const EmailVerification = () => {
   const handleVerification = async (userId, secret) => {
     try {
       setIsLoading(true);
-      console.log('=== VERIFICATION FLOW START ===');
-      console.log('handleVerification called with:', { userId, secret });
-      console.log('About to call verifyEmail from AuthContext...');
-      
+
       // Pass both parameters to verifyEmail
       const result = await verifyEmail(userId, secret);
-      
-      console.log('=== VERIFICATION SUCCESS ===');
-      console.log('Verification result:', result);
+
       setStatus('success');
       
       // Show success message
@@ -80,8 +69,7 @@ const EmailVerification = () => {
       }
       
     } catch (error) {
-      console.error('=== VERIFICATION ERROR ===');
-      console.error('Error in handleVerification:', error);
+
       setStatus('error');
       toast.error(error.message || 'Email verification failed. Please try again.');
     } finally {
@@ -107,7 +95,7 @@ const EmailVerification = () => {
       });
       
     } catch (error) {
-      console.error('Resend verification error:', error);
+
       toast.error('Failed to send verification email. Please try again.');
     } finally {
       setIsLoading(false);
@@ -275,3 +263,4 @@ const EmailVerification = () => {
 };
 
 export default EmailVerification;
+

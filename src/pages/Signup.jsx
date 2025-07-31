@@ -94,7 +94,7 @@ const Signup = () => {
       }
       
     } catch (error) {
-      console.error('Signup error:', error);
+
       let errorMessage = 'Signup failed. Please try again.';
       
       // Handle specific Appwrite errors
@@ -374,3 +374,4 @@ const Signup = () => {
 };
 
 export default Signup;
+

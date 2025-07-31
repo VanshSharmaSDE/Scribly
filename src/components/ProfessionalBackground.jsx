@@ -65,3 +65,4 @@ const ProfessionalBackground = ({ children, className = '' }) => {
 };
 
 export default ProfessionalBackground;
+

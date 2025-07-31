@@ -49,7 +49,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
       
       setAllShareLinks(linksData);
     } catch (error) {
-      console.error('Error loading share links:', error);
+
       toast.error('Failed to load share links');
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
       toast.success('Share link revoked');
       loadAllShareLinks(); // Refresh the list
     } catch (error) {
-      console.error('Error revoking link:', error);
+
       toast.error('Failed to revoke share link');
     }
   };
@@ -83,7 +83,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
       toast.success('New share link created!');
       loadAllShareLinks(); // Refresh the list
     } catch (error) {
-      console.error('Error creating new link:', error);
+
       toast.error('Failed to create new share link');
     }
   };
@@ -96,7 +96,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
       setNewLinkName('');
       loadAllShareLinks(); // Refresh the list
     } catch (error) {
-      console.error('Error updating link name:', error);
+
       toast.error('Failed to update link name');
     }
   };
@@ -344,3 +344,4 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
 };
 
 export default SharedLinksManager;
+

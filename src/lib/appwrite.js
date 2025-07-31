@@ -18,3 +18,4 @@ export const USERS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_USERS_COLLECTIO
 
 export { ID };
 export default client;
+

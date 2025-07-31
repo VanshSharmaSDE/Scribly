@@ -10,13 +10,13 @@ const TagManager = ({ tags = [], onTagsChange, noteTitle = '', noteContent = '',
 
   // Sync internal state with props when tags change from parent
   useEffect(() => {
-    console.log('TagManager: Received tags from parent:', tags);
+
     setCurrentTags(tags);
   }, [tags]);
 
   // Debug current tags
   useEffect(() => {
-    console.log('TagManager: Current tags state:', currentTags);
+
   }, [currentTags]);
 
   const predefinedTags = [
@@ -222,3 +222,4 @@ const TagManager = ({ tags = [], onTagsChange, noteTitle = '', noteContent = '',
 };
 
 export default TagManager;
+

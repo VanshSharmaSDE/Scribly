@@ -366,3 +366,4 @@ const Beta = () => {
 };
 
 export default Beta;
+

@@ -23,8 +23,6 @@ class AIService {
     
     // Use single model without complex configuration
     this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
-    
-    console.log('Gemini model initialized successfully with gemini-2.5-pro');
   }
 
   // Check if AI service is initialized
@@ -43,8 +41,7 @@ class AIService {
     
     localStorage.setItem('scribly_gemini_api_key', apiKey);
     this.initialize(apiKey);
-    
-    console.log('New API key set and service reinitialized');
+
   }
 
   getApiKey() {
@@ -56,14 +53,14 @@ class AIService {
     this.apiKey = null;
     this.genAI = null;
     this.model = null;
-    console.log('API key removed and service cleared');
+
   }
 
   // Force refresh the service with current API key
   async refreshService() {
     const currentApiKey = this.getApiKey();
     if (currentApiKey) {
-      console.log('Refreshing AI service...');
+
       this.removeApiKey();
       await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
       this.setApiKey(currentApiKey);
@@ -111,12 +108,10 @@ class AIService {
       const result = await tempModel.generateContent('Test');
       const response = await result.response;
       const text = response.text();
-      
-      console.log('API key test successful:', text ? 'Response received' : 'No response');
+
       return true;
     } catch (error) {
-      console.error('API key test failed:', error);
-      
+
       // Check for specific error types
       if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid_api_key')) {
         throw new Error('Invalid API key. Please check your Google Gemini API key.');
@@ -126,6 +121,16 @@ class AIService {
         throw new Error('Permission denied. Please ensure your API key has the necessary permissions.');
       }
       
+      return false;
+    }
+  }
+
+  // Validate API key (simple wrapper around testApiKey)
+  async validateApiKey(apiKey) {
+    try {
+      return await this.testApiKey(apiKey);
+    } catch (error) {
+
       return false;
     }
   }
@@ -178,12 +183,9 @@ EMOJI GUIDELINES:
 
 USER REQUEST: ${prompt}`;
 
-      console.log('Generating note with AI...');
       const result = await this.model.generateContent(systemPrompt);
       const response = await result.response;
       const text = response.text();
-
-      console.log('AI Response:', text);
 
       // Try to parse the JSON response
       let noteData;
@@ -196,7 +198,7 @@ USER REQUEST: ${prompt}`;
           throw new Error('No valid JSON found in response');
         }
       } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', parseError);
+
         // Fallback: create note data from raw text
         noteData = {
           title: this.extractTitleFromText(text) || 'AI Generated Note',
@@ -208,13 +210,11 @@ USER REQUEST: ${prompt}`;
 
       // Validate and clean the response
       noteData = this.validateNoteData(noteData);
-      
-      console.log('Generated note data:', noteData);
+
       return noteData;
 
     } catch (error) {
-      console.error('AI generation error:', error);
-      
+
       if (error.message?.includes('API_KEY_INVALID')) {
         throw new Error('Invalid Google Gemini API key. Please check your API key and try again.');
       } else if (error.message?.includes('QUOTA_EXCEEDED')) {
@@ -330,46 +330,33 @@ USER REQUEST: ${prompt}`;
 
     // Check if AI service is available
     if (!this.isInitialized()) {
-      console.log('AI service not initialized, using template-based generation');
+
       return this.generateContentFallback(title, options);
     }
 
     try {
       const prompt = this.createContentPrompt(title, noteType, language, tone, length);
-      
-      console.log('Generating content from title with AI...');
-      console.log('Prompt:', prompt);
-      
+
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
-      
-      console.log('Raw AI result:', result);
-      console.log('Raw AI response:', response);
-      
+
       const text = response.text().trim();
-      
-      console.log('AI response text:', text);
-      console.log('AI response length:', text.length);
 
       if (!text || text.length === 0) {
-        console.warn('AI returned empty response, using fallback');
+
         return this.generateContentFallback(title, options);
       }
 
       // Try to extract markdown content from response
       let content = this.extractContentFromResponse(text);
-      
-      console.log('Extracted content:', content);
-      
+
       // Validate and clean the content
       content = this.validateContent(content, title);
-      
-      console.log('Final generated content:', content);
+
       return content;
 
     } catch (error) {
-      console.error('Error generating content with AI:', error);
-      
+
       // Provide specific error messages
       if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid_api_key')) {
         throw new Error('Invalid API key. Please check your Google Gemini API key in settings.');
@@ -384,7 +371,7 @@ USER REQUEST: ${prompt}`;
       }
       
       // Use fallback for other errors
-      console.log('Using template-based fallback due to AI error');
+
       return this.generateContentFallback(title, options);
     }
   }
@@ -477,9 +464,7 @@ Start writing now:`;
   // Fallback content generation without AI
   generateContentFallback(title, options = {}) {
     const { noteType = 'general', tone = 'professional' } = options;
-    
-    console.log('Generating content using template fallback');
-    
+
     const templates = {
       'meeting': this.generateMeetingTemplate(title),
       'project': this.generateProjectTemplate(title),
@@ -792,7 +777,7 @@ Provide more detailed information and context here.
   // Generate tags based on title and content
   async generateTagsForNote(title, content) {
     if (!this.isInitialized()) {
-      console.log('AI service not initialized, using fallback');
+
       return this.generateTagsFallback(title, content);
     }
 
@@ -815,18 +800,12 @@ Examples:
 
 Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
 
-      console.log('Sending AI request for tag generation...');
-      console.log('Tag prompt:', prompt);
-      
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text().trim();
-      
-      console.log('AI response for tags:', text);
-      console.log('AI response length:', text.length);
 
       if (!text || text.length === 0) {
-        console.warn('AI returned empty response for tags, using fallback');
+
         return this.generateSmartTagsFallback(title, content);
       }
 
@@ -839,8 +818,7 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
         try {
           tags = JSON.parse(jsonMatch[0]);
         } catch (parseError) {
-          console.error('Failed to parse JSON from AI response:', parseError);
-          
+
           // Try alternative parsing - extract content between quotes
           const quotedContent = text.match(/"([^"]+)"/g);
           if (quotedContent) {
@@ -876,7 +854,7 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
         }
         
         if (tags.length === 0) {
-          console.warn('No valid tags found in AI response, using intelligent fallback');
+
           return this.generateSmartTagsFallback(title, content);
         }
       }
@@ -893,16 +871,14 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
           )
           .filter(tag => tag.length > 1 && tag.length < 25) // Reasonable length
           .filter(tag => !['note', 'text', 'content', 'document'].includes(tag)); // Remove generic tags
-        
-        console.log('Generated and cleaned tags:', cleanedTags);
+
         return cleanedTags.length > 0 ? cleanedTags : this.generateSmartTagsFallback(title, content);
       } else {
-        console.warn('AI response was not a valid array');
+
         return this.generateSmartTagsFallback(title, content);
       }
     } catch (error) {
-      console.error('Error generating tags with AI:', error);
-      
+
       // Provide more specific error information
       if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('invalid_api_key')) {
         throw new Error('Invalid API key. Please check your Google Gemini API key in settings.');
@@ -917,7 +893,7 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
       }
       
       // Use smart fallback for other errors
-      console.log('Using smart fallback due to AI error');
+
       return this.generateSmartTagsFallback(title, content);
     }
   }
@@ -1083,3 +1059,4 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
 }
 
 export default new AIService();
+

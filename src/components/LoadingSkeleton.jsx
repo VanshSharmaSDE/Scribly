@@ -21,3 +21,4 @@ const LoadingSkeleton = ({ className = '', variant = 'default' }) => {
 };
 
 export default LoadingSkeleton;
+

@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
         setUserDoc(userDocument);
       }
     } catch (error) {
-      console.error("Auth check error:", error);
+
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       }
     } catch (error) {
-      console.error("Login error:", error);
+
       throw error;
     }
   };
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      console.error("Signup error:", error);
+
       throw error;
     }
   };
@@ -87,22 +87,16 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       toast.success("You have been logged out successfully");
     } catch (error) {
-      console.error("Logout error:", error);
+
       throw error;
     }
   };
 
   const verifyEmail = async (userId, secret) => {
     try {
-      console.log("=== AuthContext.verifyEmail called ===");
-      console.log("AuthContext received parameters:", { userId, secret });
-      console.log("About to call authService.confirmEmailVerification...");
 
       const result = await authService.confirmEmailVerification(userId, secret);
 
-      console.log("=== AuthContext verification success ===");
-      console.log("Verification result:", result);
-      
       // If verification was successful and user is logged in, refresh user data
       if (result.verified && result.user) {
         setUser(result.user);
@@ -125,8 +119,7 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      console.error("=== AuthContext verification error ===");
-      console.error("Email verification error:", error);
+
       throw error;
     }
   };
@@ -136,7 +129,7 @@ export const AuthProvider = ({ children }) => {
       await authService.sendPasswordRecovery(email);
       return { success: true };
     } catch (error) {
-      console.error("Password recovery error:", error);
+
       throw error;
     }
   };
@@ -146,7 +139,7 @@ export const AuthProvider = ({ children }) => {
       await authService.confirmPasswordRecovery(userId, secret, newPassword);
       return { success: true };
     } catch (error) {
-      console.error("Reset password error:", error);
+
       throw error;
     }
   };
@@ -174,3 +167,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export default AuthContext;
+

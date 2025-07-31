@@ -39,7 +39,7 @@ const SharedNoteView = () => {
         setCreator(creatorInfo);
         
       } catch (error) {
-        console.error('Error fetching shared note:', error);
+
         setError(error.message || 'Failed to load shared note');
       } finally {
         setLoading(false);
@@ -310,3 +310,4 @@ const SharedNoteView = () => {
 };
 
 export default SharedNoteView;
+

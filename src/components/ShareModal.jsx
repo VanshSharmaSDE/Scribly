@@ -29,7 +29,7 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
       });
       
     } catch (error) {
-      console.error('Error sharing note:', error);
+
       toast.error('Failed to create share link');
     } finally {
       setIsSharing(false);
@@ -51,7 +51,7 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
       });
       
     } catch (error) {
-      console.error('Error revoking share:', error);
+
       toast.error('Failed to revoke sharing');
     } finally {
       setIsRevoking(false);
@@ -72,7 +72,7 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
             shareUrl = `${window.location.origin}/shared/${latestLink.token}`;
           }
         } catch (e) {
-          console.warn('Failed to parse share link:', e);
+
         }
       }
       
@@ -90,7 +90,7 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
         toast.error('No active share link found');
       }
     } catch (error) {
-      console.error('Error copying link:', error);
+
       toast.error('Failed to copy link');
     }
   };
@@ -109,7 +109,7 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
             shareUrl = `${window.location.origin}/shared/${latestLink.token}`;
           }
         } catch (e) {
-          console.warn('Failed to parse share link:', e);
+
         }
       }
       
@@ -124,7 +124,7 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
         toast.error('No active share link found');
       }
     } catch (error) {
-      console.error('Error opening link:', error);
+
       toast.error('Failed to open link');
     }
   };
@@ -237,3 +237,4 @@ const ShareModal = ({ isOpen, onClose, note, onShareUpdate }) => {
 };
 
 export default ShareModal;
+

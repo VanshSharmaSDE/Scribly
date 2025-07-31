@@ -62,3 +62,4 @@ export const getReadingTime = (text) => {
   const minutes = Math.ceil(wordCount / 200);
   return minutes;
 };
+

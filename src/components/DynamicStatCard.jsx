@@ -83,3 +83,4 @@ const DynamicStatCard = ({ endNumber, label, delay = 0, suffix = '+', prefix = '
 );
 
 export default DynamicStatCard;
+

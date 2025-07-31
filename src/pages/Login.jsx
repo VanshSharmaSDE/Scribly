@@ -68,7 +68,7 @@ const Login = () => {
       }, 1000);
       
     } catch (error) {
-      console.error('Login error:', error);
+
       let errorMessage = 'Login failed. Please check your credentials';
       
       // Handle specific Appwrite errors
@@ -213,3 +213,4 @@ const Login = () => {
 };
 
 export default Login;
+
