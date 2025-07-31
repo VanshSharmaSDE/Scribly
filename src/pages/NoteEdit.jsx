@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { 
-  ArrowLeft, 
-  Save, 
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
+import {
+  ArrowLeft,
+  Save,
   X,
-  Bold, 
-  Italic, 
-  Type, 
-  List, 
-  Link2, 
+  Bold,
+  Italic,
+  Type,
+  List,
+  Link2,
   Palette,
   Eye,
   Wand2,
@@ -47,51 +47,51 @@ import {
   Bookmark,
   Smile,
   Search,
-  Clock
-} from 'lucide-react';
-import Button from '../components/Button';
-import ProfessionalBackground from '../components/ProfessionalBackground';
-import Breadcrumb from '../components/Breadcrumb';
-import TagManager from '../components/TagManager';
-import { useAuth } from '../contexts/AuthContext';
-import notesService from '../services/notesService';
-import aiService from '../services/aiService';
-import { parseMarkdown } from '../utils/markdown';
+  Clock,
+} from "lucide-react";
+import Button from "../components/Button";
+import ProfessionalBackground from "../components/ProfessionalBackground";
+import Breadcrumb from "../components/Breadcrumb";
+import TagManager from "../components/TagManager";
+import { useAuth } from "../contexts/AuthContext";
+import notesService from "../services/notesService";
+import aiService from "../services/aiService";
+import { parseMarkdown } from "../utils/markdown";
 
 const NoteEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // Form state
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [emoji, setEmoji] = useState('📝');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [emoji, setEmoji] = useState("📝");
   const [tags, setTags] = useState([]);
   const [customStyle, setCustomStyle] = useState({
-    backgroundColor: '#1e3a8a',
-    textColor: '#ffffff',
-    fontSize: '16px',
-    fontFamily: 'Inter, sans-serif'
+    backgroundColor: "#1e3a8a",
+    textColor: "#ffffff",
+    fontSize: "16px",
+    fontFamily: "Inter, sans-serif",
   });
-  
+
   const [showStylePanel, setShowStylePanel] = useState(false);
   const [generatingTags, setGeneratingTags] = useState(false);
   const [generatingNote, setGeneratingNote] = useState(false);
-  const [selectedNoteType, setSelectedNoteType] = useState('general');
+  const [selectedNoteType, setSelectedNoteType] = useState("general");
   const [autoSaveTimeout, setAutoSaveTimeout] = useState(null);
   const [lastAutoSave, setLastAutoSave] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [emojiSearchTerm, setEmojiSearchTerm] = useState('');
+  const [emojiSearchTerm, setEmojiSearchTerm] = useState("");
 
   // Debug tags changes
   useEffect(() => {
-    console.log('NoteEdit: Tags state changed:', tags);
+    console.log("NoteEdit: Tags state changed:", tags);
   }, [tags]);
 
   // Handle keyboard shortcuts
@@ -99,45 +99,45 @@ const NoteEdit = () => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey || e.metaKey) {
         switch (e.key.toLowerCase()) {
-          case 'b':
+          case "b":
             e.preventDefault();
-            insertText('**', '**');
+            insertText("**", "**");
             break;
-          case 'i':
+          case "i":
             e.preventDefault();
-            insertText('*', '*');
+            insertText("*", "*");
             break;
-          case 'u':
+          case "u":
             e.preventDefault();
-            insertText('<u>', '</u>');
+            insertText("<u>", "</u>");
             break;
-          case 'k':
+          case "k":
             e.preventDefault();
-            insertText('[Link Text](', ')');
+            insertText("[Link Text](", ")");
             break;
         }
       }
-      
+
       // Close emoji picker on Escape
-      if (e.key === 'Escape' && showEmojiPicker) {
+      if (e.key === "Escape" && showEmojiPicker) {
         setShowEmojiPicker(false);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [content, showEmojiPicker]);
 
   // Handle click outside to close emoji picker
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (showEmojiPicker && !e.target.closest('.emoji-picker-container')) {
+      if (showEmojiPicker && !e.target.closest(".emoji-picker-container")) {
         setShowEmojiPicker(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmojiPicker]);
 
   // Track changes to detect unsaved content
@@ -151,9 +151,15 @@ const NoteEdit = () => {
 
   // Auto-save functionality
   useEffect(() => {
-    const isAutoSaveEnabled = localStorage.getItem('scribly_auto_save') === 'true';
-    
-    if (isAutoSaveEnabled && user && (title.trim() || content.trim()) && title.trim()) {
+    const isAutoSaveEnabled =
+      localStorage.getItem("scribly_auto_save") === "true";
+
+    if (
+      isAutoSaveEnabled &&
+      user &&
+      (title.trim() || content.trim()) &&
+      title.trim()
+    ) {
       // Clear existing timeout
       if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
@@ -168,7 +174,7 @@ const NoteEdit = () => {
             emoji,
             tags,
             customStyle,
-            userId: user.$id
+            userId: user.$id,
           };
 
           let savedNote;
@@ -179,24 +185,28 @@ const NoteEdit = () => {
             // Create new note and update URL
             savedNote = await notesService.createNote(noteData);
             // Update the URL to reflect the new note ID
-            window.history.replaceState(null, '', `/notes/edit/${savedNote.$id}`);
+            window.history.replaceState(
+              null,
+              "",
+              `/notes/edit/${savedNote.$id}`
+            );
           }
-          
+
           setHasUnsavedChanges(false);
           setLastAutoSave(new Date());
-          
+
           // Show auto-save notification
-          toast.success('Note saved automatically', {
+          toast.success("Note saved automatically", {
             duration: 2000,
-            icon: '💾',
+            icon: "💾",
             style: {
-              background: '#1f2937',
-              color: '#fff',
-              border: '1px solid #374151'
-            }
+              background: "#1f2937",
+              color: "#fff",
+              border: "1px solid #374151",
+            },
           });
         } catch (error) {
-          console.error('Auto-save failed:', error);
+          console.error("Auto-save failed:", error);
           // Don't show error toast for auto-save failures to avoid spam
         }
       }, 2000);
@@ -223,54 +233,73 @@ const NoteEdit = () => {
 
   const handleBackNavigation = () => {
     if (hasUnsavedChanges) {
-      const shouldLeave = window.confirm('You have unsaved changes. Do you want to leave without saving?');
+      const shouldLeave = window.confirm(
+        "You have unsaved changes. Do you want to leave without saving?"
+      );
       if (!shouldLeave) return;
     }
-    
+
     if (!id) {
-      navigate('/dashboard');
+      navigate("/dashboard");
     } else {
       navigate(`/notes/view/${id}`);
     }
   };
 
-  const emojiOptions = ['📝', '💡', '📚', '💼', '🎯', '⭐', '🔥', '💭', '📋', '🚀', '💻', '🎨', '📊', '🎵', '📷', '🌟'];
-  
+  const emojiOptions = [
+    "📝",
+    "💡",
+    "📚",
+    "💼",
+    "🎯",
+    "⭐",
+    "🔥",
+    "💭",
+    "📋",
+    "🚀",
+    "💻",
+    "🎨",
+    "📊",
+    "🎵",
+    "📷",
+    "🌟",
+  ];
+
   const backgroundOptions = [
-    { name: 'Deep Blue', color: '#1e3a8a' },
-    { name: 'Forest Green', color: '#166534' },
-    { name: 'Crimson Red', color: '#dc2626' },
-    { name: 'Royal Purple', color: '#7c3aed' },
-    { name: 'Slate Gray', color: '#374151' },
-    { name: 'Amber Orange', color: '#d97706' },
-    { name: 'Teal', color: '#0f766e' },
-    { name: 'Rose', color: '#e11d48' },
-    { name: 'Indigo', color: '#4f46e5' },
-    { name: 'Emerald', color: '#059669' },
-    { name: 'Violet', color: '#8b5cf6' },
-    { name: 'Sky Blue', color: '#0284c7' }
+    { name: "Deep Blue", color: "#1e3a8a" },
+    { name: "Forest Green", color: "#166534" },
+    { name: "Crimson Red", color: "#dc2626" },
+    { name: "Royal Purple", color: "#7c3aed" },
+    { name: "Slate Gray", color: "#374151" },
+    { name: "Amber Orange", color: "#d97706" },
+    { name: "Teal", color: "#0f766e" },
+    { name: "Rose", color: "#e11d48" },
+    { name: "Indigo", color: "#4f46e5" },
+    { name: "Emerald", color: "#059669" },
+    { name: "Violet", color: "#8b5cf6" },
+    { name: "Sky Blue", color: "#0284c7" },
   ];
 
   const fontSizeOptions = [
-    { label: 'Extra Small (12px)', value: '12px' },
-    { label: 'Small (14px)', value: '14px' },
-    { label: 'Medium (16px)', value: '16px' },
-    { label: 'Large (18px)', value: '18px' },
-    { label: 'Extra Large (20px)', value: '20px' },
-    { label: 'Huge (24px)', value: '24px' }
+    { label: "Extra Small (12px)", value: "12px" },
+    { label: "Small (14px)", value: "14px" },
+    { label: "Medium (16px)", value: "16px" },
+    { label: "Large (18px)", value: "18px" },
+    { label: "Extra Large (20px)", value: "20px" },
+    { label: "Huge (24px)", value: "24px" },
   ];
 
   const fontFamilyOptions = [
-    { label: 'Inter (Modern)', value: 'Inter, sans-serif' },
-    { label: 'Georgia (Serif)', value: 'Georgia, serif' },
-    { label: 'Times New Roman (Classic)', value: '"Times New Roman", serif' },
-    { label: 'Arial (Clean)', value: 'Arial, sans-serif' },
-    { label: 'Helvetica (Swiss)', value: 'Helvetica, sans-serif' },
-    { label: 'Courier New (Mono)', value: '"Courier New", monospace' },
-    { label: 'Roboto (Google)', value: 'Roboto, sans-serif' },
-    { label: 'Open Sans (Friendly)', value: '"Open Sans", sans-serif' },
-    { label: 'Merriweather (Reading)', value: 'Merriweather, serif' },
-    { label: 'Source Code Pro (Code)', value: '"Source Code Pro", monospace' }
+    { label: "Inter (Modern)", value: "Inter, sans-serif" },
+    { label: "Georgia (Serif)", value: "Georgia, serif" },
+    { label: "Times New Roman (Classic)", value: '"Times New Roman", serif' },
+    { label: "Arial (Clean)", value: "Arial, sans-serif" },
+    { label: "Helvetica (Swiss)", value: "Helvetica, sans-serif" },
+    { label: "Courier New (Mono)", value: '"Courier New", monospace' },
+    { label: "Roboto (Google)", value: "Roboto, sans-serif" },
+    { label: "Open Sans (Friendly)", value: '"Open Sans", sans-serif' },
+    { label: "Merriweather (Reading)", value: "Merriweather, serif" },
+    { label: "Source Code Pro (Code)", value: '"Source Code Pro", monospace' },
   ];
 
   useEffect(() => {
@@ -283,12 +312,12 @@ const NoteEdit = () => {
       setTags(aiNote.tags || []);
       setHasUnsavedChanges(true);
       setLoading(false);
-      
+
       // Clear the state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
       return;
     }
-    
+
     // Load existing note if editing
     if (id) {
       loadNote();
@@ -304,17 +333,19 @@ const NoteEdit = () => {
       setContent(note.content);
       setEmoji(note.emoji);
       setTags(note.tags || []);
-      setCustomStyle(note.customStyle || {
-        backgroundColor: '#1e3a8a',
-        textColor: '#ffffff',
-        fontSize: '16px',
-        fontFamily: 'Inter, sans-serif'
-      });
+      setCustomStyle(
+        note.customStyle || {
+          backgroundColor: "#1e3a8a",
+          textColor: "#ffffff",
+          fontSize: "16px",
+          fontFamily: "Inter, sans-serif",
+        }
+      );
       setHasUnsavedChanges(false);
     } catch (error) {
-      console.error('Error loading note:', error);
-      toast.error('Failed to load note');
-      navigate('/dashboard');
+      console.error("Error loading note:", error);
+      toast.error("Failed to load note");
+      navigate("/dashboard");
     } finally {
       setLoading(false);
     }
@@ -322,20 +353,22 @@ const NoteEdit = () => {
 
   const handleSave = async () => {
     if (!user) {
-      toast.error('You must be logged in to save notes');
+      toast.error("You must be logged in to save notes");
       return;
     }
 
     if (!title.trim()) {
-      toast.error('Please enter a note title');
+      toast.error("Please enter a note title");
       return;
     }
 
     setSaving(true);
-    
+
     // Show loading toast
-    const loadingToast = toast.loading(!id ? 'Creating note...' : 'Saving changes...');
-    
+    const loadingToast = toast.loading(
+      !id ? "Creating note..." : "Saving changes..."
+    );
+
     try {
       const noteData = {
         title: title.trim(),
@@ -343,7 +376,7 @@ const NoteEdit = () => {
         emoji,
         tags,
         customStyle,
-        userId: user.$id
+        userId: user.$id,
       };
 
       let savedNote;
@@ -354,91 +387,101 @@ const NoteEdit = () => {
         // Create new note
         savedNote = await notesService.createNote(noteData);
       }
-      
+
       setHasUnsavedChanges(false); // Clear unsaved changes flag
-      
+
       // Show success toast
       toast.dismiss(loadingToast);
-      toast.success(!id ? 'Note created successfully!' : 'Note saved successfully!', {
-        duration: 3000,
-      });
-      
+      toast.success(
+        !id ? "Note created successfully!" : "Note saved successfully!",
+        {
+          duration: 3000,
+        }
+      );
+
       // Navigate to view mode after a short delay
       setTimeout(() => {
         navigate(`/notes/view/${savedNote.$id}`);
       }, 1000);
     } catch (error) {
-      console.error('Error saving note:', error);
+      console.error("Error saving note:", error);
       toast.dismiss(loadingToast);
-      toast.error('Failed to save note');
+      toast.error("Failed to save note");
     } finally {
       setSaving(false);
     }
   };
 
   const handleGenerateTags = async () => {
-    console.log('AI Tags: Starting tag generation...');
-    console.log('AI Tags: Title:', title);
-    console.log('AI Tags: Content length:', content.length);
-    
+    console.log("AI Tags: Starting tag generation...");
+    console.log("AI Tags: Title:", title);
+    console.log("AI Tags: Content length:", content.length);
+
     if (!title.trim() && !content.trim()) {
-      toast.error('Please add a title or content first');
+      toast.error("Please add a title or content first");
       return;
     }
 
-    const userApiKey = localStorage.getItem('scribly_gemini_api_key');
-    console.log('AI Tags: API key exists:', !!userApiKey);
-    
+    const userApiKey = localStorage.getItem("scribly_gemini_api_key");
+    console.log("AI Tags: API key exists:", !!userApiKey);
+
     if (!userApiKey) {
-      toast.error('Please set your Google Gemini API key in settings');
+      toast.error("Please set your Google Gemini API key in settings");
       return;
     }
 
     setGeneratingTags(true);
-    
+
     // Show loading toast
-    const loadingToast = toast.loading('Generating AI tags...');
-    
+    const loadingToast = toast.loading("Generating AI tags...");
+
     try {
-      console.log('AI Tags: Initializing AI service...');
-      
+      console.log("AI Tags: Initializing AI service...");
+
       // Initialize AI service
       aiService.initialize(userApiKey);
-      
-      console.log('AI Tags: Calling generateTagsForNote...');
-      
+
+      console.log("AI Tags: Calling generateTagsForNote...");
+
       // Generate tags based on title and content
       const generatedTags = await aiService.generateTagsForNote(title, content);
-      
-      console.log('AI Tags: Generated tags:', generatedTags);
-      
+
+      console.log("AI Tags: Generated tags:", generatedTags);
+
       if (generatedTags && generatedTags.length > 0) {
         // Merge with existing tags, avoiding duplicates
         const newTags = [...new Set([...tags, ...generatedTags])];
-        console.log('AI Tags: Current tags:', tags);
-        console.log('AI Tags: New tags to set:', newTags);
+        console.log("AI Tags: Current tags:", tags);
+        console.log("AI Tags: New tags to set:", newTags);
         setTags(newTags);
-        
+
         // Dismiss loading toast and show success
         toast.dismiss(loadingToast);
-        toast.success(`Generated ${generatedTags.length} new tags: ${generatedTags.join(', ')}`, {
-          duration: 4000
-        });
+        toast.success(
+          `Generated ${generatedTags.length} new tags: ${generatedTags.join(
+            ", "
+          )}`,
+          {
+            duration: 4000,
+          }
+        );
       } else {
         toast.dismiss(loadingToast);
-        toast.error('No tags could be generated for this content');
+        toast.error("No tags could be generated for this content");
       }
     } catch (error) {
-      console.error('AI Tags: Error generating tags:', error);
+      console.error("AI Tags: Error generating tags:", error);
       toast.dismiss(loadingToast);
-      
+
       // More specific error messages
-      if (error.message?.includes('API key')) {
-        toast.error('Invalid API key. Please check your Google Gemini API key in settings.');
-      } else if (error.message?.includes('quota')) {
-        toast.error('API quota exceeded. Please try again later.');
-      } else if (error.message?.includes('network')) {
-        toast.error('Network error. Please check your internet connection.');
+      if (error.message?.includes("API key")) {
+        toast.error(
+          "Invalid API key. Please check your Google Gemini API key in settings."
+        );
+      } else if (error.message?.includes("quota")) {
+        toast.error("API quota exceeded. Please try again later.");
+      } else if (error.message?.includes("network")) {
+        toast.error("Network error. Please check your internet connection.");
       } else {
         toast.error(`Failed to generate tags: ${error.message}`);
       }
@@ -448,9 +491,11 @@ const NoteEdit = () => {
   };
 
   const handleManualAIGeneration = async (prompt) => {
-    const userApiKey = localStorage.getItem('scribly_gemini_api_key');
+    const userApiKey = localStorage.getItem("scribly_gemini_api_key");
     if (!userApiKey) {
-      toast.error('Please set your Google Gemini API key in Dashboard settings');
+      toast.error(
+        "Please set your Google Gemini API key in Dashboard settings"
+      );
       return;
     }
 
@@ -458,25 +503,25 @@ const NoteEdit = () => {
     try {
       // Initialize AI service
       aiService.initialize(userApiKey);
-      
+
       // Generate note content
       const generatedNote = await aiService.generateNote({
-        topic: prompt || title || 'Interesting topic',
-        type: 'general',
-        tone: 'professional',
-        language: 'English'
+        topic: prompt || title || "Interesting topic",
+        type: "general",
+        tone: "professional",
+        language: "English",
       });
-      
+
       // Update the form with generated content
       setTitle(generatedNote.title);
       setContent(generatedNote.content);
       setEmoji(generatedNote.emoji);
       setTags([...new Set([...tags, ...(generatedNote.tags || [])])]);
-      
-      toast.success('Note generated successfully!');
+
+      toast.success("Note generated successfully!");
     } catch (error) {
-      console.error('Error generating note:', error);
-      toast.error('Failed to generate note. Please check your API key.');
+      console.error("Error generating note:", error);
+      toast.error("Failed to generate note. Please check your API key.");
     } finally {
       setGeneratingNote(false);
     }
@@ -484,13 +529,15 @@ const NoteEdit = () => {
 
   const handleGenerateContentFromTitle = async () => {
     if (!title.trim()) {
-      toast.error('Please add a title first');
+      toast.error("Please add a title first");
       return;
     }
 
-    const userApiKey = localStorage.getItem('scribly_gemini_api_key');
+    const userApiKey = localStorage.getItem("scribly_gemini_api_key");
     if (!userApiKey) {
-      toast.error('Please set your Google Gemini API key in Dashboard settings');
+      toast.error(
+        "Please set your Google Gemini API key in Dashboard settings"
+      );
       return;
     }
 
@@ -498,35 +545,40 @@ const NoteEdit = () => {
     try {
       // Initialize AI service
       aiService.initialize(userApiKey);
-      
+
       // Generate content based on title using the new method
       const generatedContent = await aiService.generateContentFromTitle(title, {
         noteType: selectedNoteType,
-        tone: 'professional',
-        language: 'English',
-        length: 'medium'
+        tone: "professional",
+        language: "English",
+        length: "medium",
       });
-      
+
       // Only update content, keep existing title and other fields
       setContent(generatedContent);
-      
-      toast.success('Content generated successfully!');
+
+      toast.success("Content generated successfully!");
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error("Error generating content:", error);
       toast.error(`Error generating content: ${error.message}`);
     } finally {
       setGeneratingNote(false);
     }
   };
 
-  const insertText = (before, after = '') => {
-    const textarea = document.getElementById('note-content');
+  const insertText = (before, after = "") => {
+    const textarea = document.getElementById("note-content");
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
-    const newText = content.substring(0, start) + before + selectedText + after + content.substring(end);
+    const newText =
+      content.substring(0, start) +
+      before +
+      selectedText +
+      after +
+      content.substring(end);
     setContent(newText);
-    
+
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + before.length, end + before.length);
@@ -534,21 +586,23 @@ const NoteEdit = () => {
   };
 
   const insertAtNewLine = (text) => {
-    const textarea = document.getElementById('note-content');
+    const textarea = document.getElementById("note-content");
     const start = textarea.selectionStart;
     const beforeCursor = content.substring(0, start);
     const afterCursor = content.substring(start);
-    
+
     // Check if we need a new line before
-    const needsNewLineBefore = beforeCursor.length > 0 && !beforeCursor.endsWith('\n');
-    const needsNewLineAfter = afterCursor.length > 0 && !afterCursor.startsWith('\n');
-    
-    const prefix = needsNewLineBefore ? '\n' : '';
-    const suffix = needsNewLineAfter ? '\n' : '';
-    
+    const needsNewLineBefore =
+      beforeCursor.length > 0 && !beforeCursor.endsWith("\n");
+    const needsNewLineAfter =
+      afterCursor.length > 0 && !afterCursor.startsWith("\n");
+
+    const prefix = needsNewLineBefore ? "\n" : "";
+    const suffix = needsNewLineAfter ? "\n" : "";
+
     const newText = beforeCursor + prefix + text + suffix + afterCursor;
     setContent(newText);
-    
+
     setTimeout(() => {
       textarea.focus();
       const newPosition = start + prefix.length + text.length;
@@ -556,67 +610,76 @@ const NoteEdit = () => {
     }, 0);
   };
 
-  const insertList = (type = 'unordered') => {
-    const textarea = document.getElementById('note-content');
+  const insertList = (type = "unordered") => {
+    const textarea = document.getElementById("note-content");
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
-    
+
     if (selectedText) {
       // Convert selected text to list
-      const lines = selectedText.split('\n');
-      const listItems = lines.map((line, index) => {
-        if (line.trim()) {
-          return type === 'ordered' ? `${index + 1}. ${line.trim()}` : `- ${line.trim()}`;
-        }
-        return line;
-      }).join('\n');
-      
-      const newText = content.substring(0, start) + listItems + content.substring(end);
+      const lines = selectedText.split("\n");
+      const listItems = lines
+        .map((line, index) => {
+          if (line.trim()) {
+            return type === "ordered"
+              ? `${index + 1}. ${line.trim()}`
+              : `- ${line.trim()}`;
+          }
+          return line;
+        })
+        .join("\n");
+
+      const newText =
+        content.substring(0, start) + listItems + content.substring(end);
       setContent(newText);
-      
+
       setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(start, start + listItems.length);
       }, 0);
     } else {
       // Insert new list item
-      const listItem = type === 'ordered' ? '1. ' : '- ';
+      const listItem = type === "ordered" ? "1. " : "- ";
       insertAtNewLine(listItem);
     }
   };
 
   const insertTable = (rows = 3, cols = 3) => {
-    let table = '\n';
-    
+    let table = "\n";
+
     // Create header row
-    const headerCells = Array(cols).fill('Header').map((_, i) => `Header ${i + 1}`);
-    table += `| ${headerCells.join(' | ')} |\n`;
-    
+    const headerCells = Array(cols)
+      .fill("Header")
+      .map((_, i) => `Header ${i + 1}`);
+    table += `| ${headerCells.join(" | ")} |\n`;
+
     // Create separator row
-    const separators = Array(cols).fill('---');
-    table += `| ${separators.join(' | ')} |\n`;
-    
+    const separators = Array(cols).fill("---");
+    table += `| ${separators.join(" | ")} |\n`;
+
     // Create data rows
     for (let i = 0; i < rows - 1; i++) {
-      const dataCells = Array(cols).fill('Data').map((_, j) => `Cell ${i + 1},${j + 1}`);
-      table += `| ${dataCells.join(' | ')} |\n`;
+      const dataCells = Array(cols)
+        .fill("Data")
+        .map((_, j) => `Cell ${i + 1},${j + 1}`);
+      table += `| ${dataCells.join(" | ")} |\n`;
     }
-    
-    table += '\n';
+
+    table += "\n";
     insertAtNewLine(table);
   };
 
-  const insertCallout = (type = 'info') => {
+  const insertCallout = (type = "info") => {
     const callouts = {
-      info: '> ℹ️ **Info:** Your info message here',
-      warning: '> ⚠️ **Warning:** Your warning message here',
-      success: '> ✅ **Success:** Your success message here',
-      error: '> ❌ **Error:** Your error message here',
-      note: '> 📝 **Note:** Your note here',
-      tip: '> 💡 **Tip:** Your tip here'
+      info: "> ℹ️ **Info:** Your info message here",
+      warning: "> ⚠️ **Warning:** Your warning message here",
+      success: "> ✅ **Success:** Your success message here",
+      error: "> ❌ **Error:** Your error message here",
+      note: "> 📝 **Note:** Your note here",
+      tip: "> 💡 **Tip:** Your tip here",
     };
-    
+
     insertAtNewLine(callouts[type] || callouts.info);
   };
 
@@ -641,7 +704,7 @@ const NoteEdit = () => {
 
 ## Next Steps
 - `,
-      
+
       todo: `# Todo List - ${new Date().toLocaleDateString()}
 
 ## High Priority
@@ -744,45 +807,1174 @@ Brief description of what you're researching
 
 ## Next Steps
 - [ ] 
-- [ ] `
+- [ ] `,
     };
 
-    setContent(templates[templateType] || '');
+    setContent(templates[templateType] || "");
   };
 
   const insertEmoji = (emoji) => {
-    insertText(emoji, '');
+    insertText(emoji, "");
   };
 
-  const quickEmojis = ['😊', '❤️', '👍', '🎉', '💡', '⭐', '🔥', '💯', '✅', '❌', '⚠️', '📝', '💼', '🎯', '🚀', '💻', '📱', '🌟', '🎨', '📊'];
-  const statusEmojis = ['🟢', '🟡', '🔴', '⚪', '🟤', '🟣', '⚫'];
+  const quickEmojis = [
+    "😊",
+    "❤️",
+    "👍",
+    "🎉",
+    "💡",
+    "⭐",
+    "🔥",
+    "💯",
+    "✅",
+    "❌",
+    "⚠️",
+    "📝",
+    "💼",
+    "🎯",
+    "🚀",
+    "💻",
+    "📱",
+    "🌟",
+    "🎨",
+    "📊",
+  ];
+  const statusEmojis = ["🟢", "🟡", "🔴", "⚪", "🟤", "🟣", "⚫"];
 
   // Comprehensive emoji database with categories
   const emojiDatabase = {
-    'Smileys & People': [
-      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '☺️', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '🥴', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'
+    "Smileys & People": [
+      "😀",
+      "😃",
+      "😄",
+      "😁",
+      "😆",
+      "😅",
+      "🤣",
+      "😂",
+      "🙂",
+      "🙃",
+      "😉",
+      "😊",
+      "😇",
+      "🥰",
+      "😍",
+      "🤩",
+      "😘",
+      "😗",
+      "☺️",
+      "😚",
+      "😙",
+      "🥲",
+      "😋",
+      "😛",
+      "😜",
+      "🤪",
+      "😝",
+      "🤑",
+      "🤗",
+      "🤭",
+      "🤫",
+      "🤔",
+      "🤐",
+      "🤨",
+      "😐",
+      "😑",
+      "😶",
+      "😏",
+      "😒",
+      "🙄",
+      "😬",
+      "🤥",
+      "😔",
+      "😪",
+      "🤤",
+      "😴",
+      "😷",
+      "🤒",
+      "🤕",
+      "🤢",
+      "🤮",
+      "🤧",
+      "🥵",
+      "🥶",
+      "🥴",
+      "😵",
+      "🤯",
+      "🤠",
+      "🥳",
+      "😎",
+      "🤓",
+      "🧐",
+      "😕",
+      "😟",
+      "🙁",
+      "☹️",
+      "😮",
+      "😯",
+      "😲",
+      "😳",
+      "🥺",
+      "😦",
+      "😧",
+      "😨",
+      "😰",
+      "😥",
+      "😢",
+      "😭",
+      "😱",
+      "😖",
+      "😣",
+      "😞",
+      "😓",
+      "😩",
+      "😫",
+      "🥱",
+      "😤",
+      "😡",
+      "😠",
+      "🤬",
+      "😈",
+      "👿",
+      "💀",
+      "☠️",
+      "💩",
+      "🤡",
+      "👹",
+      "👺",
+      "👻",
+      "👽",
+      "👾",
+      "🤖",
+      "😺",
+      "😸",
+      "😹",
+      "😻",
+      "😼",
+      "😽",
+      "🙀",
+      "😿",
+      "😾",
     ],
-    'Animals & Nature': [
-      '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐻‍❄️', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🕸️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔'
+    "Animals & Nature": [
+      "🐶",
+      "🐱",
+      "🐭",
+      "🐹",
+      "🐰",
+      "🦊",
+      "🐻",
+      "🐼",
+      "🐻‍❄️",
+      "🐨",
+      "🐯",
+      "🦁",
+      "🐮",
+      "🐷",
+      "🐽",
+      "🐸",
+      "🐵",
+      "🙈",
+      "🙉",
+      "🙊",
+      "🐒",
+      "🐔",
+      "🐧",
+      "🐦",
+      "🐤",
+      "🐣",
+      "🐥",
+      "🦆",
+      "🦅",
+      "🦉",
+      "🦇",
+      "🐺",
+      "🐗",
+      "🐴",
+      "🦄",
+      "🐝",
+      "🐛",
+      "🦋",
+      "🐌",
+      "🐞",
+      "🐜",
+      "🦟",
+      "🦗",
+      "🕷️",
+      "🕸️",
+      "🦂",
+      "🐢",
+      "🐍",
+      "🦎",
+      "🦖",
+      "🦕",
+      "🐙",
+      "🦑",
+      "🦐",
+      "🦞",
+      "🦀",
+      "🐡",
+      "🐠",
+      "🐟",
+      "🐬",
+      "🐳",
+      "🐋",
+      "🦈",
+      "🐊",
+      "🐅",
+      "🐆",
+      "🦓",
+      "🦍",
+      "🦧",
+      "🐘",
+      "🦛",
+      "🦏",
+      "🐪",
+      "🐫",
+      "🦒",
+      "🦘",
+      "🐃",
+      "🐂",
+      "🐄",
+      "🐎",
+      "🐖",
+      "🐏",
+      "🐑",
+      "🦙",
+      "🐐",
+      "🦌",
+      "🐕",
+      "🐩",
+      "🦮",
+      "🐕‍🦺",
+      "🐈",
+      "🐈‍⬛",
+      "🐓",
+      "🦃",
+      "🦚",
+      "🦜",
+      "🦢",
+      "🦩",
+      "🕊️",
+      "🐇",
+      "🦝",
+      "🦨",
+      "🦡",
+      "🦦",
+      "🦥",
+      "🐁",
+      "🐀",
+      "🐿️",
+      "🦔",
     ],
-    'Food & Drink': [
-      '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥖', '🍞', '🥨', '🥯', '🧇', '🥞', '🧈', '🍯', '🥛', '🍼', '☕', '🍵', '🧃', '🥤', '🍶', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🧉', '🍾', '🧊', '🥄', '🍴', '🍽️', '🥣', '🥡', '🥢', '🧂'
+    "Food & Drink": [
+      "🍎",
+      "🍐",
+      "🍊",
+      "🍋",
+      "🍌",
+      "🍉",
+      "🍇",
+      "🍓",
+      "🫐",
+      "🍈",
+      "🍒",
+      "🍑",
+      "🥭",
+      "🍍",
+      "🥥",
+      "🥝",
+      "🍅",
+      "🍆",
+      "🥑",
+      "🥦",
+      "🥬",
+      "🥒",
+      "🌶️",
+      "🫑",
+      "🌽",
+      "🥕",
+      "🫒",
+      "🧄",
+      "🧅",
+      "🥔",
+      "🍠",
+      "🥐",
+      "🥖",
+      "🍞",
+      "🥨",
+      "🥯",
+      "🧇",
+      "🥞",
+      "🧈",
+      "🍯",
+      "🥛",
+      "🍼",
+      "☕",
+      "🍵",
+      "🧃",
+      "🥤",
+      "🍶",
+      "🍺",
+      "🍻",
+      "🥂",
+      "🍷",
+      "🥃",
+      "🍸",
+      "🍹",
+      "🧉",
+      "🍾",
+      "🧊",
+      "🥄",
+      "🍴",
+      "🍽️",
+      "🥣",
+      "🥡",
+      "🥢",
+      "🧂",
     ],
-    'Activities & Sports': [
-      '⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛷', '⛸️', '🥌', '🎿', '⛷️', '🏂', '🪂', '🏋️‍♀️', '🏋️', '🏋️‍♂️', '🤼‍♀️', '🤼', '🤼‍♂️', '🤸‍♀️', '🤸', '🤸‍♂️', '⛹️‍♀️', '⛹️', '⛹️‍♂️', '🤺', '🤾‍♀️', '🤾', '🤾‍♂️', '🏌️‍♀️', '🏌️', '🏌️‍♂️', '🏇', '🧘‍♀️', '🧘', '🧘‍♂️', '🏄‍♀️', '🏄', '🏄‍♂️', '🏊‍♀️', '🏊', '🏊‍♂️', '🤽‍♀️', '🤽', '🤽‍♂️', '🚣‍♀️', '🚣', '🚣‍♂️', '🧗‍♀️', '🧗', '🧗‍♂️', '🚵‍♀️', '🚵', '🚵‍♂️', '🚴‍♀️', '🚴', '🚴‍♂️', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎫', '🎟️', '🎪', '🤹', '🤹‍♀️', '🤹‍♂️', '🎭', '🩰', '🎨', '🎬', '🎤', '🎧', '🎼', '🎵', '🎶', '🥁', '🪘', '🎹', '🎷', '🎺', '🪗', '🎸', '🪕', '🎻', '🎲', '♟️', '🎯', '🎳', '🎮', '🎰', '🧩'
+    "Activities & Sports": [
+      "⚽",
+      "🏀",
+      "🏈",
+      "⚾",
+      "🥎",
+      "🎾",
+      "🏐",
+      "🏉",
+      "🥏",
+      "🎱",
+      "🪀",
+      "🏓",
+      "🏸",
+      "🏒",
+      "🏑",
+      "🥍",
+      "🏏",
+      "🪃",
+      "🥅",
+      "⛳",
+      "🪁",
+      "🏹",
+      "🎣",
+      "🤿",
+      "🥊",
+      "🥋",
+      "🎽",
+      "🛹",
+      "🛷",
+      "⛸️",
+      "🥌",
+      "🎿",
+      "⛷️",
+      "🏂",
+      "🪂",
+      "🏋️‍♀️",
+      "🏋️",
+      "🏋️‍♂️",
+      "🤼‍♀️",
+      "🤼",
+      "🤼‍♂️",
+      "🤸‍♀️",
+      "🤸",
+      "🤸‍♂️",
+      "⛹️‍♀️",
+      "⛹️",
+      "⛹️‍♂️",
+      "🤺",
+      "🤾‍♀️",
+      "🤾",
+      "🤾‍♂️",
+      "🏌️‍♀️",
+      "🏌️",
+      "🏌️‍♂️",
+      "🏇",
+      "🧘‍♀️",
+      "🧘",
+      "🧘‍♂️",
+      "🏄‍♀️",
+      "🏄",
+      "🏄‍♂️",
+      "🏊‍♀️",
+      "🏊",
+      "🏊‍♂️",
+      "🤽‍♀️",
+      "🤽",
+      "🤽‍♂️",
+      "🚣‍♀️",
+      "🚣",
+      "🚣‍♂️",
+      "🧗‍♀️",
+      "🧗",
+      "🧗‍♂️",
+      "🚵‍♀️",
+      "🚵",
+      "🚵‍♂️",
+      "🚴‍♀️",
+      "🚴",
+      "🚴‍♂️",
+      "🏆",
+      "🥇",
+      "🥈",
+      "🥉",
+      "🏅",
+      "🎖️",
+      "🏵️",
+      "🎗️",
+      "🎫",
+      "🎟️",
+      "🎪",
+      "🤹",
+      "🤹‍♀️",
+      "🤹‍♂️",
+      "🎭",
+      "🩰",
+      "🎨",
+      "🎬",
+      "🎤",
+      "🎧",
+      "🎼",
+      "🎵",
+      "🎶",
+      "🥁",
+      "🪘",
+      "🎹",
+      "🎷",
+      "🎺",
+      "🪗",
+      "🎸",
+      "🪕",
+      "🎻",
+      "🎲",
+      "♟️",
+      "🎯",
+      "🎳",
+      "🎮",
+      "🎰",
+      "🧩",
     ],
-    'Travel & Places': [
-      '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛹', '🛼', '🚁', '✈️', '🛩️', '🛫', '🛬', '🪂', '💺', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '⚓', '⛽', '🚧', '🚨', '🚥', '🚦', '🛑', '🚏', '🗺️', '🗿', '🗽', '🗼', '🏰', '🏯', '🏟️', '🎡', '🎢', '🎠', '⛲', '⛱️', '🏖️', '🏝️', '🏜️', '🌋', '⛰️', '🏔️', '🗻', '🏕️', '⛺', '🛖', '🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏭', '🏢', '🏬', '🏣', '🏤', '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒', '🏛️', '⛪', '🕌', '🛕', '🕍', '⛩️', '🕋', '⛲', '⛱️', '🌁', '🌃', '🏙️', '🌄', '🌅', '🌆', '🌇', '🌉', '♨️', '🎠', '🎡', '🎢', '💈', '🎪'
+    "Travel & Places": [
+      "🚗",
+      "🚕",
+      "🚙",
+      "🚌",
+      "🚎",
+      "🏎️",
+      "🚓",
+      "🚑",
+      "🚒",
+      "🚐",
+      "🛻",
+      "🚚",
+      "🚛",
+      "🚜",
+      "🏍️",
+      "🛵",
+      "🚲",
+      "🛴",
+      "🛹",
+      "🛼",
+      "🚁",
+      "✈️",
+      "🛩️",
+      "🛫",
+      "🛬",
+      "🪂",
+      "💺",
+      "🚀",
+      "🛸",
+      "🚁",
+      "🛶",
+      "⛵",
+      "🚤",
+      "🛥️",
+      "🛳️",
+      "⛴️",
+      "🚢",
+      "⚓",
+      "⛽",
+      "🚧",
+      "🚨",
+      "🚥",
+      "🚦",
+      "🛑",
+      "🚏",
+      "🗺️",
+      "🗿",
+      "🗽",
+      "🗼",
+      "🏰",
+      "🏯",
+      "🏟️",
+      "🎡",
+      "🎢",
+      "🎠",
+      "⛲",
+      "⛱️",
+      "🏖️",
+      "🏝️",
+      "🏜️",
+      "🌋",
+      "⛰️",
+      "🏔️",
+      "🗻",
+      "🏕️",
+      "⛺",
+      "🛖",
+      "🏠",
+      "🏡",
+      "🏘️",
+      "🏚️",
+      "🏗️",
+      "🏭",
+      "🏢",
+      "🏬",
+      "🏣",
+      "🏤",
+      "🏥",
+      "🏦",
+      "🏨",
+      "🏪",
+      "🏫",
+      "🏩",
+      "💒",
+      "🏛️",
+      "⛪",
+      "🕌",
+      "🛕",
+      "🕍",
+      "⛩️",
+      "🕋",
+      "⛲",
+      "⛱️",
+      "🌁",
+      "🌃",
+      "🏙️",
+      "🌄",
+      "🌅",
+      "🌆",
+      "🌇",
+      "🌉",
+      "♨️",
+      "🎠",
+      "🎡",
+      "🎢",
+      "💈",
+      "🎪",
     ],
-    'Objects & Symbols': [
-      '⌚', '📱', '📲', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '🗜️', '💽', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📽️', '🎞️', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙️', '🎚️', '🎛️', '🧭', '⏱️', '⏲️', '⏰', '🕰️', '⌛', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '🪙', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪓', '🪚', '🔩', '⚙️', '🪤', '🧱', '⛓️', '🧲', '🔫', '💣', '🧨', '🪓', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭', '🔬', '🕳️', '🩹', '🩺', '💊', '💉', '🩸', '🧬', '🦠', '🧫', '🧪', '🌡️', '🧹', '🧺', '🧻', '🚽', '🚰', '🚿', '🛁', '🛀', '🧼', '🪥', '🪒', '🧽', '🧴', '🛎️', '🔑', '🗝️', '🚪', '🪑', '🛋️', '🛏️', '🛌', '🧸', '🖼️', '🛍️', '🛒', '🎁', '🎈', '🎏', '🎀', '🎊', '🎉', '🎎', '🏮', '🎐', '🧧', '✉️', '📩', '📨', '📧', '💌', '📥', '📤', '📦', '🏷️', '📪', '📫', '📬', '📭', '📮', '📯', '📜', '📃', '📄', '📑', '📊', '📈', '📉', '🗒️', '🗓️', '📅', '📆', '📇', '📋', '📌', '📍', '📎', '🖇️', '📏', '📐', '✂️', '🗃️', '🗄️', '🗑️', '🔒', '🔓', '🔏', '🔐', '🔑', '🗝️', '🔨', '🪓', '⛏️', '⚒️', '🛠️', '🗡️', '⚔️', '🔫', '🪃', '🏹', '🛡️', '🪚', '🔧', '🪛', '🔩', '⚙️', '🗜️', '⚖️', '🦯', '🔗', '⛓️', '🪝', '🧰', '🧲', '🪜', '🧪', '🧫', '🧬', '🔬', '🔭', '📡'
+    "Objects & Symbols": [
+      "⌚",
+      "📱",
+      "📲",
+      "💻",
+      "⌨️",
+      "🖥️",
+      "🖨️",
+      "🖱️",
+      "🖲️",
+      "🕹️",
+      "🗜️",
+      "💽",
+      "💾",
+      "💿",
+      "📀",
+      "📼",
+      "📷",
+      "📸",
+      "📹",
+      "🎥",
+      "📽️",
+      "🎞️",
+      "📞",
+      "☎️",
+      "📟",
+      "📠",
+      "📺",
+      "📻",
+      "🎙️",
+      "🎚️",
+      "🎛️",
+      "🧭",
+      "⏱️",
+      "⏲️",
+      "⏰",
+      "🕰️",
+      "⌛",
+      "⏳",
+      "📡",
+      "🔋",
+      "🔌",
+      "💡",
+      "🔦",
+      "🕯️",
+      "🪔",
+      "🧯",
+      "🛢️",
+      "💸",
+      "💵",
+      "💴",
+      "💶",
+      "💷",
+      "🪙",
+      "💰",
+      "💳",
+      "💎",
+      "⚖️",
+      "🪜",
+      "🧰",
+      "🔧",
+      "🔨",
+      "⚒️",
+      "🛠️",
+      "⛏️",
+      "🪓",
+      "🪚",
+      "🔩",
+      "⚙️",
+      "🪤",
+      "🧱",
+      "⛓️",
+      "🧲",
+      "🔫",
+      "💣",
+      "🧨",
+      "🪓",
+      "🔪",
+      "🗡️",
+      "⚔️",
+      "🛡️",
+      "🚬",
+      "⚰️",
+      "🪦",
+      "⚱️",
+      "🏺",
+      "🔮",
+      "📿",
+      "🧿",
+      "💈",
+      "⚗️",
+      "🔭",
+      "🔬",
+      "🕳️",
+      "🩹",
+      "🩺",
+      "💊",
+      "💉",
+      "🩸",
+      "🧬",
+      "🦠",
+      "🧫",
+      "🧪",
+      "🌡️",
+      "🧹",
+      "🧺",
+      "🧻",
+      "🚽",
+      "🚰",
+      "🚿",
+      "🛁",
+      "🛀",
+      "🧼",
+      "🪥",
+      "🪒",
+      "🧽",
+      "🧴",
+      "🛎️",
+      "🔑",
+      "🗝️",
+      "🚪",
+      "🪑",
+      "🛋️",
+      "🛏️",
+      "🛌",
+      "🧸",
+      "🖼️",
+      "🛍️",
+      "🛒",
+      "🎁",
+      "🎈",
+      "🎏",
+      "🎀",
+      "🎊",
+      "🎉",
+      "🎎",
+      "🏮",
+      "🎐",
+      "🧧",
+      "✉️",
+      "📩",
+      "📨",
+      "📧",
+      "💌",
+      "📥",
+      "📤",
+      "📦",
+      "🏷️",
+      "📪",
+      "📫",
+      "📬",
+      "📭",
+      "📮",
+      "📯",
+      "📜",
+      "📃",
+      "📄",
+      "📑",
+      "📊",
+      "📈",
+      "📉",
+      "🗒️",
+      "🗓️",
+      "📅",
+      "📆",
+      "📇",
+      "📋",
+      "📌",
+      "📍",
+      "📎",
+      "🖇️",
+      "📏",
+      "📐",
+      "✂️",
+      "🗃️",
+      "🗄️",
+      "🗑️",
+      "🔒",
+      "🔓",
+      "🔏",
+      "🔐",
+      "🔑",
+      "🗝️",
+      "🔨",
+      "🪓",
+      "⛏️",
+      "⚒️",
+      "🛠️",
+      "🗡️",
+      "⚔️",
+      "🔫",
+      "🪃",
+      "🏹",
+      "🛡️",
+      "🪚",
+      "🔧",
+      "🪛",
+      "🔩",
+      "⚙️",
+      "🗜️",
+      "⚖️",
+      "🦯",
+      "🔗",
+      "⛓️",
+      "🪝",
+      "🧰",
+      "🧲",
+      "🪜",
+      "🧪",
+      "🧫",
+      "🧬",
+      "🔬",
+      "🔭",
+      "📡",
     ],
-    'Flags': [
-      '🏁', '🚩', '🎌', '🏴', '🏳️', '🏳️‍🌈', '🏳️‍⚧️', '🏴‍☠️', '🇦🇫', '🇦🇽', '🇦🇱', '🇩🇿', '🇦🇸', '🇦🇩', '🇦🇴', '🇦🇮', '🇦🇶', '🇦🇬', '🇦🇷', '🇦🇲', '🇦🇼', '🇦🇺', '🇦🇹', '🇦🇿', '🇧🇸', '🇧🇭', '🇧🇩', '🇧🇧', '🇧🇾', '🇧🇪', '🇧🇿', '🇧🇯', '🇧🇲', '🇧🇹', '🇧🇴', '🇧🇦', '🇧🇼', '🇧🇷', '🇮🇴', '🇻🇬', '🇧🇳', '🇧🇬', '🇧🇫', '🇧🇮', '🇰🇭', '🇨🇲', '🇨🇦', '🇮🇨', '🇨🇻', '🇧🇶', '🇰🇾', '🇨🇫', '🇹🇩', '🇨🇱', '🇨🇳', '🇨🇽', '🇨🇨', '🇨🇴', '🇰🇲', '🇨🇬', '🇨🇩', '🇨🇰', '🇨🇷', '🇨🇮', '🇭🇷', '🇨🇺', '🇨🇼', '🇨🇾', '🇨🇿', '🇩🇰', '🇩🇯', '🇩🇲', '🇩🇴', '🇪🇨', '🇪🇬', '🇸🇻', '🇬🇶', '🇪🇷', '🇪🇪', '🇪🇹', '🇪🇺', '🇫🇰', '🇫🇴', '🇫🇯', '🇫🇮', '🇫🇷', '🇬🇫', '🇵🇫', '🇹🇫', '🇬🇦', '🇬🇲', '🇬🇪', '🇩🇪', '🇬🇭', '🇬🇮', '🇬🇷', '🇬🇱', '🇬🇩', '🇬🇵', '🇬🇺', '🇬🇹', '🇬🇬', '🇬🇳', '🇬🇼', '🇬🇾', '🇭🇹', '🇭🇳', '🇭🇰', '🇭🇺', '🇮🇸', '🇮🇳', '🇮🇩', '🇮🇷', '🇮🇶', '🇮🇪', '🇮🇲', '🇮🇱', '🇮🇹', '🇯🇲', '🇯🇵', '🎌', '🇯🇪', '🇯🇴', '🇰🇿', '🇰🇪', '🇰🇮', '🇽🇰', '🇰🇼', '🇰🇬', '🇱🇦', '🇱🇻', '🇱🇧', '🇱🇸', '🇱🇷', '🇱🇾', '🇱🇮', '🇱🇹', '🇱🇺', '🇲🇴', '🇲🇰', '🇲🇬', '🇲🇼', '🇲🇾', '🇲🇻', '🇲🇱', '🇲🇹', '🇲🇭', '🇲🇶', '🇲🇷', '🇲🇺', '🇾🇹', '🇲🇽', '🇫🇲', '🇲🇩', '🇲🇨', '🇲🇳', '🇲🇪', '🇲🇸', '🇲🇦', '🇲🇿', '🇲🇲', '🇳🇦', '🇳🇷', '🇳🇵', '🇳🇱', '🇳🇨', '🇳🇿', '🇳🇮', '🇳🇪', '🇳🇬', '🇳🇺', '🇳🇫', '🇰🇵', '🇲🇵', '🇳🇴', '🇴🇲', '🇵🇰', '🇵🇼', '🇵🇸', '🇵🇦', '🇵🇬', '🇵🇾', '🇵🇪', '🇵🇭', '🇵🇳', '🇵🇱', '🇵🇹', '🇵🇷', '🇶🇦', '🇷🇪', '🇷🇴', '🇷🇺', '🇷🇼', '🇼🇸', '🇸🇲', '🇸🇹', '🇸🇦', '🇸🇳', '🇷🇸', '🇸🇨', '🇸🇱', '🇸🇬', '🇸🇽', '🇸🇰', '🇸🇮', '🇬🇸', '🇸🇧', '🇸🇴', '🇿🇦', '🇰🇷', '🇸🇸', '🇪🇸', '🇱🇰', '🇧🇱', '🇸🇭', '🇰🇳', '🇱🇨', '🇲🇫', '🇵🇲', '🇻🇨', '🇸🇩', '🇸🇷', '🇸🇯', '🇸🇿', '🇸🇪', '🇨🇭', '🇸🇾', '🇹🇼', '🇹🇯', '🇹🇿', '🇹🇭', '🇹🇱', '🇹🇬', '🇹🇰', '🇹🇴', '🇹🇹', '🇹🇳', '🇹🇷', '🇹🇲', '🇹🇨', '🇹🇻', '🇻🇮', '🇺🇬', '🇺🇦', '🇦🇪', '🇬🇧', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '🏴󠁧󠁢󠁷󠁬󠁳󠁿', '🇺🇸', '🇺🇾', '🇺🇿', '🇻🇺', '🇻🇦', '🇻🇪', '🇻🇳', '🇼🇫', '🇪🇭', '🇾🇪', '🇿🇲', '🇿🇼'
+    Flags: [
+      "🏁",
+      "🚩",
+      "🎌",
+      "🏴",
+      "🏳️",
+      "🏳️‍🌈",
+      "🏳️‍⚧️",
+      "🏴‍☠️",
+      "🇦🇫",
+      "🇦🇽",
+      "🇦🇱",
+      "🇩🇿",
+      "🇦🇸",
+      "🇦🇩",
+      "🇦🇴",
+      "🇦🇮",
+      "🇦🇶",
+      "🇦🇬",
+      "🇦🇷",
+      "🇦🇲",
+      "🇦🇼",
+      "🇦🇺",
+      "🇦🇹",
+      "🇦🇿",
+      "🇧🇸",
+      "🇧🇭",
+      "🇧🇩",
+      "🇧🇧",
+      "🇧🇾",
+      "🇧🇪",
+      "🇧🇿",
+      "🇧🇯",
+      "🇧🇲",
+      "🇧🇹",
+      "🇧🇴",
+      "🇧🇦",
+      "🇧🇼",
+      "🇧🇷",
+      "🇮🇴",
+      "🇻🇬",
+      "🇧🇳",
+      "🇧🇬",
+      "🇧🇫",
+      "🇧🇮",
+      "🇰🇭",
+      "🇨🇲",
+      "🇨🇦",
+      "🇮🇨",
+      "🇨🇻",
+      "🇧🇶",
+      "🇰🇾",
+      "🇨🇫",
+      "🇹🇩",
+      "🇨🇱",
+      "🇨🇳",
+      "🇨🇽",
+      "🇨🇨",
+      "🇨🇴",
+      "🇰🇲",
+      "🇨🇬",
+      "🇨🇩",
+      "🇨🇰",
+      "🇨🇷",
+      "🇨🇮",
+      "🇭🇷",
+      "🇨🇺",
+      "🇨🇼",
+      "🇨🇾",
+      "🇨🇿",
+      "🇩🇰",
+      "🇩🇯",
+      "🇩🇲",
+      "🇩🇴",
+      "🇪🇨",
+      "🇪🇬",
+      "🇸🇻",
+      "🇬🇶",
+      "🇪🇷",
+      "🇪🇪",
+      "🇪🇹",
+      "🇪🇺",
+      "🇫🇰",
+      "🇫🇴",
+      "🇫🇯",
+      "🇫🇮",
+      "🇫🇷",
+      "🇬🇫",
+      "🇵🇫",
+      "🇹🇫",
+      "🇬🇦",
+      "🇬🇲",
+      "🇬🇪",
+      "🇩🇪",
+      "🇬🇭",
+      "🇬🇮",
+      "🇬🇷",
+      "🇬🇱",
+      "🇬🇩",
+      "🇬🇵",
+      "🇬🇺",
+      "🇬🇹",
+      "🇬🇬",
+      "🇬🇳",
+      "🇬🇼",
+      "🇬🇾",
+      "🇭🇹",
+      "🇭🇳",
+      "🇭🇰",
+      "🇭🇺",
+      "🇮🇸",
+      "🇮🇳",
+      "🇮🇩",
+      "🇮🇷",
+      "🇮🇶",
+      "🇮🇪",
+      "🇮🇲",
+      "🇮🇱",
+      "🇮🇹",
+      "🇯🇲",
+      "🇯🇵",
+      "🎌",
+      "🇯🇪",
+      "🇯🇴",
+      "🇰🇿",
+      "🇰🇪",
+      "🇰🇮",
+      "🇽🇰",
+      "🇰🇼",
+      "🇰🇬",
+      "🇱🇦",
+      "🇱🇻",
+      "🇱🇧",
+      "🇱🇸",
+      "🇱🇷",
+      "🇱🇾",
+      "🇱🇮",
+      "🇱🇹",
+      "🇱🇺",
+      "🇲🇴",
+      "🇲🇰",
+      "🇲🇬",
+      "🇲🇼",
+      "🇲🇾",
+      "🇲🇻",
+      "🇲🇱",
+      "🇲🇹",
+      "🇲🇭",
+      "🇲🇶",
+      "🇲🇷",
+      "🇲🇺",
+      "🇾🇹",
+      "🇲🇽",
+      "🇫🇲",
+      "🇲🇩",
+      "🇲🇨",
+      "🇲🇳",
+      "🇲🇪",
+      "🇲🇸",
+      "🇲🇦",
+      "🇲🇿",
+      "🇲🇲",
+      "🇳🇦",
+      "🇳🇷",
+      "🇳🇵",
+      "🇳🇱",
+      "🇳🇨",
+      "🇳🇿",
+      "🇳🇮",
+      "🇳🇪",
+      "🇳🇬",
+      "🇳🇺",
+      "🇳🇫",
+      "🇰🇵",
+      "🇲🇵",
+      "🇳🇴",
+      "🇴🇲",
+      "🇵🇰",
+      "🇵🇼",
+      "🇵🇸",
+      "🇵🇦",
+      "🇵🇬",
+      "🇵🇾",
+      "🇵🇪",
+      "🇵🇭",
+      "🇵🇳",
+      "🇵🇱",
+      "🇵🇹",
+      "🇵🇷",
+      "🇶🇦",
+      "🇷🇪",
+      "🇷🇴",
+      "🇷🇺",
+      "🇷🇼",
+      "🇼🇸",
+      "🇸🇲",
+      "🇸🇹",
+      "🇸🇦",
+      "🇸🇳",
+      "🇷🇸",
+      "🇸🇨",
+      "🇸🇱",
+      "🇸🇬",
+      "🇸🇽",
+      "🇸🇰",
+      "🇸🇮",
+      "🇬🇸",
+      "🇸🇧",
+      "🇸🇴",
+      "🇿🇦",
+      "🇰🇷",
+      "🇸🇸",
+      "🇪🇸",
+      "🇱🇰",
+      "🇧🇱",
+      "🇸🇭",
+      "🇰🇳",
+      "🇱🇨",
+      "🇲🇫",
+      "🇵🇲",
+      "🇻🇨",
+      "🇸🇩",
+      "🇸🇷",
+      "🇸🇯",
+      "🇸🇿",
+      "🇸🇪",
+      "🇨🇭",
+      "🇸🇾",
+      "🇹🇼",
+      "🇹🇯",
+      "🇹🇿",
+      "🇹🇭",
+      "🇹🇱",
+      "🇹🇬",
+      "🇹🇰",
+      "🇹🇴",
+      "🇹🇹",
+      "🇹🇳",
+      "🇹🇷",
+      "🇹🇲",
+      "🇹🇨",
+      "🇹🇻",
+      "🇻🇮",
+      "🇺🇬",
+      "🇺🇦",
+      "🇦🇪",
+      "🇬🇧",
+      "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+      "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+      "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+      "🇺🇸",
+      "🇺🇾",
+      "🇺🇿",
+      "🇻🇺",
+      "🇻🇦",
+      "🇻🇪",
+      "🇻🇳",
+      "🇼🇫",
+      "🇪🇭",
+      "🇾🇪",
+      "🇿🇲",
+      "🇿🇼",
     ],
-    'Hearts & Symbols': [
-      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '♥️', '💌', '💋', '💍', '💎', '👑', '🎩', '🎓', '📿', '💄', '👠', '👡', '👢', '👞', '👟', '🥾', '🩴', '👒', '🧢', '⛑️', '📯', '🎺', '🥁', '🎷', '🎸', '🎻', '🎹', '🥂', '🍾', '🍺', '🍻', '🥃', '🍸', '🍹', '🍷', '🍶', '☕', '🍵', '🧃', '🥤', '🧋', '🧉', '🧊', '⭐', '🌟', '✨', '⚡', '☄️', '💫', '🔥', '💥', '💢', '💯', '💫', '💤', '💨', '🕳️', '💣', '💥', '💫', '💦', '💧', '🌊', '💔', '❤️‍🔥', '❤️‍🩹', '💘', '💝', '💖', '💗', '💓', '💞', '💕', '💟', '❣️', '💔', '❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '♠️', '♥️', '♦️', '♣️', '♟️', '🃏', '🀄', '🎴', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎵', '🎶', '🎹', '🥁', '🎷', '🎺', '🎸', '🎻', '🎲', '♟️', '🎯', '🎳', '🎮', '🎰', '🧩'
-    ]
+    "Hearts & Symbols": [
+      "❤️",
+      "🧡",
+      "💛",
+      "💚",
+      "💙",
+      "💜",
+      "🖤",
+      "🤍",
+      "🤎",
+      "💔",
+      "❣️",
+      "💕",
+      "💞",
+      "💓",
+      "💗",
+      "💖",
+      "💘",
+      "💝",
+      "💟",
+      "♥️",
+      "💌",
+      "💋",
+      "💍",
+      "💎",
+      "👑",
+      "🎩",
+      "🎓",
+      "📿",
+      "💄",
+      "👠",
+      "👡",
+      "👢",
+      "👞",
+      "👟",
+      "🥾",
+      "🩴",
+      "👒",
+      "🧢",
+      "⛑️",
+      "📯",
+      "🎺",
+      "🥁",
+      "🎷",
+      "🎸",
+      "🎻",
+      "🎹",
+      "🥂",
+      "🍾",
+      "🍺",
+      "🍻",
+      "🥃",
+      "🍸",
+      "🍹",
+      "🍷",
+      "🍶",
+      "☕",
+      "🍵",
+      "🧃",
+      "🥤",
+      "🧋",
+      "🧉",
+      "🧊",
+      "⭐",
+      "🌟",
+      "✨",
+      "⚡",
+      "☄️",
+      "💫",
+      "🔥",
+      "💥",
+      "💢",
+      "💯",
+      "💫",
+      "💤",
+      "💨",
+      "🕳️",
+      "💣",
+      "💥",
+      "💫",
+      "💦",
+      "💧",
+      "🌊",
+      "💔",
+      "❤️‍🔥",
+      "❤️‍🩹",
+      "💘",
+      "💝",
+      "💖",
+      "💗",
+      "💓",
+      "💞",
+      "💕",
+      "💟",
+      "❣️",
+      "💔",
+      "❤️",
+      "🧡",
+      "💛",
+      "💚",
+      "💙",
+      "💜",
+      "🤎",
+      "🖤",
+      "🤍",
+      "♠️",
+      "♥️",
+      "♦️",
+      "♣️",
+      "♟️",
+      "🃏",
+      "🀄",
+      "🎴",
+      "🎭",
+      "🎨",
+      "🎬",
+      "🎤",
+      "🎧",
+      "🎼",
+      "🎵",
+      "🎶",
+      "🎹",
+      "🥁",
+      "🎷",
+      "🎺",
+      "🎸",
+      "🎻",
+      "🎲",
+      "♟️",
+      "🎯",
+      "🎳",
+      "🎮",
+      "🎰",
+      "🧩",
+    ],
   };
 
   // Filter emojis based on search term
@@ -790,10 +1982,10 @@ Brief description of what you're researching
     if (!emojiSearchTerm) {
       return emojiDatabase;
     }
-    
+
     const filtered = {};
     Object.entries(emojiDatabase).forEach(([category, emojis]) => {
-      const matchingEmojis = emojis.filter(emoji => {
+      const matchingEmojis = emojis.filter((emoji) => {
         // Simple emoji search - you can enhance this with emoji names/descriptions
         return category.toLowerCase().includes(emojiSearchTerm.toLowerCase());
       });
@@ -801,28 +1993,28 @@ Brief description of what you're researching
         filtered[category] = matchingEmojis;
       }
     });
-    
+
     return filtered;
   };
 
   const insertCurrentDate = () => {
     const now = new Date();
-    const date = now.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const date = now.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
-    insertText(date, '');
+    insertText(date, "");
   };
 
   const insertCurrentTime = () => {
     const now = new Date();
-    const time = now.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
+    const time = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
-    insertText(time, '');
+    insertText(time, "");
   };
 
   if (loading) {
@@ -849,14 +2041,14 @@ Brief description of what you're researching
               <button
                 onClick={handleBackNavigation}
                 className={`px-4 py-2 text-gray-400 hover:text-white rounded-lg border transition-all duration-200 ${
-                  hasUnsavedChanges 
-                    ? 'border-orange-500/50 hover:border-orange-400' 
-                    : 'border-blue-500/50 hover:border-blue-400'
+                  hasUnsavedChanges
+                    ? "border-orange-500/50 hover:border-orange-400"
+                    : "border-blue-500/50 hover:border-blue-400"
                 }`}
               >
-                {!id ? 'Back to Dashboard' : 'Back to Note'}
+                {!id ? "Back to Dashboard" : "Back to Note"}
               </button>
-              
+
               {hasUnsavedChanges && (
                 <span className="text-xs text-orange-400 bg-orange-400/10 px-2 py-1 rounded-full border border-orange-400/20">
                   Unsaved changes
@@ -864,18 +2056,18 @@ Brief description of what you're researching
               )}
 
               {/* Auto-save status */}
-              {localStorage.getItem('scribly_auto_save') === 'true' && (
+              {localStorage.getItem("scribly_auto_save") === "true" && (
                 <span className="text-xs text-green-400 bg-green-400/10 px-2 py-1 rounded-full border border-green-400/20 flex items-center space-x-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span>Auto-save ON</span>
                 </span>
               )}
-              
+
               <h1 className="text-2xl font-bold text-white">
-                {!id ? 'Create Note' : 'Edit Note'}
+                {!id ? "Create Note" : "Edit Note"}
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               {id && (
                 <button
@@ -885,7 +2077,7 @@ Brief description of what you're researching
                       // Create a temporary note for preview
                       const tempNote = {
                         id: id,
-                        title: title || 'Untitled Note',
+                        title: title || "Untitled Note",
                         content,
                         emoji,
                         tags,
@@ -893,10 +2085,13 @@ Brief description of what you're researching
                         createdAt: new Date(),
                         updatedAt: new Date(),
                         starred: false,
-                        isTemp: true
+                        isTemp: true,
                       };
                       // Store in sessionStorage for preview
-                      sessionStorage.setItem('tempNote', JSON.stringify(tempNote));
+                      sessionStorage.setItem(
+                        "tempNote",
+                        JSON.stringify(tempNote)
+                      );
                       navigate(`/notes/${id}?preview=true`);
                     } else {
                       navigate(`/notes/${id}`);
@@ -907,13 +2102,13 @@ Brief description of what you're researching
                   Preview
                 </button>
               )}
-              
-              <Button 
-                onClick={handleSave} 
+
+              <Button
+                onClick={handleSave}
                 loading={saving}
                 className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
-                {saving ? 'Saving...' : 'Save Note'}
+                {saving ? "Saving..." : "Save Note"}
               </Button>
             </div>
           </div>
@@ -935,11 +2130,13 @@ Brief description of what you're researching
                     onChange={(e) => setEmoji(e.target.value)}
                     className="text-3xl bg-transparent border-none outline-none cursor-pointer"
                   >
-                    {emojiOptions.map(e => (
-                      <option key={e} value={e}>{e}</option>
+                    {emojiOptions.map((e) => (
+                      <option key={e} value={e}>
+                        {e}
+                      </option>
                     ))}
                   </select>
-                  
+
                   <input
                     type="text"
                     value={title}
@@ -950,8 +2147,8 @@ Brief description of what you're researching
                 </div>
 
                 <div className="space-y-4 ">
-                  <TagManager 
-                    tags={tags} 
+                  <TagManager
+                    tags={tags}
                     onTagsChange={setTags}
                     noteTitle={title}
                     noteContent={content}
@@ -969,28 +2166,28 @@ Brief description of what you're researching
                     {/* Text Formatting Group */}
                     <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
-                        onClick={() => insertText('**', '**')}
+                        onClick={() => insertText("**", "**")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
                         title="Bold (Ctrl+B)"
                       >
                         <Bold className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertText('*', '*')}
+                        onClick={() => insertText("*", "*")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Italic (Ctrl+I)"
                       >
                         <Italic className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertText('<u>', '</u>')}
+                        onClick={() => insertText("<u>", "</u>")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Underline (Ctrl+U)"
                       >
                         <Underline className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertText('~~', '~~')}
+                        onClick={() => insertText("~~", "~~")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
                         title="Strikethrough"
                       >
@@ -1001,21 +2198,21 @@ Brief description of what you're researching
                     {/* Headings Group */}
                     <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
-                        onClick={() => insertAtNewLine('# ')}
+                        onClick={() => insertAtNewLine("# ")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
                         title="Heading 1"
                       >
                         <Heading1 className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertAtNewLine('## ')}
+                        onClick={() => insertAtNewLine("## ")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Heading 2"
                       >
                         <Heading2 className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertAtNewLine('### ')}
+                        onClick={() => insertAtNewLine("### ")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
                         title="Heading 3"
                       >
@@ -1026,21 +2223,21 @@ Brief description of what you're researching
                     {/* Lists & Structure Group */}
                     <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
-                        onClick={() => insertList('unordered')}
+                        onClick={() => insertList("unordered")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
                         title="Bullet List"
                       >
                         <List className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertList('ordered')}
+                        onClick={() => insertList("ordered")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Numbered List"
                       >
                         <ListOrdered className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertAtNewLine('- [ ] ')}
+                        onClick={() => insertAtNewLine("- [ ] ")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Checklist"
                       >
@@ -1058,28 +2255,28 @@ Brief description of what you're researching
                     {/* Content Elements Group */}
                     <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
-                        onClick={() => insertAtNewLine('> ')}
+                        onClick={() => insertAtNewLine("> ")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
                         title="Quote"
                       >
                         <Quote className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertText('`', '`')}
+                        onClick={() => insertText("`", "`")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Inline Code"
                       >
                         <Code className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertText('[Link Text](', ')')}
+                        onClick={() => insertText("[Link Text](", ")")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Link (Ctrl+K)"
                       >
                         <Link2 className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => insertAtNewLine('---')}
+                        onClick={() => insertAtNewLine("---")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
                         title="Horizontal Rule"
                       >
@@ -1087,7 +2284,7 @@ Brief description of what you're researching
                       </button>
                     </div>
                   </div>
-                  
+
                   <span className="text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-600/30 font-mono">
                     {content.length} chars
                   </span>
@@ -1103,23 +2300,38 @@ Brief description of what you're researching
                         Templates
                       </button>
                       <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl py-2 min-w-[220px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
-                        <button onClick={() => insertTemplate('meeting')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertTemplate("meeting")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">📝</span>
                           Meeting Notes
                         </button>
-                        <button onClick={() => insertTemplate('todo')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertTemplate("todo")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">✅</span>
                           Todo List
                         </button>
-                        <button onClick={() => insertTemplate('project')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertTemplate("project")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">🎯</span>
                           Project Plan
                         </button>
-                        <button onClick={() => insertTemplate('journal')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertTemplate("journal")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">📔</span>
                           Daily Journal
                         </button>
-                        <button onClick={() => insertTemplate('research')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertTemplate("research")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">🔬</span>
                           Research Notes
                         </button>
@@ -1133,27 +2345,45 @@ Brief description of what you're researching
                         Callouts
                       </button>
                       <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
-                        <button onClick={() => insertCallout('info')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertCallout("info")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">ℹ️</span>
                           Info
                         </button>
-                        <button onClick={() => insertCallout('warning')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertCallout("warning")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">⚠️</span>
                           Warning
                         </button>
-                        <button onClick={() => insertCallout('success')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertCallout("success")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">✅</span>
                           Success
                         </button>
-                        <button onClick={() => insertCallout('error')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertCallout("error")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">❌</span>
                           Error
                         </button>
-                        <button onClick={() => insertCallout('note')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertCallout("note")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">📝</span>
                           Note
                         </button>
-                        <button onClick={() => insertCallout('tip')} className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center">
+                        <button
+                          onClick={() => insertCallout("tip")}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
+                        >
                           <span className="mr-3">💡</span>
                           Tip
                         </button>
@@ -1162,14 +2392,14 @@ Brief description of what you're researching
 
                     {/* Emoji Picker */}
                     <div className="relative emoji-picker-container">
-                      <button 
+                      <button
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                         className="px-4 py-2.5 text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max"
                       >
                         <Smile className="h-4 w-4 mr-2" />
                         Emojis
                       </button>
-                      
+
                       {showEmojiPicker && (
                         <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl w-96 max-h-96 overflow-hidden z-30">
                           {/* Emoji Search */}
@@ -1180,15 +2410,19 @@ Brief description of what you're researching
                                 type="text"
                                 placeholder="Search emojis..."
                                 value={emojiSearchTerm}
-                                onChange={(e) => setEmojiSearchTerm(e.target.value)}
+                                onChange={(e) =>
+                                  setEmojiSearchTerm(e.target.value)
+                                }
                                 className="w-full pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                               />
                             </div>
                           </div>
-                          
+
                           {/* Quick Emojis */}
                           <div className="p-4 border-b border-gray-700/50">
-                            <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Quick Access</h4>
+                            <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                              Quick Access
+                            </h4>
                             <div className="grid grid-cols-10 gap-1">
                               {quickEmojis.map((emoji, index) => (
                                 <button
@@ -1205,36 +2439,41 @@ Brief description of what you're researching
                               ))}
                             </div>
                           </div>
-                          
+
                           {/* Emoji Categories */}
                           <div className="max-h-64 overflow-y-auto p-4 space-y-4">
-                            {Object.entries(getFilteredEmojis()).map(([category, emojis]) => (
-                              <div key={category}>
-                                <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">{category}</h4>
-                                <div className="grid grid-cols-10 gap-1">
-                                  {emojis.slice(0, 50).map((emoji, index) => (
-                                    <button
-                                      key={index}
-                                      onClick={() => {
-                                        insertEmoji(emoji);
-                                        setShowEmojiPicker(false);
-                                      }}
-                                      className="p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-lg hover:scale-110"
-                                      title={`Insert ${emoji}`}
-                                    >
-                                      {emoji}
-                                    </button>
-                                  ))}
+                            {Object.entries(getFilteredEmojis()).map(
+                              ([category, emojis]) => (
+                                <div key={category}>
+                                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                                    {category}
+                                  </h4>
+                                  <div className="grid grid-cols-10 gap-1">
+                                    {emojis.slice(0, 50).map((emoji, index) => (
+                                      <button
+                                        key={index}
+                                        onClick={() => {
+                                          insertEmoji(emoji);
+                                          setShowEmojiPicker(false);
+                                        }}
+                                        className="p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-lg hover:scale-110"
+                                        title={`Insert ${emoji}`}
+                                      >
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {emojis.length > 50 && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                      +{emojis.length - 50} more emojis in this
+                                      category
+                                    </p>
+                                  )}
                                 </div>
-                                {emojis.length > 50 && (
-                                  <p className="text-xs text-gray-500 mt-2">
-                                    +{emojis.length - 50} more emojis in this category
-                                  </p>
-                                )}
-                              </div>
-                            ))}
+                              )
+                            )}
                           </div>
-                          
+
                           {/* Close button */}
                           <div className="p-3 border-t border-gray-700/50 bg-gray-800/60">
                             <button
@@ -1271,68 +2510,78 @@ Brief description of what you're researching
                 </div>
 
                 {/* Note Type Selector for AI */}
-                    <div className="flex items-center space-x-2">
-                      <select
-                        value={selectedNoteType}
-                        onChange={(e) => setSelectedNoteType(e.target.value)}
-                        className="text-xs bg-gray-800/60 border border-gray-600/50 text-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                      >
-                        <option value="general">General</option>
-                        <option value="meeting">Meeting</option>
-                        <option value="project">Project</option>
-                        <option value="research">Research</option>
-                        <option value="tutorial">Tutorial</option>
-                        <option value="idea">Idea</option>
-                        <option value="personal">Personal</option>
-                        <option value="business">Business</option>
-                        <option value="creative">Creative</option>
-                      </select>
-                    
-                      {/* AI Generate Content Button */}
-                      <Button
-                        onClick={handleGenerateContentFromTitle}
-                        size="sm"
-                        disabled={generatingNote || (!title.trim())}
-                        className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5"
-                      >
-                        {generatingNote ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-1" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Wand2 className="h-3 w-3 mr-1" />
-                            AI Content
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                <div className="flex items-center justify-end space-x-2 w-full">
+                  <select
+                    value={selectedNoteType}
+                    onChange={(e) => setSelectedNoteType(e.target.value)}
+                    className="text-xs bg-gray-800/60 border border-gray-600/50 text-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  >
+                    <option value="general">General</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="project">Project</option>
+                    <option value="research">Research</option>
+                    <option value="tutorial">Tutorial</option>
+                    <option value="idea">Idea</option>
+                    <option value="personal">Personal</option>
+                    <option value="business">Business</option>
+                    <option value="creative">Creative</option>
+                  </select>
+
+                  {/* AI Generate Content Button */}
+                  <Button
+                    onClick={handleGenerateContentFromTitle}
+                    size="sm"
+                    disabled={generatingNote || !title.trim()}
+                    className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5"
+                  >
+                    {generatingNote ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-1" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-3 w-3 mr-1" />
+                        AI Content
+                      </>
+                    )}
+                  </Button>
+                </div>
 
                 {/* Quick Shortcuts Info */}
                 <div className="pt-3 border-t border-gray-700/30">
                   <div className="flex items-center justify-between text-xs text-gray-400 flex-wrap gap-2">
                     <div className="flex items-center space-x-2 flex-wrap">
-                      <span className="font-medium text-gray-300">Shortcuts:</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">Ctrl+B</span>
+                      <span className="font-medium text-gray-300">
+                        Shortcuts:
+                      </span>
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                        Ctrl+B
+                      </span>
                       <span className="text-gray-500">=</span>
                       <span>Bold</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">Ctrl+I</span>
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                        Ctrl+I
+                      </span>
                       <span className="text-gray-500">=</span>
                       <span>Italic</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">Ctrl+U</span>
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                        Ctrl+U
+                      </span>
                       <span className="text-gray-500">=</span>
                       <span>Underline</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">---</span>
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                        ---
+                      </span>
                       <span className="text-gray-500">=</span>
                       <span>Horizontal Line</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">Tab</span>
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                        Tab
+                      </span>
                       <span className="text-gray-500">=</span>
                       <span>Indent</span>
                     </div>
-                    <div className="flex items-center space-x-2 flex-wrap">
-                      
-                    </div>
+                    <div className="flex items-center space-x-2 flex-wrap"></div>
                   </div>
                 </div>
               </div>
@@ -1343,8 +2592,13 @@ Brief description of what you're researching
                   <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
                     <span>Content</span>
                     <div className="flex items-center space-x-4">
-                      <span>Lines: {content.split('\n').length}</span>
-                      <span>Words: {content.trim() ? content.trim().split(/\s+/).length : 0}</span>
+                      <span>Lines: {content.split("\n").length}</span>
+                      <span>
+                        Words:{" "}
+                        {content.trim()
+                          ? content.trim().split(/\s+/).length
+                          : 0}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1354,44 +2608,53 @@ Brief description of what you're researching
                   onChange={(e) => {
                     const value = e.target.value;
                     setContent(value);
-                    
+
                     // Auto-format horizontal rules
-                    if (value.endsWith('---\n') || (value.endsWith('---') && e.nativeEvent.inputType === 'insertText')) {
-                      const newValue = value.replace(/---$/, '---\n');
+                    if (
+                      value.endsWith("---\n") ||
+                      (value.endsWith("---") &&
+                        e.nativeEvent.inputType === "insertText")
+                    ) {
+                      const newValue = value.replace(/---$/, "---\n");
                       setContent(newValue);
                       setTimeout(() => {
                         e.target.focus();
-                        e.target.setSelectionRange(newValue.length, newValue.length);
+                        e.target.setSelectionRange(
+                          newValue.length,
+                          newValue.length
+                        );
                       }, 0);
                     }
                   }}
                   onKeyDown={(e) => {
                     // Enhanced enter key behavior for lists
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       const textarea = e.target;
                       const start = textarea.selectionStart;
                       const beforeCursor = content.substring(0, start);
-                      const currentLine = beforeCursor.split('\n').pop();
-                      
+                      const currentLine = beforeCursor.split("\n").pop();
+
                       // Auto-continue lists
                       if (currentLine.match(/^\s*[-*+]\s/)) {
                         e.preventDefault();
                         const indent = currentLine.match(/^\s*/)[0];
                         const newListItem = `\n${indent}- `;
-                        insertText(newListItem, '');
+                        insertText(newListItem, "");
                       } else if (currentLine.match(/^\s*\d+\.\s/)) {
                         e.preventDefault();
                         const indent = currentLine.match(/^\s*/)[0];
-                        const currentNumber = parseInt(currentLine.match(/(\d+)/)[1]);
+                        const currentNumber = parseInt(
+                          currentLine.match(/(\d+)/)[1]
+                        );
                         const newListItem = `\n${indent}${currentNumber + 1}. `;
-                        insertText(newListItem, '');
+                        insertText(newListItem, "");
                       }
                     }
-                    
+
                     // Tab key for indentation
-                    if (e.key === 'Tab') {
+                    if (e.key === "Tab") {
                       e.preventDefault();
-                      insertText('  ', '');
+                      insertText("  ", "");
                     }
                   }}
                   placeholder="Start writing your note... 
@@ -1404,7 +2667,7 @@ Brief description of what you're researching
                   style={{
                     fontFamily: customStyle.fontFamily,
                     fontSize: customStyle.fontSize,
-                    color: customStyle.textColor
+                    color: customStyle.textColor,
                   }}
                 />
               </div>
@@ -1422,30 +2685,44 @@ Brief description of what you're researching
                 <Palette className="h-5 w-5 mr-2 text-blue-400" />
                 Customization
               </h3>
-              
+
               {/* Background Color Picker */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4">Background Color</label>
-                
+                <label className="block text-sm font-semibold text-gray-200 mb-4">
+                  Background Color
+                </label>
+
                 <div className="mb-4">
                   <input
                     type="color"
                     value={customStyle.backgroundColor}
-                    onChange={(e) => setCustomStyle(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                    onChange={(e) =>
+                      setCustomStyle((prev) => ({
+                        ...prev,
+                        backgroundColor: e.target.value,
+                      }))
+                    }
                     className="w-full h-12 rounded-xl border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
                   />
-                  <p className="text-xs text-gray-400 mt-2">Current: {customStyle.backgroundColor}</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Current: {customStyle.backgroundColor}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-4 gap-3">
                   {backgroundOptions.map((bg) => (
                     <button
                       key={bg.color}
-                      onClick={() => setCustomStyle(prev => ({ ...prev, backgroundColor: bg.color }))}
+                      onClick={() =>
+                        setCustomStyle((prev) => ({
+                          ...prev,
+                          backgroundColor: bg.color,
+                        }))
+                      }
                       className={`group relative w-full h-12 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
-                        customStyle.backgroundColor === bg.color 
-                          ? 'border-white shadow-lg' 
-                          : 'border-gray-600 hover:border-gray-400'
+                        customStyle.backgroundColor === bg.color
+                          ? "border-white shadow-lg"
+                          : "border-gray-600 hover:border-gray-400"
                       }`}
                       style={{ backgroundColor: bg.color }}
                       title={bg.name}
@@ -1462,14 +2739,25 @@ Brief description of what you're researching
 
               {/* Font Family */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3">Font Family</label>
+                <label className="block text-sm font-semibold text-gray-200 mb-3">
+                  Font Family
+                </label>
                 <select
                   value={customStyle.fontFamily}
-                  onChange={(e) => setCustomStyle(prev => ({ ...prev, fontFamily: e.target.value }))}
+                  onChange={(e) =>
+                    setCustomStyle((prev) => ({
+                      ...prev,
+                      fontFamily: e.target.value,
+                    }))
+                  }
                   className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300"
                 >
                   {fontFamilyOptions.map((font) => (
-                    <option key={font.value} value={font.value} className="bg-gray-800">
+                    <option
+                      key={font.value}
+                      value={font.value}
+                      className="bg-gray-800"
+                    >
                       {font.label}
                     </option>
                   ))}
@@ -1478,14 +2766,25 @@ Brief description of what you're researching
 
               {/* Font Size */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3">Font Size</label>
+                <label className="block text-sm font-semibold text-gray-200 mb-3">
+                  Font Size
+                </label>
                 <select
                   value={customStyle.fontSize}
-                  onChange={(e) => setCustomStyle(prev => ({ ...prev, fontSize: e.target.value }))}
+                  onChange={(e) =>
+                    setCustomStyle((prev) => ({
+                      ...prev,
+                      fontSize: e.target.value,
+                    }))
+                  }
                   className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300"
                 >
                   {fontSizeOptions.map((size) => (
-                    <option key={size.value} value={size.value} className="bg-gray-800">
+                    <option
+                      key={size.value}
+                      value={size.value}
+                      className="bg-gray-800"
+                    >
                       {size.label}
                     </option>
                   ))}
@@ -1494,24 +2793,45 @@ Brief description of what you're researching
 
               {/* Text Color */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4">Text Color</label>
+                <label className="block text-sm font-semibold text-gray-200 mb-4">
+                  Text Color
+                </label>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setCustomStyle(prev => ({ ...prev, textColor: '#ffffff' }))}
+                    onClick={() =>
+                      setCustomStyle((prev) => ({
+                        ...prev,
+                        textColor: "#ffffff",
+                      }))
+                    }
                     className={`flex-1 h-10 rounded-lg border-2 bg-white transition-all duration-300 ${
-                      customStyle.textColor === '#ffffff' ? 'border-blue-400' : 'border-gray-600 hover:border-gray-400'
+                      customStyle.textColor === "#ffffff"
+                        ? "border-blue-400"
+                        : "border-gray-600 hover:border-gray-400"
                     }`}
                   />
                   <button
-                    onClick={() => setCustomStyle(prev => ({ ...prev, textColor: '#000000' }))}
+                    onClick={() =>
+                      setCustomStyle((prev) => ({
+                        ...prev,
+                        textColor: "#000000",
+                      }))
+                    }
                     className={`flex-1 h-10 rounded-lg border-2 bg-black transition-all duration-300 ${
-                      customStyle.textColor === '#000000' ? 'border-blue-400' : 'border-gray-600 hover:border-gray-400'
+                      customStyle.textColor === "#000000"
+                        ? "border-blue-400"
+                        : "border-gray-600 hover:border-gray-400"
                     }`}
                   />
                   <input
                     type="color"
                     value={customStyle.textColor}
-                    onChange={(e) => setCustomStyle(prev => ({ ...prev, textColor: e.target.value }))}
+                    onChange={(e) =>
+                      setCustomStyle((prev) => ({
+                        ...prev,
+                        textColor: e.target.value,
+                      }))
+                    }
                     className="flex-1 h-10 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
                   />
                 </div>
@@ -1519,40 +2839,49 @@ Brief description of what you're researching
 
               {/* Preview */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4">Live Preview</label>
-                <div 
+                <label className="block text-sm font-semibold text-gray-200 mb-4">
+                  Live Preview
+                </label>
+                <div
                   className="p-6 rounded-xl border-2 border-gray-600 min-h-[140px] transition-all duration-300 prose prose-invert max-w-none"
                   style={{ backgroundColor: customStyle.backgroundColor }}
                 >
                   {title && (
-                    <h4 
+                    <h4
                       className="font-bold mb-3"
                       style={{
                         fontSize: `calc(${customStyle.fontSize} + 2px)`,
                         fontFamily: customStyle.fontFamily,
-                        color: customStyle.textColor
+                        color: customStyle.textColor,
                       }}
                     >
                       {title}
                     </h4>
                   )}
-                  <div 
+                  <div
                     className="leading-relaxed"
                     style={{
                       fontSize: customStyle.fontSize,
                       fontFamily: customStyle.fontFamily,
                       color: customStyle.textColor,
-                      opacity: 0.9
+                      opacity: 0.9,
                     }}
                   >
                     {content ? (
-                      <div 
-                        dangerouslySetInnerHTML={{ 
-                          __html: parseMarkdown(content.length > 200 ? content.substring(0, 200) + '...' : content)
-                        }} 
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: parseMarkdown(
+                            content.length > 200
+                              ? content.substring(0, 200) + "..."
+                              : content
+                          ),
+                        }}
                       />
                     ) : (
-                      <span className="text-gray-400">Your note content will appear here with the selected styling...</span>
+                      <span className="text-gray-400">
+                        Your note content will appear here with the selected
+                        styling...
+                      </span>
                     )}
                   </div>
                 </div>

@@ -17,7 +17,8 @@ import {
   Eye,
   Sparkles,
   Settings,
-  Wand2
+  Wand2,
+  Share
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import notesService from '../services/notesService';
@@ -31,6 +32,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import AIGeneratorModal from '../components/AIGeneratorModal';
 import APIKeyModal from '../components/APIKeyModal';
 import AIFeaturesGuide from '../components/AIFeaturesGuide';
+import SharedLinksManager from '../components/SharedLinksManager';
 import aiService from '../services/aiService';
 import { parseMarkdown } from '../utils/markdown';
 
@@ -274,6 +276,7 @@ const Dashboard = () => {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showAPIKeyModal, setShowAPIKeyModal] = useState(false);
   const [showAIGuide, setShowAIGuide] = useState(false);
+  const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
   const [userApiKey, setUserApiKey] = useState(() => {
     return localStorage.getItem('scribly_gemini_api_key') || '';
   });
@@ -512,6 +515,22 @@ const Dashboard = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-4"
                 >
+                  {/* Beta Tag */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full mb-4 border"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
+                      borderColor: 'rgba(147, 51, 234, 0.3)',
+                      color: '#9333ea'
+                    }}
+                  >
+                    <Sparkles className="w-3 h-3 mr-2" />
+                    <span className="text-xs font-semibold">BETA</span>
+                  </motion.div>
+                  
                   <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                     Your <span className="gradient-text">Workspace</span>
                   </h1>
@@ -644,6 +663,22 @@ const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4"
               >
+                {/* Beta Tag */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="inline-flex items-center px-3 py-1.5 rounded-full mb-4 border"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
+                    borderColor: 'rgba(147, 51, 234, 0.3)',
+                    color: '#9333ea'
+                  }}
+                >
+                  <Sparkles className="w-3 h-3 mr-2" />
+                  <span className="text-xs font-semibold">BETA</span>
+                </motion.div>
+                
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                   Your <span className="gradient-text">Workspace</span>
                 </h1>
@@ -770,6 +805,13 @@ const Dashboard = () => {
                 
                 <div className="flex items-center space-x-3">                  
                   <Button 
+                    onClick={() => setShowSharedLinksManager(true)}
+                    className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/20 hover:shadow-green-500/30 transition-all duration-300 hover:scale-105 flex items-center"
+                  >
+                    <Share className="h-4 w-4 mr-2" />
+                    Manage Links
+                  </Button>
+                  <Button 
                     onClick={handleCreateNote} 
                     className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 flex items-center"
                   >
@@ -875,6 +917,13 @@ const Dashboard = () => {
           onSetupAPI={() => setShowAPIKeyModal(true)}
         />
       )}
+
+      {/* Shared Links Manager */}
+      <SharedLinksManager
+        isOpen={showSharedLinksManager}
+        onClose={() => setShowSharedLinksManager(false)}
+        notes={notes}
+      />
     </>
   );
 };

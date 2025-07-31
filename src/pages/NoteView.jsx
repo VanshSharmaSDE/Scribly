@@ -19,6 +19,7 @@ import Button from '../components/Button';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
 import ConfirmationModal from '../components/ConfirmationModal';
+import ShareModal from '../components/ShareModal';
 import { parseMarkdown } from '../utils/markdown';
 
 const NoteView = () => {
@@ -28,6 +29,7 @@ const NoteView = () => {
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   
   // Check if this is a preview from editing
@@ -136,22 +138,26 @@ const NoteView = () => {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Link copied to clipboard', {
-      duration: 2000,
-    });
+    setShowShareModal(true);
+  };
+
+  const handleShareUpdate = (shareData) => {
+    setNote(prev => ({
+      ...prev,
+      ...shareData
+    }));
   };
 
   const handleDownload = () => {
     const element = document.createElement('a');
-    const file = new Blob([note.content], { type: 'text/plain' });
+    const file = new Blob([note.content], { type: 'text/markdown' });
     element.href = URL.createObjectURL(file);
-    element.download = `${note.title}.txt`;
+    element.download = `${note.title}.md`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
     
-    toast.success('Note downloaded', {
+    toast.success('Note downloaded as Markdown', {
       duration: 2000,
     });
   };
@@ -239,7 +245,12 @@ const NoteView = () => {
                 <Button
                   variant="outline"
                   onClick={handleShare}
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500"
+                  className={`border-gray-600 transition-all duration-300 ${
+                    note.isShared
+                      ? 'text-green-400 border-green-400/50 hover:bg-green-400/10'
+                      : 'text-gray-300 hover:bg-gray-700 hover:border-gray-500'
+                  }`}
+                  title={note.isShared ? 'Note is shared - click to manage' : 'Share this note publicly'}
                 >
                   <Share className="h-4 w-4" />
                 </Button>
@@ -266,6 +277,16 @@ const NoteView = () => {
             </div>
 
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{note.title}</h1>
+            
+            {/* Shared Status Indicator */}
+            {note.isShared && (
+              <div className="mb-4">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-500/20 text-green-300 border border-green-500/30 text-sm">
+                  <Share className="h-3 w-3 mr-2" />
+                  <span>Publicly Shared</span>
+                </div>
+              </div>
+            )}
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-8">
               <div className="flex items-center">
@@ -348,6 +369,14 @@ const NoteView = () => {
       cancelText="Cancel"
       type="danger"
       isLoading={deleteLoading}
+    />
+
+    {/* Share Modal */}
+    <ShareModal
+      isOpen={showShareModal}
+      onClose={() => setShowShareModal(false)}
+      note={note}
+      onShareUpdate={handleShareUpdate}
     />
     </>
   );

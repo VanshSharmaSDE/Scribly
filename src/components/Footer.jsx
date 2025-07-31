@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Github, Twitter, Linkedin, Heart } from 'lucide-react';
 
 const Footer = () => {
@@ -50,16 +51,30 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-white">Product</h4>
             <ul className="space-y-2">
-              {['Features', 'Pricing', 'Updates', 'Beta'].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-white transition-colors duration-300"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <Link
+                  to="/features"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  Features
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/beta"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  Beta
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/future-updates"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  Future Updates
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -67,33 +82,45 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold text-white">Company</h4>
             <ul className="space-y-2">
-              {['About', 'Blog', 'Careers', 'Press'].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-white transition-colors duration-300"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <Link
+                  to="/about"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contact"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Legal */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-white">Support</h4>
+            <h4 className="text-lg font-semibold text-white">Legal</h4>
             <ul className="space-y-2">
-              {['Help Center', 'Documentation', 'Contact', 'Community'].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-white transition-colors duration-300"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <Link
+                  to="/privacy"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/terms"
+                  className="text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  Terms of Service
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

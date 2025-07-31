@@ -113,6 +113,22 @@ class AuthService {
       // Create the session
       const session = await account.createEmailPasswordSession(email, password);
       
+      // Ensure user profile exists (for users created before this system)
+      if (session) {
+        const userAccount = await account.get();
+        const userProfile = await this.getUserProfile(userAccount.$id);
+        
+        if (!userProfile) {
+          console.log('Creating missing user profile for existing user');
+          await this.createUserProfile({
+            userId: userAccount.$id,
+            email: userAccount.email,
+            name: userAccount.name,
+            emailVerified: userAccount.emailVerification
+          });
+        }
+      }
+      
       return session;
     } catch (error) {
       console.error("AuthService :: login :: ", error);

@@ -1,21 +1,8 @@
 import { motion } from 'framer-motion';
-import { Users, Target, Heart, Award } from 'lucide-react';
+import { Users, Target, Heart, Award, Brain, Share2, Sparkles } from 'lucide-react';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
-
-const StatCard = ({ number, label, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.8 }}
-    whileInView={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.6, delay }}
-    className="text-center"
-  >
-    <div className="text-4xl md:text-5xl font-bold mb-2" style={{ color: '#4F70E2' }}>
-      {number}
-    </div>
-    <div className="text-gray-200">{label}</div>
-  </motion.div>
-);
+import DynamicStatCard from '../components/DynamicStatCard';
 
 const ValueCard = ({ icon: Icon, title, description, delay = 0 }) => (
   <motion.div
@@ -40,14 +27,17 @@ const ValueCard = ({ icon: Icon, title, description, delay = 0 }) => (
 );
 
 const About = () => {
-  const stats = [
-    { number: '10K+', label: 'Active Users' },
-    { number: '1M+', label: 'Notes Created' },
-    { number: '99.9%', label: 'Uptime' },
-    { number: '4.9★', label: 'User Rating' },
-  ];
-
   const values = [
+    {
+      icon: Brain,
+      title: 'AI-Powered',
+      description: 'Leveraging cutting-edge AI technology to enhance your writing and creative process with intelligent insights.',
+    },
+    {
+      icon: Share2,
+      title: 'Collaboration',
+      description: 'Advanced sharing capabilities that enable seamless collaboration and knowledge sharing across teams.',
+    },
     {
       icon: Users,
       title: 'User-Centric',
@@ -82,25 +72,38 @@ const About = () => {
             transition={{ duration: 0.8 }}
             className="text-center mb-20"
           >
+            {/* Beta Tag */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center px-4 py-2 rounded-full mb-6 border"
+              style={{
+                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
+                borderColor: 'rgba(147, 51, 234, 0.3)',
+                color: '#9333ea'
+              }}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              <span className="text-sm font-semibold">Beta • AI-Enhanced</span>
+            </motion.div>
+            
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
               About <span className="gradient-text">Scribly</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-              We believe that every great idea deserves a beautiful home. Scribly was born 
-              from the need for a note-taking app that combines powerful functionality with 
-              stunning design.
+              We believe that every great idea deserves a beautiful home. Scribly combines 
+              powerful AI technology with intuitive design to revolutionize how you capture, 
+              organize, and share your thoughts.
             </p>
           </motion.div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
-            {stats.map((stat, index) => (
-              <StatCard
-                key={stat.label}
-                {...stat}
-                delay={index * 0.1}
-              />
-            ))}
+            <DynamicStatCard endNumber={12847} label="Active Users" delay={0.1} />
+            <DynamicStatCard endNumber={185792} label="Notes Created" delay={0.2} />
+            <DynamicStatCard endNumber={76439} label="Links Shared" delay={0.3} />
+            <DynamicStatCard endNumber={4.9} label="User Rating" delay={0.4} suffix="" showStar={true} />
           </div>
         </div>
       </section>
@@ -136,9 +139,10 @@ const About = () => {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-gray-300 text-lg leading-relaxed mb-6"
               >
-                Our team of designers and developers came together with a shared vision: to create 
-                the perfect digital notebook that feels as natural as writing on paper, but with 
-                all the advantages of modern technology.
+                Our breakthrough came with integrating Google's Gemini 2.5 Pro AI, transforming 
+                Scribly from a simple note-taking app into an intelligent writing companion. 
+                Combined with advanced sharing capabilities and professional export features, 
+                we've created a platform that truly understands modern content creation needs.
               </motion.p>
               
               <motion.p
@@ -148,8 +152,9 @@ const About = () => {
                 className="text-gray-300 text-lg leading-relaxed"
               >
                 Today, Scribly is trusted by creators, students, professionals, and dreamers 
-                around the world. We're just getting started on our mission to revolutionize 
-                how people capture and organize their thoughts.
+                around the world. From AI-powered content enhancement to enterprise-level 
+                sharing with detailed analytics, we're revolutionizing how people capture and 
+                organize their thoughts in the digital age.
               </motion.p>
             </div>
           </motion.div>
@@ -174,7 +179,7 @@ const About = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {values.map((value, index) => (
               <ValueCard
                 key={value.title}
@@ -200,17 +205,17 @@ const About = () => {
             }}
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Join Our Journey
+              Join Our Beta Journey
             </h2>
             <p className="text-xl text-gray-300 mb-8">
-              We're always looking for passionate individuals who share our vision. 
-              Come help us build the future of note-taking.
+              We're in active development, constantly improving and adding new features. 
+              Join our beta community and help shape the future of intelligent note-taking.
             </p>
             <motion.a
-              href="mailto:careers@scribly.com"
+              href="mailto:feedback@scribly.com"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white"
+              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white mr-4"
               style={{
                 backgroundColor: '#4F70E2',
                 '&:hover': {
@@ -219,6 +224,26 @@ const About = () => {
               }}
               onMouseEnter={(e) => e.target.style.backgroundColor = '#3A5BC7'}
               onMouseLeave={(e) => e.target.style.backgroundColor = '#4F70E2'}
+            >
+              Share Beta Feedback
+            </motion.a>
+            <motion.a
+              href="mailto:careers@scribly.com"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white border"
+              style={{
+                borderColor: '#4F70E2',
+                color: '#4F70E2'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#4F70E2';
+                e.target.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#4F70E2';
+              }}
             >
               View Open Positions
             </motion.a>

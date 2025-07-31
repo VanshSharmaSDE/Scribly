@@ -8,14 +8,21 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import ScrollToTop from "./components/ScrollToTop";
 import Landing from "./pages/Landing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Features from "./pages/Features";
+import Beta from "./pages/Beta";
+import FutureUpdates from "./pages/FutureUpdates";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import NoteView from "./pages/NoteView";
 import NoteEdit from "./pages/NoteEdit";
+import SharedNoteView from "./pages/SharedNoteView";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import EmailVerification from "./pages/EmailVerification";
@@ -35,10 +42,13 @@ function AppContent() {
       "/forgot-password", 
       "/reset-password",
       "/verify-email",
-    ].includes(location.pathname) || location.pathname.startsWith("/notes/");
+    ].includes(location.pathname) || 
+    location.pathname.startsWith("/notes/") || 
+    location.pathname.startsWith("/shared/");
 
   return (
     <div className="min-h-screen bg-scribly-black">
+      <ScrollToTop />
       {!hideNavbarFooter && (
         <Navbar 
           isAuthenticated={isAuthenticated} 
@@ -51,11 +61,19 @@ function AppContent() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/beta" element={<Beta />} />
+        <Route path="/future-updates" element={<FutureUpdates />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<EmailVerification />} />
+
+        {/* Public Shared Note Route */}
+        <Route path="/shared/:shareToken" element={<SharedNoteView />} />
 
         {/* Protected Routes */}
         <Route

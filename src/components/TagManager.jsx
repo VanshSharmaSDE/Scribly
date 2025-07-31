@@ -100,7 +100,7 @@ const TagManager = ({ tags = [], onTagsChange, noteTitle = '', noteContent = '',
               </motion.span>
             ))
           ) : (
-            <span className="text-gray-500 text-xs italic">No tags yet. Add some tags to organize your note.</span>
+            <span className="text-gray-500 text-xs italic"></span>
           )}
           
           <button

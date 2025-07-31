@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, PenTool, User, LogOut, Home, Layout } from 'lucide-react';
+import { Menu, X, PenTool, User, LogOut, Home, Layout, Sparkles } from 'lucide-react';
 import Button from './Button';
 
 const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
@@ -44,7 +44,20 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <PenTool className="h-8 w-8" style={{ color: '#4F70E2' }} />
-            <span className="text-2xl font-bold text-white">Scribly</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-2xl font-bold text-white">Scribly</span>
+              <span 
+                className="px-2 py-1 rounded-full text-xs font-semibold flex items-center"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(79, 112, 226, 0.2) 100%)',
+                  border: '1px solid rgba(147, 51, 234, 0.3)',
+                  color: '#9333ea'
+                }}
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                BETA
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

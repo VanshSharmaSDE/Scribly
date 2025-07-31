@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { PenTool, Zap, Shield, Users, ArrowRight, BookOpen, Star, ChevronRight, Sparkles } from 'lucide-react';
+import { PenTool, Zap, Shield, Users, ArrowRight, BookOpen, Star, ChevronRight, Sparkles, Share2, Brain, Download } from 'lucide-react';
 import Button from '../components/Button';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
+import DynamicStatCard from '../components/DynamicStatCard';
 import { useAuth } from '../contexts/AuthContext';
 
 const FeatureCard = ({ icon: Icon, title, description, delay = 0 }) => (
@@ -29,18 +30,6 @@ const FeatureCard = ({ icon: Icon, title, description, delay = 0 }) => (
   </motion.div>
 );
 
-const StatCard = ({ number, label, delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, delay }}
-    className="text-center"
-  >
-    <div className="text-4xl font-bold text-white mb-2">{number}</div>
-    <div className="text-gray-400 text-sm">{label}</div>
-  </motion.div>
-);
-
 const Landing = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -62,6 +51,22 @@ const Landing = () => {
               transition={{ duration: 0.8 }}
               className="max-w-4xl mx-auto"
             >
+            {/* Beta Tag */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="inline-flex items-center px-4 py-2 rounded-full mb-6 border"
+              style={{
+                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
+                borderColor: 'rgba(147, 51, 234, 0.3)',
+                color: '#9333ea'
+              }}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              <span className="text-sm font-semibold">Beta • Powered by AI</span>
+            </motion.div>
+            
             <motion.h1 
               className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
               initial={{ opacity: 0, y: 20 }}
@@ -80,7 +85,7 @@ const Landing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              Experience the future of note-taking with Scribly. Clean, intuitive, and powerful.
+              Experience the future of note-taking with AI-powered insights, secure sharing, and seamless collaboration.
             </motion.p>
             
             <motion.div 
@@ -143,10 +148,10 @@ const Landing = () => {
       <section className="py-16 border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatCard number="10K+" label="Active Users" delay={0.1} />
-            <StatCard number="50K+" label="Notes Created" delay={0.2} />
-            <StatCard number="99.9%" label="Uptime" delay={0.3} />
-            <StatCard number="4.9★" label="User Rating" delay={0.4} />
+            <DynamicStatCard endNumber={12847} label="Active Users" delay={0.1} />
+            <DynamicStatCard endNumber={185792} label="Notes Created" delay={0.2} />
+            <DynamicStatCard endNumber={76439} label="Links Shared" delay={0.3} />
+            <DynamicStatCard endNumber={4.9} label="User Rating" delay={0.4} suffix="" showStar={true} />
           </div>
         </div>
       </section>
@@ -171,39 +176,39 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FeatureCard
+              icon={Brain}
+              title="AI-Powered Writing"
+              description="Get intelligent suggestions and insights powered by Google Gemini 2.5 Pro. Transform your ideas into polished content effortlessly."
+              delay={0.1}
+            />
+            <FeatureCard
+              icon={Share2}
+              title="Advanced Sharing"
+              description="Create multiple shareable links for each note with custom names, expiration dates, and detailed analytics tracking."
+              delay={0.2}
+            />
+            <FeatureCard
+              icon={Download}
+              title="Professional Export"
+              description="Export your notes in beautiful Markdown format with preserved formatting, perfect for documentation and publishing."
+              delay={0.3}
+            />
+            <FeatureCard
               icon={PenTool}
               title="Rich Text Editor"
               description="Write with style using our intuitive rich text editor. Support for markdown, formatting, and real-time collaboration."
-              delay={0.1}
+              delay={0.4}
             />
             <FeatureCard
               icon={Zap}
               title="Lightning Fast"
               description="Experience instant sync and blazing fast performance. Your notes are always up-to-date across all devices."
-              delay={0.2}
+              delay={0.5}
             />
             <FeatureCard
               icon={Shield}
               title="Secure & Private"
               description="End-to-end encryption ensures your thoughts remain private. Your data is protected with enterprise-grade security."
-              delay={0.3}
-            />
-            <FeatureCard
-              icon={BookOpen}
-              title="Smart Organization"
-              description="Intelligent categorization and powerful search help you find any note instantly. Never lose a thought again."
-              delay={0.4}
-            />
-            <FeatureCard
-              icon={Users}
-              title="Team Collaboration"
-              description="Share notebooks and collaborate in real-time. Perfect for teams, students, and creative professionals."
-              delay={0.5}
-            />
-            <FeatureCard
-              icon={Star}
-              title="Premium Experience"
-              description="Beautiful, distraction-free interface designed for focus. Dark mode, custom themes, and more."
               delay={0.6}
             />
           </div>
@@ -224,10 +229,11 @@ const Landing = () => {
             }}
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to get started?
+              Join the Beta Revolution
             </h2>
             <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of users who have already transformed their note-taking experience.
+              Be among the first to experience the future of AI-powered note-taking. 
+              Join our beta community and help shape Scribly's evolution.
             </p>
             <Link to="/signup">
               <Button 
@@ -239,7 +245,7 @@ const Landing = () => {
                   boxShadow: '0 8px 32px rgba(79, 112, 226, 0.3)'
                 }}
               >
-                Start Free Trial 
+                Join Beta Program
               </Button>
             </Link>
           </motion.div>

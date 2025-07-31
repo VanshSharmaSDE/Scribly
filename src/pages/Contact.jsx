@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, MessageCircle, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageCircle, Clock, Github, Twitter, Sparkles } from 'lucide-react';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import ProfessionalBackground from '../components/ProfessionalBackground';
@@ -44,28 +44,32 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
+    // Create mailto link with form data
+    const subject = encodeURIComponent(formData.subject || 'Contact from Scribly Website');
+    const body = encodeURIComponent(
+      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+    );
+    window.location.href = `mailto:hello@scribly.com?subject=${subject}&body=${body}`;
+    
+    setIsSubmitting(false);
+    setSubmitStatus('success');
+    setFormData({ name: '', email: '', subject: '', message: '' });
+    
     setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
-      
-      setTimeout(() => {
-        setSubmitStatus(null);
-      }, 5000);
-    }, 2000);
+      setSubmitStatus(null);
+    }, 5000);
   };
 
   const contactInfo = [
     {
       icon: Mail,
-      title: 'Email Us',
+      title: 'General Inquiries',
       content: 'hello@scribly.com'
     },
     {
       icon: MessageCircle,
-      title: 'Live Chat',
-      content: 'Available 24/7 for premium users'
+      title: 'Beta Feedback',
+      content: 'beta@scribly.com'
     },
     {
       icon: Clock,
@@ -86,12 +90,28 @@ const Contact = () => {
             transition={{ duration: 0.8 }}
             className="text-center mb-20"
           >
+            {/* Beta Tag */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center px-4 py-2 rounded-full mb-6 border"
+              style={{
+                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
+                borderColor: 'rgba(147, 51, 234, 0.3)',
+                color: '#9333ea'
+              }}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              <span className="text-sm font-semibold">We'd Love to Hear From You</span>
+            </motion.div>
+            
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
               Get in <span className="gradient-text">Touch</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-              Have a question, suggestion, or just want to say hello? 
-              We'd love to hear from you.
+              Have questions, feedback, or just want to say hello? 
+              We're here to help and excited to hear from our community.
             </p>
           </motion.div>
 
