@@ -1,45 +1,49 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, Camera, Mail, Edit3, Save, X } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import Button from './Button';
-import ConfirmationModal from './ConfirmationModal';
-import userService from '../services/userService';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, LogOut, Camera, Mail, Edit3, Save, X, Settings } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import Button from "./Button";
+import ConfirmationModal from "./ConfirmationModal";
+import SettingsModal from "./SettingsModal";
+import userService from "../services/userService";
 
 const ProfileDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: ''
+    name: "",
+    email: "",
   });
   const { user, logout, updateUserInContext } = useAuth();
   const navigate = useNavigate();
 
   // Fallback data if user is not fully loaded
   const defaultUser = {
-    name: 'User',
-    email: 'user@example.com',
-    avatar: null
+    name: "User",
+    email: "user@example.com",
+    avatar: null,
   };
 
-  const currentUser = user ? {
-    name: user.name || user.email?.split('@')[0] || 'User',
-    email: user.email || 'user@example.com',
-    avatar: null, // Appwrite user doesn't have avatar by default
-  } : defaultUser;
+  const currentUser = user
+    ? {
+        name: user.name || user.email?.split("@")[0] || "User",
+        email: user.email || "user@example.com",
+        avatar: null, // Appwrite user doesn't have avatar by default
+      }
+    : defaultUser;
 
   // Initialize form data when modal opens or user changes
   const initializeFormData = () => {
     setFormData({
       name: currentUser.name,
-      email: currentUser.email
+      email: currentUser.email,
     });
   };
 
@@ -49,10 +53,10 @@ const ProfileDropdown = () => {
       await logout();
       setIsOpen(false);
       setShowLogoutModal(false);
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
     } catch (error) {
-      console.error('Logout failed:', error);
-      toast.error('Failed to logout. Please try again.');
+      console.error("Logout failed:", error);
+      toast.error("Failed to logout. Please try again.");
     } finally {
       setLogoutLoading(false);
     }
@@ -65,8 +69,8 @@ const ProfileDropdown = () => {
 
   const handleSaveProfile = async () => {
     setLoading(true);
-    const loadingToast = toast.loading('Updating profile...');
-    
+    const loadingToast = toast.loading("Updating profile...");
+
     try {
       // Update name if changed
       if (formData.name !== currentUser.name) {
@@ -77,21 +81,23 @@ const ProfileDropdown = () => {
       // For now, we'll just update the name
       if (formData.email !== currentUser.email) {
         toast.dismiss(loadingToast);
-        toast.error('Email updates require verification. Contact support to change your email.');
+        toast.error(
+          "Email updates require verification. Contact support to change your email."
+        );
         return;
       }
 
       // Get updated user data
       const updatedUser = await userService.getCurrentUser();
       updateUserInContext(updatedUser);
-      
+
       toast.dismiss(loadingToast);
-      toast.success('Profile updated successfully!');
+      toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
-      console.error('Profile update failed:', error);
+      console.error("Profile update failed:", error);
       toast.dismiss(loadingToast);
-      toast.error('Failed to update profile');
+      toast.error("Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -108,20 +114,29 @@ const ProfileDropdown = () => {
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center space-x-3 p-2 rounded-lg transition-colors"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-          whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+          whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
         >
-          <div 
+          <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-            style={{ backgroundColor: '#4F70E2' }}
+            style={{ backgroundColor: "#4F70E2" }}
           >
             {currentUser.avatar ? (
-              <img src={currentUser.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+              <img
+                src={currentUser.avatar}
+                alt="Profile"
+                className="w-full h-full rounded-full object-cover"
+              />
             ) : (
-              currentUser.name.split(' ').map(n => n[0]).join('')
+              currentUser.name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
             )}
           </div>
-          <span className="text-white font-medium hidden md:block">{currentUser.name}</span>
+          <span className="text-white font-medium hidden md:block">
+            {currentUser.name}
+          </span>
         </motion.button>
 
         <AnimatePresence>
@@ -134,14 +149,21 @@ const ProfileDropdown = () => {
             >
               <div className="p-4 border-b border-white/10">
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-12 h-12 rounded-full flex items-center justify-center text-white font-medium"
-                    style={{ backgroundColor: '#4F70E2' }}
+                    style={{ backgroundColor: "#4F70E2" }}
                   >
                     {currentUser.avatar ? (
-                      <img src={currentUser.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                      <img
+                        src={currentUser.avatar}
+                        alt="Profile"
+                        className="w-full h-full rounded-full object-cover"
+                      />
                     ) : (
-                      currentUser.name.split(' ').map(n => n[0]).join('')
+                      currentUser.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
                     )}
                   </div>
                   <div>
@@ -162,6 +184,18 @@ const ProfileDropdown = () => {
                   <User className="h-4 w-4" />
                   <span>View Profile</span>
                 </button>
+                
+                <button
+                  onClick={() => {
+                    setShowSettingsModal(true);
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-3 p-3 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </button>
+                
                 <hr className="my-2 border-white/10" />
                 <button
                   onClick={handleLogoutClick}
@@ -198,7 +232,9 @@ const ProfileDropdown = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Profile Settings
+                </h2>
                 {!isEditing && (
                   <button
                     onClick={() => {
@@ -212,34 +248,42 @@ const ProfileDropdown = () => {
                   </button>
                 )}
               </div>
-              
+
               <div className="space-y-6">
                 <div className="flex items-center justify-center">
                   <div className="relative">
-                    <div 
+                    <div
                       className="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-medium"
-                      style={{ backgroundColor: '#4F70E2' }}
+                      style={{ backgroundColor: "#4F70E2" }}
                     >
                       {currentUser.avatar ? (
-                        <img src={currentUser.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                        <img
+                          src={currentUser.avatar}
+                          alt="Profile"
+                          className="w-full h-full rounded-full object-cover"
+                        />
                       ) : (
-                        currentUser.name.split(' ').map(n => n[0]).join('')
+                        currentUser.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
                       )}
                     </div>
-                    <button className="absolute bottom-0 right-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-                      <Camera className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Name
+                    </label>
                     {isEditing ? (
                       <input
                         type="text"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
                         className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                         placeholder="Enter your name"
                       />
@@ -249,16 +293,20 @@ const ProfileDropdown = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Email
+                    </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       {isEditing ? (
                         <input
                           type="email"
                           value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                          }
                           className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
                           placeholder="Enter your email"
                           disabled
@@ -271,7 +319,9 @@ const ProfileDropdown = () => {
                       )}
                     </div>
                     {isEditing && (
-                      <p className="text-xs text-gray-500 mt-1">Email changes require verification</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Email changes require verification
+                      </p>
                     )}
                   </div>
                 </div>
@@ -285,7 +335,6 @@ const ProfileDropdown = () => {
                         className="flex-1"
                         disabled={loading}
                       >
-                        <X className="h-4 w-4 mr-2" />
                         Cancel
                       </Button>
                       <Button
@@ -293,7 +342,6 @@ const ProfileDropdown = () => {
                         className="flex-1"
                         disabled={loading || !formData.name.trim()}
                       >
-                        <Save className="h-4 w-4 mr-2" />
                         Save Changes
                       </Button>
                     </>
@@ -314,6 +362,12 @@ const ProfileDropdown = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      />
 
       {/* Logout Confirmation Modal */}
       <ConfirmationModal

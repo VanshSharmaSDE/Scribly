@@ -14,7 +14,10 @@ import {
   Tag,
   Calendar,
   MoreVertical,
-  Eye
+  Eye,
+  Sparkles,
+  Settings,
+  Wand2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import notesService from '../services/notesService';
@@ -25,6 +28,11 @@ import ProfessionalBackground from '../components/ProfessionalBackground';
 import ProfileDropdown from '../components/ProfileDropdown';
 import Breadcrumb from '../components/Breadcrumb';
 import ConfirmationModal from '../components/ConfirmationModal';
+import AIGeneratorModal from '../components/AIGeneratorModal';
+import APIKeyModal from '../components/APIKeyModal';
+import AIFeaturesGuide from '../components/AIFeaturesGuide';
+import aiService from '../services/aiService';
+import { parseMarkdown } from '../utils/markdown';
 
 const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -39,7 +47,10 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
   };
 
   const truncateContent = (content, maxLength = 150) => {
-    const plainText = content.replace(/[#*`\-\[\]]/g, '').trim();
+    // Parse markdown and then extract plain text for truncation
+    const parsedHtml = parseMarkdown(content);
+    // Remove HTML tags to get plain text
+    const plainText = parsedHtml.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim();
     return plainText.length > maxLength ? plainText.slice(0, maxLength) + '...' : plainText;
   };
 
@@ -80,7 +91,11 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
                     borderColor: 'rgba(255, 255, 255, 0.1)'
                   }}
                 >
-                  {truncateContent(note.content, 100)}
+                  <div 
+                    dangerouslySetInnerHTML={{ 
+                      __html: parseMarkdown(note.content.length > 100 ? note.content.substring(0, 100) + '...' : note.content)
+                    }} 
+                  />
                 </div>
                 <div className="flex items-center space-x-4 text-xs text-gray-500">
                   <span className="flex items-center">
@@ -204,7 +219,11 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
             borderColor: 'rgba(255, 255, 255, 0.1)'
           }}
         >
-          {truncateContent(note.content)}
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: parseMarkdown(note.content.length > 150 ? note.content.substring(0, 150) + '...' : note.content)
+            }} 
+          />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -250,6 +269,14 @@ const Dashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // AI-related states
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [showAPIKeyModal, setShowAPIKeyModal] = useState(false);
+  const [showAIGuide, setShowAIGuide] = useState(false);
+  const [userApiKey, setUserApiKey] = useState(() => {
+    return localStorage.getItem('scribly_gemini_api_key') || '';
+  });
 
   useEffect(() => {
     if (user) {
@@ -381,6 +408,60 @@ const Dashboard = () => {
     navigate('/notes/new');
   };
 
+  // AI-related functions
+  const handleAIGenerate = () => {
+    if (!userApiKey) {
+      setShowAIGuide(true);
+      return;
+    }
+    setShowAIModal(true);
+  };
+
+  const handleSaveAPIKey = (apiKey) => {
+    setUserApiKey(apiKey);
+    localStorage.setItem('scribly_gemini_api_key', apiKey);
+    
+    // Initialize AI service with the new key
+    if (apiKey) {
+      try {
+        aiService.initialize(apiKey);
+      } catch (error) {
+        console.error('Error initializing AI service:', error);
+      }
+    }
+  };
+
+  const handleSaveAINote = async (noteData) => {
+    try {
+      const noteToSave = {
+        ...noteData,
+        userId: user.$id,
+        customStyle: JSON.stringify({
+          backgroundColor: '#1e3a8a',
+          textColor: '#ffffff',
+          fontSize: '16px',
+          fontFamily: 'Inter, sans-serif'
+        })
+      };
+
+      const savedNote = await notesService.createNote(noteToSave);
+      setNotes(prevNotes => [savedNote, ...prevNotes]);
+      toast.success('AI-generated note saved successfully!');
+    } catch (error) {
+      console.error('Error saving AI note:', error);
+      toast.error('Failed to save note');
+    }
+  };
+
+  const handleEditAINote = (noteData) => {
+    // Navigate to edit page with pre-filled data
+    navigate('/notes/new', { 
+      state: { 
+        aiGeneratedNote: noteData 
+      } 
+    });
+  };
+
   if (!user) {
     return (
       <ProfessionalBackground>
@@ -419,59 +500,134 @@ const Dashboard = () => {
   // Show empty state immediately if no notes and not loading
   if (!loading && notes.length === 0) {
     return (
-      <ProfessionalBackground>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 min-h-screen">
-          {/* Header with Profile */}
-          <div className="flex items-start justify-between mb-12">
-            <div className="flex-1">
-              <Breadcrumb />
+      <>
+        <ProfessionalBackground>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 min-h-screen">
+            {/* Header with Profile */}
+            <div className="flex items-start justify-between mb-12">
+              <div className="flex-1">
+                <Breadcrumb />
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4"
+                >
+                  <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                    Your <span className="gradient-text">Workspace</span>
+                  </h1>
+                  <p className="text-xl text-gray-300">
+                    0 notes in your collection
+                  </p>
+                </motion.div>
+              </div>
+              
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex-shrink-0 ml-8"
               >
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                  Your <span className="gradient-text">Workspace</span>
-                </h1>
-                <p className="text-xl text-gray-300">
-                  0 notes in your collection
-                </p>
+                <ProfileDropdown />
               </motion.div>
             </div>
-            
+
+            {/* Empty State */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex-shrink-0 ml-8"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-20"
             >
-              <ProfileDropdown />
+              <div className="max-w-md mx-auto">
+                <div className="text-6xl mb-6 opacity-50">📝</div>
+                <h3 className="text-2xl font-semibold text-gray-200 mb-3">
+                  No notes yet
+                </h3>
+                <p className="text-gray-400 mb-8 leading-relaxed">
+                  Create your first note to start building your knowledge base
+                </p>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                  <Button 
+                    onClick={handleAIGenerate}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105 flex items-center"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Create with AI
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleCreateNote}
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 items-center flex"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Manually
+                  </Button>
+                </div>
+                
+                {/* Secondary Actions */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+                  <button
+                    onClick={() => setShowAIGuide(true)}
+                    className="text-blue-400 hover:text-blue-300 text-sm flex items-center space-x-2 transition-colors hover:underline"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>How to Use AI</span>
+                  </button>
+                  
+                  <span className="text-gray-600 hidden sm:block">•</span>
+                  
+                  <button
+                    onClick={() => setShowAPIKeyModal(true)}
+                    className="text-gray-400 hover:text-gray-200 text-sm flex items-center space-x-2 transition-colors hover:underline"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Configure AI API Key</span>
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
+        </ProfessionalBackground>
 
-          {/* Empty State */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20"
-          >
-            <div className="max-w-md mx-auto">
-              <div className="text-6xl mb-6 opacity-50">📝</div>
-              <h3 className="text-2xl font-semibold text-gray-200 mb-3">
-                No notes yet
-              </h3>
-              <p className="text-gray-400 mb-8 leading-relaxed">
-                Create your first note to start building your knowledge base
-              </p>
-              <Button 
-                onClick={handleCreateNote}
-                className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300"
-              >
-                Create Your First Note
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </ProfessionalBackground>
+        {/* Modals - Include in empty state too! */}
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => handleDeleteNote(noteToDelete?.$id)}
+          title="Delete Note"
+          message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          isLoading={deleteLoading}
+        />
+
+        {/* AI Generator Modal */}
+        <AIGeneratorModal
+          isOpen={showAIModal}
+          onClose={() => setShowAIModal(false)}
+          onSaveNote={handleSaveAINote}
+          onEditNote={handleEditAINote}
+          userApiKey={userApiKey}
+        />
+
+        {/* API Key Settings Modal */}
+        <APIKeyModal
+          isOpen={showAPIKeyModal}
+          onClose={() => setShowAPIKeyModal(false)}
+          currentApiKey={userApiKey}
+          onSave={handleSaveAPIKey}
+        />
+
+        {/* AI Features Guide */}
+        {showAIGuide && (
+          <AIFeaturesGuide
+            onClose={() => setShowAIGuide(false)}
+            onSetupAPI={() => setShowAPIKeyModal(true)}
+          />
+        )}
+      </>
     );
   }
 
@@ -505,6 +661,52 @@ const Dashboard = () => {
               <ProfileDropdown />
             </motion.div>
           </div>
+
+          {/* AI Features Quick Access */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mb-8"
+          >
+            <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-2xl p-6 backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-xl">
+                    <Sparkles className="h-6 w-6 text-purple-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-1">AI-Powered Note Creation</h3>
+                    <p className="text-sm text-gray-300">Generate intelligent notes with just a prompt</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Button 
+                    onClick={handleAIGenerate}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105 flex items-center"
+                  >
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Create with AI
+                  </Button>
+                  
+                  <button
+                    onClick={() => setShowAIGuide(true)}
+                    className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200 text-sm"
+                  >
+                    How to Use AI
+                  </button>
+                  
+                  {/* <button
+                    onClick={() => setShowAPIKeyModal(true)}
+                    className="p-3 bg-gray-800/60 hover:bg-gray-700/70 border border-gray-600/50 hover:border-gray-500/50 rounded-xl text-gray-400 hover:text-gray-200 transition-all duration-300 hover:scale-105"
+                    title="Configure API Key"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </button> */}
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
           {/* Controls */}
           <motion.div
@@ -566,13 +768,15 @@ const Dashboard = () => {
                   </button>
                 </div>
                 
-                <Button 
-                  onClick={handleCreateNote} 
-                  className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 flex items-center"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Note
-                </Button>
+                <div className="flex items-center space-x-3">                  
+                  <Button 
+                    onClick={handleCreateNote} 
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 flex items-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Note
+                  </Button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -646,6 +850,31 @@ const Dashboard = () => {
         type="danger"
         isLoading={deleteLoading}
       />
+
+      {/* AI Generator Modal */}
+      <AIGeneratorModal
+        isOpen={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        onSaveNote={handleSaveAINote}
+        onEditNote={handleEditAINote}
+        userApiKey={userApiKey}
+      />
+
+      {/* API Key Settings Modal */}
+      <APIKeyModal
+        isOpen={showAPIKeyModal}
+        onClose={() => setShowAPIKeyModal(false)}
+        currentApiKey={userApiKey}
+        onSave={handleSaveAPIKey}
+      />
+
+      {/* AI Features Guide */}
+      {showAIGuide && (
+        <AIFeaturesGuide
+          onClose={() => setShowAIGuide(false)}
+          onSetupAPI={() => setShowAPIKeyModal(true)}
+        />
+      )}
     </>
   );
 };

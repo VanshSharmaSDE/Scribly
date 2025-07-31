@@ -19,6 +19,7 @@ import Button from '../components/Button';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { parseMarkdown } from '../utils/markdown';
 
 const NoteView = () => {
   const { id } = useParams();
@@ -312,7 +313,7 @@ const NoteView = () => {
           >
             <div 
               dangerouslySetInnerHTML={{ 
-                __html: note.content.replace(/\n/g, '<br/>') 
+                __html: parseMarkdown(note.content)
               }} 
             />
           </div>

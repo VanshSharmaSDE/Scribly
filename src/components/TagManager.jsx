@@ -1,12 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tag, Plus, X, Hash } from 'lucide-react';
+import { Tag, Plus, X, Hash, Sparkles } from 'lucide-react';
 import Button from './Button';
 
-const TagManager = ({ tags = [], onTagsChange }) => {
+const TagManager = ({ tags = [], onTagsChange, noteTitle = '', noteContent = '', onGenerateAITags, isGeneratingTags = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [currentTags, setCurrentTags] = useState(tags);
+
+  // Sync internal state with props when tags change from parent
+  useEffect(() => {
+    console.log('TagManager: Received tags from parent:', tags);
+    setCurrentTags(tags);
+  }, [tags]);
+
+  // Debug current tags
+  useEffect(() => {
+    console.log('TagManager: Current tags state:', currentTags);
+  }, [currentTags]);
 
   const predefinedTags = [
     'work', 'personal', 'ideas', 'projects', 'meetings', 'notes',
@@ -40,31 +51,57 @@ const TagManager = ({ tags = [], onTagsChange }) => {
   return (
     <>
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-300">Tags</label>
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium text-gray-300">Tags</label>
+          {onGenerateAITags && (
+            <Button
+              onClick={onGenerateAITags}
+              size="sm"
+              disabled={isGeneratingTags || (!noteTitle.trim() && !noteContent.trim())}
+              className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingTags ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-1" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI Tags
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         
         {/* Current Tags Display */}
         <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-white/5 border border-white/20 rounded-lg">
-          {currentTags.map((tag) => (
-            <motion.span
-              key={tag}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center px-2 py-1 text-xs rounded-full"
-              style={{
-                backgroundColor: 'rgba(79, 112, 226, 0.2)',
-                color: '#4F70E2'
-              }}
-            >
-              <Hash className="h-3 w-3 mr-1" />
-              {tag}
-              <button
-                onClick={() => handleRemoveTag(tag)}
-                className="ml-1 text-red-400 hover:text-red-300"
+          {currentTags && currentTags.length > 0 ? (
+            currentTags.map((tag) => (
+              <motion.span
+                key={tag}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center px-2 py-1 text-xs rounded-full"
+                style={{
+                  backgroundColor: 'rgba(79, 112, 226, 0.2)',
+                  color: '#4F70E2'
+                }}
               >
-                <X className="h-3 w-3" />
-              </button>
-            </motion.span>
-          ))}
+                <Hash className="h-3 w-3 mr-1" />
+                {tag}
+                <button
+                  onClick={() => handleRemoveTag(tag)}
+                  className="ml-1 text-red-400 hover:text-red-300"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </motion.span>
+            ))
+          ) : (
+            <span className="text-gray-500 text-xs italic">No tags yet. Add some tags to organize your note.</span>
+          )}
           
           <button
             onClick={() => setIsOpen(true)}

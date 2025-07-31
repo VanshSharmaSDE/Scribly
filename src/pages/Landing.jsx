@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { PenTool, Zap, Shield, Users, ArrowRight, BookOpen, Star, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { PenTool, Zap, Shield, Users, ArrowRight, BookOpen, Star, ChevronRight, Sparkles } from 'lucide-react';
 import Button from '../components/Button';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
+import { useAuth } from '../contexts/AuthContext';
 
 const FeatureCard = ({ icon: Icon, title, description, delay = 0 }) => (
   <motion.div
@@ -41,6 +42,14 @@ const StatCard = ({ number, label, delay = 0 }) => (
 );
 
 const Landing = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleCreateWithAI = () => {
+    // Only authenticated users can access this now
+    navigate('/dashboard');
+  };
+
   return (
     <ProfessionalBackground>
       {/* Hero Section */}
@@ -60,7 +69,7 @@ const Landing = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               Your Ideas,
-              <span className="block bg-gradient-to-r from-blue-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-blue-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent pb-3">
                 Beautifully Organized
               </span>
             </motion.h1>
@@ -80,32 +89,50 @@ const Landing = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              <Link to="/signup">
+              {isAuthenticated ? (
                 <Button 
+                  onClick={handleCreateWithAI}
                   variant="primary" 
                   size="lg"
-                  className="group text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                  className="group items-center flex text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
                   style={{ 
-                    background: 'linear-gradient(135deg, #4F70E2 0%, #3B59D9 50%, #2A46C7 100%)',
-                    boxShadow: '0 8px 32px rgba(79, 112, 226, 0.3)'
+                    background: 'linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #6d28d9 100%)',
+                    boxShadow: '0 8px 32px rgba(147, 51, 234, 0.3)'
                   }}
                 >
-                  Start Writing
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Create with AI
                 </Button>
-              </Link>
-              <Link to="/login">
-                <Button 
-                  variant="secondary" 
-                  size="lg"
-                  className="border text-white hover:bg-white/10 px-8 py-4 rounded-xl font-semibold transition-all duration-300"
-                  style={{ 
-                    borderColor: '#4F70E2',
-                    color: '#4F70E2'
-                  }}
-                >
-                  Sign In
-                </Button>
-              </Link>
+              ) : (
+                <>
+                  <Link to="/signup">
+                    <Button 
+                      variant="primary" 
+                      size="lg"
+                      className="group text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                      style={{ 
+                        background: 'linear-gradient(135deg, #4F70E2 0%, #3B59D9 50%, #2A46C7 100%)',
+                        boxShadow: '0 8px 32px rgba(79, 112, 226, 0.3)'
+                      }}
+                    >
+                      Start Writing
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button 
+                      variant="secondary" 
+                      size="lg"
+                      className="border text-white hover:bg-white/10 px-8 py-4 rounded-xl font-semibold transition-all duration-300"
+                      style={{ 
+                        borderColor: '#4F70E2',
+                        color: '#4F70E2'
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                </>
+              )}
             </motion.div>
           </motion.div>
           </div>
