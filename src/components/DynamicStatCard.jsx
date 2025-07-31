@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay = 0 }) => {
+const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay = 0, loading = false }) => {
   const [count, setCount] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
+    if (loading) return;
+    
     const timer = setTimeout(() => {
       setHasStarted(true);
     }, delay * 1000);
 
     return () => clearTimeout(timer);
-  }, [delay]);
+  }, [delay, loading]);
 
   useEffect(() => {
     if (!hasStarted) return;
@@ -54,6 +56,12 @@ const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay =
     return num.toString();
   };
 
+  if (loading) {
+    return (
+      <span className="animate-pulse bg-gray-600 rounded h-6 w-16 inline-block"></span>
+    );
+  }
+
   return (
     <span>
       {prefix}{hasStarted ? formatNumber(count) : '0'}{suffix}
@@ -61,7 +69,7 @@ const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay =
   );
 };
 
-const DynamicStatCard = ({ endNumber, label, delay = 0, suffix = '+', prefix = '', showStar = false }) => (
+const DynamicStatCard = ({ endNumber, label, delay = 0, suffix = '+', prefix = '', showStar = false, loading = false }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -76,6 +84,7 @@ const DynamicStatCard = ({ endNumber, label, delay = 0, suffix = '+', prefix = '
         suffix={showStar ? '★' : suffix} 
         prefix={prefix}
         delay={delay}
+        loading={loading}
       />
     </div>
     <div className="text-gray-400 text-sm">{label}</div>

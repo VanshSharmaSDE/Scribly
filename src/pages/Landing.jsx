@@ -6,6 +6,7 @@ import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
 import DynamicStatCard from '../components/DynamicStatCard';
 import { useAuth } from '../contexts/AuthContext';
+import useStatistics from '../hooks/useStatistics';
 
 const FeatureCard = ({ icon: Icon, title, description, delay = 0 }) => (
   <motion.div
@@ -33,6 +34,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay = 0 }) => (
 const Landing = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { statistics, loading: statsLoading } = useStatistics();
 
   const handleCreateWithAI = () => {
     // Only authenticated users can access this now
@@ -148,10 +150,32 @@ const Landing = () => {
       <section className="py-16 border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <DynamicStatCard endNumber={12847} label="Active Users" delay={0.1} />
-            <DynamicStatCard endNumber={185792} label="Notes Created" delay={0.2} />
-            <DynamicStatCard endNumber={76439} label="Links Shared" delay={0.3} />
-            <DynamicStatCard endNumber={4.9} label="User Rating" delay={0.4} suffix="" showStar={true} />
+            <DynamicStatCard 
+              endNumber={statistics.activeUsers.value} 
+              label={statistics.activeUsers.label} 
+              delay={0.1}
+              loading={statsLoading}
+            />
+            <DynamicStatCard 
+              endNumber={statistics.totalNotes.value} 
+              label={statistics.totalNotes.label} 
+              delay={0.2}
+              loading={statsLoading}
+            />
+            <DynamicStatCard 
+              endNumber={statistics.totalSharedLinks.value} 
+              label={statistics.totalSharedLinks.label} 
+              delay={0.3}
+              loading={statsLoading}
+            />
+            <DynamicStatCard 
+              endNumber={statistics.userRating.value} 
+              label={statistics.userRating.label} 
+              delay={0.4} 
+              suffix="" 
+              showStar={true}
+              loading={statsLoading}
+            />
           </div>
         </div>
       </section>

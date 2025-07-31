@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { Users, Target, Heart, Award, Brain, Share2, Sparkles } from 'lucide-react';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
 import DynamicStatCard from '../components/DynamicStatCard';
+import useStatistics from '../hooks/useStatistics';
+import Feedback from '../components/Feedback';
 
 const ValueCard = ({ icon: Icon, title, description, delay = 0 }) => (
   <motion.div
@@ -27,6 +30,9 @@ const ValueCard = ({ icon: Icon, title, description, delay = 0 }) => (
 );
 
 const About = () => {
+  const [showFeedback, setShowFeedback] = useState(false);
+  const { statistics, loading: statsLoading } = useStatistics();
+
   const values = [
     {
       icon: Brain,
@@ -100,10 +106,32 @@ const About = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
-            <DynamicStatCard endNumber={12847} label="Active Users" delay={0.1} />
-            <DynamicStatCard endNumber={185792} label="Notes Created" delay={0.2} />
-            <DynamicStatCard endNumber={76439} label="Links Shared" delay={0.3} />
-            <DynamicStatCard endNumber={4.9} label="User Rating" delay={0.4} suffix="" showStar={true} />
+            <DynamicStatCard 
+              endNumber={statistics.activeUsers.value} 
+              label={statistics.activeUsers.label} 
+              delay={0.1}
+              loading={statsLoading}
+            />
+            <DynamicStatCard 
+              endNumber={statistics.totalNotes.value} 
+              label={statistics.totalNotes.label} 
+              delay={0.2}
+              loading={statsLoading}
+            />
+            <DynamicStatCard 
+              endNumber={statistics.totalSharedLinks.value} 
+              label={statistics.totalSharedLinks.label} 
+              delay={0.3}
+              loading={statsLoading}
+            />
+            <DynamicStatCard 
+              endNumber={statistics.userRating.value} 
+              label={statistics.userRating.label} 
+              delay={0.4} 
+              suffix="" 
+              showStar={true}
+              loading={statsLoading}
+            />
           </div>
         </div>
       </section>
@@ -211,11 +239,11 @@ const About = () => {
               We're in active development, constantly improving and adding new features. 
               Join our beta community and help shape the future of intelligent note-taking.
             </p>
-            <motion.a
-              href="mailto:feedback@scribly.com"
+            <motion.button
+              onClick={() => setShowFeedback(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white mr-4"
+              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white cursor-pointer"
               style={{
                 backgroundColor: '#4F70E2',
                 '&:hover': {
@@ -226,30 +254,13 @@ const About = () => {
               onMouseLeave={(e) => e.target.style.backgroundColor = '#4F70E2'}
             >
               Share Beta Feedback
-            </motion.a>
-            <motion.a
-              href="mailto:careers@scribly.com"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white border"
-              style={{
-                borderColor: '#4F70E2',
-                color: '#4F70E2'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#4F70E2';
-                e.target.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = '#4F70E2';
-              }}
-            >
-              View Open Positions
-            </motion.a>
+            </motion.button>
           </motion.div>
         </div>
       </section>
+      
+      {/* Feedback Modal */}
+      <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </ProfessionalBackground>
   );
 };

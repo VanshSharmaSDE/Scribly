@@ -292,9 +292,12 @@ const Beta = () => {
               </ul>
               <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <p className="text-blue-200 text-sm">
-                  <strong>Report Issues:</strong> Found a bug or have feedback? Contact us at{' '}
-                  <a href="mailto:beta@scribly.com" className="text-blue-400 hover:underline">
-                    beta@scribly.com
+                  <strong>Join Beta Program:</strong> Want to experience these features?{' '}
+                  <a 
+                    href="/signup"
+                    className="text-blue-400 hover:underline hover:text-blue-300 transition-colors"
+                  >
+                    Sign up for beta access
                   </a>
                 </p>
               </div>
@@ -322,7 +325,7 @@ const Beta = () => {
             </h2>
             <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto">
               Join thousands of beta testers who are helping us build the most advanced 
-              note-taking platform. Your feedback drives our innovation.
+              note-taking platform. Get early access to cutting-edge features.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.a
@@ -338,10 +341,10 @@ const Beta = () => {
                 Join Beta Program
               </motion.a>
               <motion.a
-                href="mailto:beta@scribly.com"
+                href="/login"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white border"
+                className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white border cursor-pointer"
                 style={{
                   borderColor: '#9333ea',
                   color: '#9333ea'
@@ -355,7 +358,7 @@ const Beta = () => {
                   e.target.style.color = '#9333ea';
                 }}
               >
-                Send Feedback
+                Already a Beta User? Login
               </motion.a>
             </div>
           </motion.div>

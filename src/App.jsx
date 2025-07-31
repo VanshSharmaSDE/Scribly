@@ -27,6 +27,7 @@ import SharedNoteView from "./pages/SharedNoteView";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import EmailVerification from "./pages/EmailVerification";
+import Statistics from "./pages/Statistics";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -65,6 +66,7 @@ function AppContent() {
         <Route path="/features" element={<Features />} />
         <Route path="/beta" element={<Beta />} />
         <Route path="/future-updates" element={<FutureUpdates />} />
+        <Route path="/statistics" element={<Statistics />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/login" element={<Login />} />

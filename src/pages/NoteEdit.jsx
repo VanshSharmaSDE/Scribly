@@ -53,6 +53,7 @@ import Button from "../components/Button";
 import ProfessionalBackground from "../components/ProfessionalBackground";
 import Breadcrumb from "../components/Breadcrumb";
 import TagManager from "../components/TagManager";
+import UnsavedChangesModal from "../components/UnsavedChangesModal";
 import { useAuth } from "../contexts/AuthContext";
 import notesService from "../services/notesService";
 import aiService from "../services/aiService";
@@ -91,6 +92,8 @@ const NoteEdit = () => {
   const [emojiSearchTerm, setEmojiSearchTerm] = useState("");
   const [autoSaveSettings, setAutoSaveSettings] = useState({ enabled: true, interval: 30 });
   const [currentNoteId, setCurrentNoteId] = useState(id);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   // Load auto-save settings on component mount
   useEffect(() => {
@@ -245,17 +248,48 @@ const NoteEdit = () => {
 
   const handleBackNavigation = () => {
     if (hasUnsavedChanges) {
-      const shouldLeave = window.confirm(
-        "You have unsaved changes. Do you want to leave without saving?"
-      );
-      if (!shouldLeave) return;
+      // Store the navigation target and show modal
+      if (!currentNoteId) {
+        setPendingNavigation("/dashboard");
+      } else {
+        setPendingNavigation(`/notes/view/${currentNoteId}`);
+      }
+      setShowUnsavedModal(true);
+      return;
     }
 
+    // Navigate immediately if no unsaved changes
     if (!currentNoteId) {
       navigate("/dashboard");
     } else {
       navigate(`/notes/view/${currentNoteId}`);
     }
+  };
+
+  // Modal handlers
+  const handleModalSave = async () => {
+    await handleSave();
+    // Navigate after successful save
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setShowUnsavedModal(false);
+    setPendingNavigation(null);
+  };
+
+  const handleModalDiscard = () => {
+    // Navigate without saving
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setShowUnsavedModal(false);
+    setPendingNavigation(null);
+  };
+
+  const handleModalClose = () => {
+    // Close modal and stay on current page
+    setShowUnsavedModal(false);
+    setPendingNavigation(null);
   };
 
   const emojiOptions = [
@@ -2900,6 +2934,15 @@ Brief description of what you're researching
           </div>
         </div>
       </div>
+
+      {/* Unsaved Changes Modal */}
+      <UnsavedChangesModal
+        isOpen={showUnsavedModal}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+        onDiscard={handleModalDiscard}
+        isSaving={saving}
+      />
     </ProfessionalBackground>
   );
 };

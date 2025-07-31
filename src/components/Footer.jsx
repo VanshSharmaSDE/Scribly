@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Github, Twitter, Linkedin, Heart } from 'lucide-react';
+import Feedback from './Feedback';
 
 const Footer = () => {
+  const [showFeedback, setShowFeedback] = useState(false);
+  
   const socialLinks = [
-    { name: 'GitHub', icon: Github, href: '#' },
-    { name: 'Twitter', icon: Twitter, href: '#' },
-    { name: 'LinkedIn', icon: Linkedin, href: '#' },
+    { name: 'GitHub', icon: Github, href: 'https://github.com/VanshSharmaSDE/Scribly' },
   ];
 
   return (
@@ -98,6 +100,14 @@ const Footer = () => {
                   Contact
                 </Link>
               </li>
+              <li>
+                <button
+                  onClick={() => setShowFeedback(true)}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-left"
+                >
+                  Feedback
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -138,6 +148,12 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      {/* Feedback Modal */}
+      <Feedback 
+        isOpen={showFeedback} 
+        onClose={() => setShowFeedback(false)} 
+      />
     </motion.footer>
   );
 };
