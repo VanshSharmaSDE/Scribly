@@ -1086,45 +1086,6 @@ Brief description of what you're researching
                         <Minus className="h-4 w-4" />
                       </button>
                     </div>
-                    
-                    {/* Note Type Selector for AI */}
-                    <div className="flex items-center space-x-2">
-                      <select
-                        value={selectedNoteType}
-                        onChange={(e) => setSelectedNoteType(e.target.value)}
-                        className="text-xs bg-gray-800/60 border border-gray-600/50 text-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                      >
-                        <option value="general">General</option>
-                        <option value="meeting">Meeting</option>
-                        <option value="project">Project</option>
-                        <option value="research">Research</option>
-                        <option value="tutorial">Tutorial</option>
-                        <option value="idea">Idea</option>
-                        <option value="personal">Personal</option>
-                        <option value="business">Business</option>
-                        <option value="creative">Creative</option>
-                      </select>
-                    
-                      {/* AI Generate Content Button */}
-                      <Button
-                        onClick={handleGenerateContentFromTitle}
-                        size="sm"
-                        disabled={generatingNote || (!title.trim())}
-                        className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5"
-                      >
-                        {generatingNote ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-1" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Wand2 className="h-3 w-3 mr-1" />
-                            AI Content
-                          </>
-                        )}
-                      </Button>
-                    </div>
                   </div>
                   
                   <span className="text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-600/30 font-mono">
@@ -1308,6 +1269,45 @@ Brief description of what you're researching
                     </div>
                   </div>
                 </div>
+
+                {/* Note Type Selector for AI */}
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={selectedNoteType}
+                        onChange={(e) => setSelectedNoteType(e.target.value)}
+                        className="text-xs bg-gray-800/60 border border-gray-600/50 text-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      >
+                        <option value="general">General</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="project">Project</option>
+                        <option value="research">Research</option>
+                        <option value="tutorial">Tutorial</option>
+                        <option value="idea">Idea</option>
+                        <option value="personal">Personal</option>
+                        <option value="business">Business</option>
+                        <option value="creative">Creative</option>
+                      </select>
+                    
+                      {/* AI Generate Content Button */}
+                      <Button
+                        onClick={handleGenerateContentFromTitle}
+                        size="sm"
+                        disabled={generatingNote || (!title.trim())}
+                        className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5"
+                      >
+                        {generatingNote ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-1" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="h-3 w-3 mr-1" />
+                            AI Content
+                          </>
+                        )}
+                      </Button>
+                    </div>
 
                 {/* Quick Shortcuts Info */}
                 <div className="pt-3 border-t border-gray-700/30">
