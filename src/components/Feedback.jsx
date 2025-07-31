@@ -80,8 +80,6 @@ const Feedback = ({ isOpen, onClose }) => {
         url: window.location.href
       };
 
-      console.log('Feedback submitted:', feedbackData);
-
       // Show success message
       toast.success('Thank you for your feedback! We\'ll get back to you soon.', {
         duration: 4000,

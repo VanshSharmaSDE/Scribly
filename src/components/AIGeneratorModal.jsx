@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Wand2, Save, Edit, Loader2, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Button from './Button';
 import Input from './Input';
 import aiService from '../services/aiService';
@@ -55,12 +56,16 @@ const AIGeneratorModal = ({
       return;
     }
 
+    // Check if API key is available
+    if (!userApiKey) {
+      toast.error('Please set your Gemini API key in settings to use AI features.');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       // Initialize AI service with user's API key
-      if (userApiKey) {
-        aiService.initialize(userApiKey);
-      }
+      aiService.initialize(userApiKey);
 
       const noteData = await aiService.generateNote(prompt, noteOptions);
       setGeneratedNote(noteData);
@@ -211,10 +216,15 @@ const AIGeneratorModal = ({
                 </div>
 
                 {/* Generate Button */}
-                <div className="flex justify-center pt-4">
+                <div className="flex flex-col items-center pt-4 space-y-3">
+                  {!userApiKey && (
+                    <div className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-300 text-sm text-center">
+                      ⚠️ Please set your Gemini API key in settings to use AI features
+                    </div>
+                  )}
                   <Button
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || isGenerating}
+                    disabled={!prompt.trim() || isGenerating || !userApiKey}
                     variant="primary"
                     className="px-8 items-center flex py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700"
                   >

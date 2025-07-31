@@ -45,7 +45,7 @@ function AppContent() {
       "/reset-password",
       "/verify-email",
     ].includes(location.pathname) || 
-    location.pathname.startsWith("/notes/") || 
+    location.pathname.startsWith("/notes/") ||
     location.pathname.startsWith("/shared/");
 
   return (

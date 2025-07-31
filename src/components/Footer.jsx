@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Github, Twitter, Linkedin, Heart } from 'lucide-react';
 import Feedback from './Feedback';
+import FAQModal from './FAQModal';
 
 const Footer = () => {
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showFAQ, setShowFAQ] = useState(false);
   
   const socialLinks = [
     { name: 'GitHub', icon: Github, href: 'https://github.com/VanshSharmaSDE/Scribly' },
@@ -108,6 +110,14 @@ const Footer = () => {
                   Feedback
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => setShowFAQ(true)}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-left"
+                >
+                  FAQ
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -153,6 +163,12 @@ const Footer = () => {
       <Feedback 
         isOpen={showFeedback} 
         onClose={() => setShowFeedback(false)} 
+      />
+      
+      {/* FAQ Modal */}
+      <FAQModal 
+        isOpen={showFAQ} 
+        onClose={() => setShowFAQ(false)} 
       />
     </motion.footer>
   );

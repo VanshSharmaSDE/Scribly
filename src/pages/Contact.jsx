@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
+import FAQModal from '../components/FAQModal';
 
 const ContactInfo = ({ icon: Icon, title, content, delay = 0 }) => (
   <motion.div
@@ -35,6 +36,7 @@ const Contact = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
+  const [showFAQ, setShowFAQ] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -64,12 +66,12 @@ const Contact = () => {
     {
       icon: Mail,
       title: 'General Inquiries',
-      content: 'hello@scribly.com'
+      content: 'scribly.server@gmail.com'
     },
     {
       icon: MessageCircle,
       title: 'Beta Feedback',
-      content: 'beta@scribly.com'
+      content: 'scribly.server@gmail.com'
     },
     {
       icon: Clock,
@@ -79,6 +81,7 @@ const Contact = () => {
   ];
 
   return (
+    <>
     <ProfessionalBackground>
       {/* Hero Section */}
       <section className="py-20 pt-32">
@@ -155,7 +158,11 @@ const Contact = () => {
                 <p className="text-gray-200 mb-4">
                   Check out our FAQ section for instant answers to common questions.
                 </p>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFAQ(true)}
+                >
                   View FAQ
                 </Button>
               </motion.div>
@@ -244,7 +251,7 @@ const Contact = () => {
       </section>
 
       {/* Alternative Contact Methods */}
-      <section className="relative z-10 py-20">
+      {/* <section className="relative z-10 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -282,8 +289,11 @@ const Contact = () => {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section> */}
     </ProfessionalBackground>
+          {/* FAQ Modal */}
+      <FAQModal isOpen={showFAQ} onClose={() => setShowFAQ(false)} />
+    </>
   );
 };
 

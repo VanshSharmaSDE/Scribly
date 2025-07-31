@@ -56,10 +56,8 @@ class StatisticsService {
         }
       });
       
-      console.log(`Found ${totalSharedLinks} shared links across ${response.documents.length} notes`);
       return totalSharedLinks;
     } catch (error) {
-      console.error('Error fetching shared links:', error);
       // Return fallback number if error
       return 0;
     }

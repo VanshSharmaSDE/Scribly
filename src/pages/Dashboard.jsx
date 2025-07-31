@@ -30,6 +30,7 @@ import AIGeneratorModal from '../components/AIGeneratorModal';
 import AIFeaturesGuide from '../components/AIFeaturesGuide';
 import SharedLinksManager from '../components/SharedLinksManager';
 import aiService from '../services/aiService';
+import settingsService from '../services/settingsService';
 import { parseMarkdown } from '../utils/markdown';
 
 const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
@@ -79,6 +80,8 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
                   <h3 className="text-lg font-semibold text-gray-100 truncate group-hover:text-white transition-colors">{note.title}</h3>
                   {note.starred && <Star className="h-4 w-4 text-yellow-400 fill-current flex-shrink-0" />}
                 </div>
+                
+                {/* Regular note content */}
                 <div 
                   className="text-sm mb-3 p-3 rounded-lg border transition-all duration-300"
                   style={{ 
@@ -207,6 +210,8 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
         </div>
 
         <h3 className="text-lg font-semibold text-gray-100 mb-3 line-clamp-2 group-hover:text-white transition-colors">{note.title}</h3>
+        
+        {/* Regular note content */}
         <div 
           className="text-sm mb-4 p-4 rounded-lg border flex-1 transition-all duration-300"
           style={{ 
@@ -279,10 +284,33 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchNotes();
+      fetchUserApiKey();
     } else {
       setLoading(false);
     }
   }, [user]);
+
+  const fetchUserApiKey = async () => {
+    try {
+      // Check localStorage first
+      const localKey = localStorage.getItem('scribly_gemini_api_key');
+      if (localKey) {
+        setUserApiKey(localKey);
+        return;
+      }
+
+      // If not in localStorage, fetch from Appwrite
+      const settings = await settingsService.getUserSettings(user.$id);
+      
+      if (settings && settings.geminiApiKey) {
+        setUserApiKey(settings.geminiApiKey);
+        // Also save to localStorage for faster access
+        localStorage.setItem('scribly_gemini_api_key', settings.geminiApiKey);
+      }
+    } catch (error) {
+      // If error fetching from Appwrite, keep current state
+    }
+  };
 
   // Refetch notes when the page becomes visible (e.g., returning from note view)
   useEffect(() => {
@@ -403,7 +431,10 @@ const Dashboard = () => {
 
   // AI-related functions
   const handleAIGenerate = () => {
-    if (!userApiKey) {
+    // Check if API key is available (either from state or localStorage)
+    const currentApiKey = userApiKey || localStorage.getItem('scribly_gemini_api_key');
+    
+    if (!currentApiKey) {
       setShowAIGuide(true);
       return;
     }

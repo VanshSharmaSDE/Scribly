@@ -82,6 +82,18 @@ const NoteEdit = () => {
     fontFamily: "Inter, sans-serif",
   });
 
+  // Original values to track changes
+  const [originalTitle, setOriginalTitle] = useState("");
+  const [originalContent, setOriginalContent] = useState("");
+  const [originalEmoji, setOriginalEmoji] = useState("📝");
+  const [originalTags, setOriginalTags] = useState([]);
+  const [originalCustomStyle, setOriginalCustomStyle] = useState({
+    backgroundColor: "#1e3a8a",
+    textColor: "#ffffff",
+    fontSize: "16px",
+    fontFamily: "Inter, sans-serif",
+  });
+
   const [showStylePanel, setShowStylePanel] = useState(false);
   const [generatingTags, setGeneratingTags] = useState(false);
   const [generatingNote, setGeneratingNote] = useState(false);
@@ -160,12 +172,15 @@ const NoteEdit = () => {
 
   // Track changes to detect unsaved content
   useEffect(() => {
-    if (title.trim() || content.trim()) {
-      setHasUnsavedChanges(true);
-    } else {
-      setHasUnsavedChanges(false);
-    }
-  }, [title, content]);
+    const hasChanges = 
+      title !== originalTitle ||
+      content !== originalContent ||
+      emoji !== originalEmoji ||
+      JSON.stringify(tags) !== JSON.stringify(originalTags) ||
+      JSON.stringify(customStyle) !== JSON.stringify(originalCustomStyle);
+    
+    setHasUnsavedChanges(hasChanges);
+  }, [title, content, emoji, tags, customStyle, originalTitle, originalContent, originalEmoji, originalTags, originalCustomStyle]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -207,6 +222,13 @@ const NoteEdit = () => {
               `/notes/edit/${savedNote.$id}`
             );
           }
+
+          // Update original values to current values after successful auto-save
+          setOriginalTitle(title);
+          setOriginalContent(content);
+          setOriginalEmoji(emoji);
+          setOriginalTags([...tags]);
+          setOriginalCustomStyle({ ...customStyle });
 
           setHasUnsavedChanges(false);
           setLastAutoSave(new Date());
@@ -359,6 +381,19 @@ const NoteEdit = () => {
       setContent(aiNote.content);
       setEmoji(aiNote.emoji);
       setTags(aiNote.tags || []);
+      
+      // For new AI-generated notes, original values should be empty
+      setOriginalTitle("");
+      setOriginalContent("");
+      setOriginalEmoji("📝");
+      setOriginalTags([]);
+      setOriginalCustomStyle({
+        backgroundColor: "#1e3a8a",
+        textColor: "#ffffff",
+        fontSize: "16px",
+        fontFamily: "Inter, sans-serif",
+      });
+      
       setHasUnsavedChanges(true);
       setLoading(false);
 
@@ -371,6 +406,17 @@ const NoteEdit = () => {
     if (id) {
       loadNote();
     } else {
+      // For new notes, set original values to empty
+      setOriginalTitle("");
+      setOriginalContent("");
+      setOriginalEmoji("📝");
+      setOriginalTags([]);
+      setOriginalCustomStyle({
+        backgroundColor: "#1e3a8a",
+        textColor: "#ffffff",
+        fontSize: "16px",
+        fontFamily: "Inter, sans-serif",
+      });
       setLoading(false);
     }
   }, [id, location.state]);
@@ -378,18 +424,31 @@ const NoteEdit = () => {
   const loadNote = async () => {
     try {
       const note = await notesService.getNote(id);
-      setTitle(note.title);
-      setContent(note.content);
-      setEmoji(note.emoji);
-      setTags(note.tags || []);
-      setCustomStyle(
-        note.customStyle || {
-          backgroundColor: "#1e3a8a",
-          textColor: "#ffffff",
-          fontSize: "16px",
-          fontFamily: "Inter, sans-serif",
-        }
-      );
+      const noteTitle = note.title;
+      const noteContent = note.content;
+      const noteEmoji = note.emoji;
+      const noteTags = note.tags || [];
+      const noteCustomStyle = note.customStyle || {
+        backgroundColor: "#1e3a8a",
+        textColor: "#ffffff",
+        fontSize: "16px",
+        fontFamily: "Inter, sans-serif",
+      };
+
+      // Set current values
+      setTitle(noteTitle);
+      setContent(noteContent);
+      setEmoji(noteEmoji);
+      setTags(noteTags);
+      setCustomStyle(noteCustomStyle);
+
+      // Set original values for change tracking
+      setOriginalTitle(noteTitle);
+      setOriginalContent(noteContent);
+      setOriginalEmoji(noteEmoji);
+      setOriginalTags([...noteTags]);
+      setOriginalCustomStyle({ ...noteCustomStyle });
+
       setHasUnsavedChanges(false);
     } catch (error) {
       toast.error("Failed to load note");
@@ -436,6 +495,13 @@ const NoteEdit = () => {
         savedNote = await notesService.createNote(noteData);
         setCurrentNoteId(savedNote.$id);
       }
+
+      // Update original values to current values after successful save
+      setOriginalTitle(title);
+      setOriginalContent(content);
+      setOriginalEmoji(emoji);
+      setOriginalTags([...tags]);
+      setOriginalCustomStyle({ ...customStyle });
 
       setHasUnsavedChanges(false); // Clear unsaved changes flag
 
