@@ -47,13 +47,11 @@ const SettingsModal = ({ isOpen, onClose }) => {
           setAutoSaveInterval(settings.autoSaveInterval);
         }
       } catch (error) {
-
-        // Fallback to localStorage for backward compatibility
-        const savedApiKey = localStorage.getItem('scribly_gemini_api_key') || '';
-        const savedAutoSave = localStorage.getItem('scribly_auto_save') === 'true';
-        
-        setApiKey(savedApiKey);
-        setIsAutoSaveEnabled(savedAutoSave);
+        console.warn('Failed to load settings:', error);
+        // Set defaults instead of localStorage fallback
+        setApiKey('');
+        setIsAutoSaveEnabled(true);
+        setAutoSaveInterval(30);
       } finally {
         setLoading(false);
       }
@@ -70,9 +68,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
       try {
         await settingsService.updateGeminiApiKey(user.$id, newApiKey);
       } catch (error) {
-
-        // Fallback to localStorage
-        localStorage.setItem('scribly_gemini_api_key', newApiKey.trim());
+        console.warn('Failed to save API key to cloud:', error);
+        // Don't use localStorage fallback - let the user know it failed
       }
     }
   };
@@ -112,33 +109,22 @@ const SettingsModal = ({ isOpen, onClose }) => {
       
       if (apiKey.trim()) {
         if (user) {
-          try {
-            await settingsService.updateGeminiApiKey(user.$id, apiKey.trim());
-            toast.success('API key saved successfully!');
-          } catch (error) {
-
-            // Fallback to localStorage
-            localStorage.setItem('scribly_gemini_api_key', apiKey.trim());
-            toast.success('API key saved locally!');
-          }
+          await settingsService.updateGeminiApiKey(user.$id, apiKey.trim());
+          toast.success('API key saved successfully!');
         } else {
-          localStorage.setItem('scribly_gemini_api_key', apiKey.trim());
-          toast.success('API key saved locally!');
+          toast.error('Please log in to save your API key');
         }
       } else {
         if (user) {
-          try {
-            await settingsService.updateGeminiApiKey(user.$id, '');
-            toast.success('API key removed');
-          } catch (error) {
-            localStorage.removeItem('scribly_gemini_api_key');
-            toast.success('API key removed');
-          }
-        } else {
-          localStorage.removeItem('scribly_gemini_api_key');
+          await settingsService.updateGeminiApiKey(user.$id, '');
           toast.success('API key removed');
+        } else {
+          toast.error('Please log in to manage your API key');
         }
       }
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+      toast.error('Failed to save API key. Please try again.');
     } finally {
       setIsSaving(false);
     }

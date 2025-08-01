@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -18,6 +18,7 @@ import {
   Share
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import notesService from '../services/notesService';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -30,7 +31,6 @@ import AIGeneratorModal from '../components/AIGeneratorModal';
 import AIFeaturesGuide from '../components/AIFeaturesGuide';
 import SharedLinksManager from '../components/SharedLinksManager';
 import aiService from '../services/aiService';
-import settingsService from '../services/settingsService';
 import { parseMarkdown } from '../utils/markdown';
 
 const NoteCard = ({ note, onDelete, onToggleStar, viewMode = 'grid' }) => {
@@ -263,6 +263,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -277,75 +278,12 @@ const Dashboard = () => {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showAIGuide, setShowAIGuide] = useState(false);
   const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
-  const [userApiKey, setUserApiKey] = useState(() => {
-    return localStorage.getItem('scribly_gemini_api_key') || '';
-  });
+  
+  // Track when the page was last focused to avoid unnecessary refetches
+  const [lastFetchTime, setLastFetchTime] = useState(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchNotes();
-      fetchUserApiKey();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchUserApiKey = async () => {
-    try {
-      // Check localStorage first
-      const localKey = localStorage.getItem('scribly_gemini_api_key');
-      if (localKey) {
-        setUserApiKey(localKey);
-        return;
-      }
-
-      // If not in localStorage, fetch from Appwrite
-      const settings = await settingsService.getUserSettings(user.$id);
-      
-      if (settings && settings.geminiApiKey) {
-        setUserApiKey(settings.geminiApiKey);
-        // Also save to localStorage for faster access
-        localStorage.setItem('scribly_gemini_api_key', settings.geminiApiKey);
-      }
-    } catch (error) {
-      // If error fetching from Appwrite, keep current state
-    }
-  };
-
-  // Refetch notes when the page becomes visible (e.g., returning from note view)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && user) {
-        fetchNotes();
-      }
-    };
-
-    const handleFocus = () => {
-      if (user) {
-        fetchNotes();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [user]);
-
-  // Refetch notes when returning to dashboard (e.g., after deleting a note in NoteView)
-  useEffect(() => {
-    // Check if we're coming back to dashboard with a state indicating a refresh is needed
-    if (location.state?.refresh && user) {
-      fetchNotes();
-      // Clear the state to prevent unnecessary refetches
-      navigate('/dashboard', { replace: true, state: undefined });
-    }
-  }, [location.state, user, navigate]);
-
-  const fetchNotes = async () => {
+  // Define fetchNotes function before useEffect hooks that depend on it
+  const fetchNotes = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -355,20 +293,84 @@ const Dashboard = () => {
       setLoading(true);
       const response = await notesService.getUserNotes(user.$id);
       setNotes(response.documents || []);
+      setLastFetchTime(Date.now()); // Track when we last fetched data
     } catch (error) {
       toast.error('Failed to load notes');
       setNotes([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const filteredNotes = notes.filter(note => {
-    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = !selectedTag || (note.tags && note.tags.includes(selectedTag));
-    return matchesSearch && matchesTag;
-  });
+  useEffect(() => {
+    if (user) {
+      fetchNotes();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Only refetch notes when coming back from another page with explicit refresh request
+  useEffect(() => {
+    let isPageVisible = !document.hidden;
+    let lastVisibilityChange = Date.now();
+
+    const handleVisibilityChange = () => {
+      const now = Date.now();
+      
+      if (document.hidden) {
+        isPageVisible = false;
+      } else {
+        // Page became visible
+        if (!isPageVisible && user) {
+          const timeSinceHidden = now - lastVisibilityChange;
+          const timeSinceLastFetch = lastFetchTime ? now - lastFetchTime : Infinity;
+          
+          // Only refetch if:
+          // 1. Page was hidden for more than 5 minutes AND
+          // 2. Last fetch was more than 2 minutes ago
+          if (timeSinceHidden > 300000 && timeSinceLastFetch > 120000) {
+            fetchNotes();
+          }
+        }
+        isPageVisible = true;
+      }
+      
+      lastVisibilityChange = now;
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, lastFetchTime, fetchNotes]);
+
+  // Refetch notes when returning to dashboard (e.g., after deleting a note in NoteView)
+  useEffect(() => {
+    // Check if we're coming back to dashboard with a state indicating a refresh is needed
+    if (location.state?.refresh && user) {
+      fetchNotes();
+      // Clear the state to prevent unnecessary refetches
+      navigate('/dashboard', { replace: true, state: undefined });
+    }
+  }, [location.state, user, navigate, fetchNotes]);
+
+  const filteredNotes = notes
+    .filter(note => {
+      const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           note.content.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTag = !selectedTag || (note.tags && note.tags.includes(selectedTag));
+      return matchesSearch && matchesTag;
+    })
+    .sort((a, b) => {
+      // Sort by starred status first (starred notes first), then by update date (newest first)
+      if (a.starred !== b.starred) {
+        return b.starred - a.starred; // true (1) comes before false (0)
+      }
+      // If both have same starred status, sort by update date (newest first)
+      return new Date(b.$updatedAt) - new Date(a.$updatedAt);
+    });
 
   const allTags = [...new Set(notes.flatMap(note => note.tags || []))];
 
@@ -431,10 +433,9 @@ const Dashboard = () => {
 
   // AI-related functions
   const handleAIGenerate = () => {
-    // Check if API key is available (either from state or localStorage)
-    const currentApiKey = userApiKey || localStorage.getItem('scribly_gemini_api_key');
-    
-    if (!currentApiKey) {
+    // Check if API key is available from settings context
+    const apiKey = settings?.geminiApiKey;
+    if (!apiKey) {
       setShowAIGuide(true);
       return;
     }
@@ -624,7 +625,6 @@ const Dashboard = () => {
           onClose={() => setShowAIModal(false)}
           onSaveNote={handleSaveAINote}
           onEditNote={handleEditAINote}
-          userApiKey={userApiKey}
         />
 
         {/* AI Features Guide */}
@@ -878,7 +878,6 @@ const Dashboard = () => {
         onClose={() => setShowAIModal(false)}
         onSaveNote={handleSaveAINote}
         onEditNote={handleEditAINote}
-        userApiKey={userApiKey}
       />
 
       {/* AI Features Guide */}

@@ -187,3 +187,115 @@ input, textarea, select {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+/* Prose Preview Styles for Note Editor */
+.prose-preview h1, .prose-preview h2, .prose-preview h3 {
+  margin: 0.5rem 0;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.prose-preview h1 {
+  font-size: 1.5em;
+}
+
+.prose-preview h2 {
+  font-size: 1.3em;
+}
+
+.prose-preview h3 {
+  font-size: 1.1em;
+}
+
+.prose-preview p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.prose-preview ul, .prose-preview ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.prose-preview li {
+  margin: 0.25rem 0;
+}
+
+.prose-preview blockquote {
+  border-left: 3px solid currentColor;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.prose-preview code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: 'Courier New', monospace;
+}
+
+.prose-preview pre {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.prose-preview pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.prose-preview strong {
+  font-weight: 600;
+}
+
+.prose-preview em {
+  font-style: italic;
+}
+
+.prose-preview a {
+  color: inherit;
+  text-decoration: underline;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.prose-preview a:hover {
+  opacity: 1;
+}
+
+.prose-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+
+.prose-preview th,
+.prose-preview td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.prose-preview th {
+  background: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+.prose-preview hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 1rem 0;
+}
+
+.prose-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+}

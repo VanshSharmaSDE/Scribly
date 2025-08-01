@@ -6,14 +6,15 @@ import Button from './Button';
 import Input from './Input';
 import aiService from '../services/aiService';
 import { parseMarkdown } from '../utils/markdown';
+import { useSettings } from '../contexts/SettingsContext';
 
 const AIGeneratorModal = ({ 
   isOpen, 
   onClose, 
   onSaveNote, 
-  onEditNote, 
-  userApiKey = null 
+  onEditNote 
 }) => {
+  const { settings } = useSettings();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedNote, setGeneratedNote] = useState(null);
@@ -57,16 +58,14 @@ const AIGeneratorModal = ({
     }
 
     // Check if API key is available
-    if (!userApiKey) {
+    const apiKey = settings?.geminiApiKey;
+    if (!apiKey) {
       toast.error('Please set your Gemini API key in settings to use AI features.');
       return;
     }
 
     setIsGenerating(true);
     try {
-      // Initialize AI service with user's API key
-      aiService.initialize(userApiKey);
-
       const noteData = await aiService.generateNote(prompt, noteOptions);
       setGeneratedNote(noteData);
     } catch (error) {
@@ -217,14 +216,14 @@ const AIGeneratorModal = ({
 
                 {/* Generate Button */}
                 <div className="flex flex-col items-center pt-4 space-y-3">
-                  {!userApiKey && (
+                  {!settings?.geminiApiKey && (
                     <div className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-300 text-sm text-center">
                       ⚠️ Please set your Gemini API key in settings to use AI features
                     </div>
                   )}
                   <Button
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || isGenerating || !userApiKey}
+                    disabled={!prompt.trim() || isGenerating || !settings?.geminiApiKey}
                     variant="primary"
                     className="px-8 items-center flex py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700"
                   >

@@ -2179,40 +2179,6 @@ Brief description of what you're researching
             </div>
 
             <div className="flex items-center space-x-3">
-              {id && (
-                <button
-                  onClick={() => {
-                    // Save as draft first if there's content, then preview
-                    if (title.trim() || content.trim()) {
-                      // Create a temporary note for preview
-                      const tempNote = {
-                        id: id,
-                        title: title || "Untitled Note",
-                        content,
-                        emoji,
-                        tags,
-                        customStyle,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                        starred: false,
-                        isTemp: true,
-                      };
-                      // Store in sessionStorage for preview
-                      sessionStorage.setItem(
-                        "tempNote",
-                        JSON.stringify(tempNote)
-                      );
-                      navigate(`/notes/${id}?preview=true`);
-                    } else {
-                      navigate(`/notes/${id}`);
-                    }
-                  }}
-                  className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all duration-200 rounded-lg border border-blue-500/50 hover:border-blue-400"
-                >
-                  Preview
-                </button>
-              )}
-
               <Button
                 onClick={handleSave}
                 loading={saving}
@@ -2224,9 +2190,9 @@ Brief description of what you're researching
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Editor */}
-          <div className="flex-1">
+          <div className="flex-1 order-1 lg:order-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -2785,20 +2751,30 @@ Brief description of what you're researching
           </div>
 
           {/* Customization Sidebar */}
-          <div className="w-96">
+          <div className="w-full lg:w-96 order-2 lg:order-2">
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 20 }} 
               animate={{ opacity: 1, x: 0 }}
-              className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sticky top-8"
+              className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl h-full flex flex-col"
             >
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                <Palette className="h-5 w-5 mr-2 text-blue-400" />
-                Customization
-              </h3>
+              <div className="p-6 border-b border-gray-700/50">
+                <h3 className="text-xl font-bold text-white flex items-center">
+                  <Palette className="h-5 w-5 mr-2 text-blue-400" />
+                  Customization
+                </h3>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-6"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#374151 #1f2937'
+                }}
+              >
+              <div className="px-6">
 
               {/* Background Color Picker */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4">
+                <label className="block text-sm font-semibold text-gray-200 mb-4 mt-2">
                   Background Color
                 </label>
 
@@ -2949,52 +2925,153 @@ Brief description of what you're researching
 
               {/* Preview */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4">
+                <label className="block text-sm font-semibold text-gray-200 mb-4 flex items-center">
+                  <Eye className="h-4 w-4 mr-2 text-blue-400" />
                   Live Preview
                 </label>
-                <div
-                  className="p-6 rounded-xl border-2 border-gray-600 min-h-[140px] transition-all duration-300 prose prose-invert max-w-none"
-                  style={{ backgroundColor: customStyle.backgroundColor }}
-                >
-                  {title && (
-                    <h4
-                      className="font-bold mb-3"
-                      style={{
-                        fontSize: `calc(${customStyle.fontSize} + 2px)`,
-                        fontFamily: customStyle.fontFamily,
-                        color: customStyle.textColor,
-                      }}
-                    >
-                      {title}
-                    </h4>
-                  )}
+                <div className="relative">
                   <div
-                    className="leading-relaxed"
-                    style={{
-                      fontSize: customStyle.fontSize,
-                      fontFamily: customStyle.fontFamily,
-                      color: customStyle.textColor,
-                      opacity: 0.9,
+                    className="p-6 rounded-xl border-2 border-gray-600/50 min-h-[180px] max-h-[400px] overflow-hidden transition-all duration-300 backdrop-blur-sm shadow-lg hover:border-blue-500/30 hover:shadow-xl"
+                    style={{ 
+                      backgroundColor: customStyle.backgroundColor,
+                      backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%)'
                     }}
                   >
-                    {content ? (
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: parseMarkdown(
-                            content.length > 200
-                              ? content.substring(0, 200) + "..."
-                              : content
-                          ),
+                    {/* Title Preview */}
+                    {title && (
+                      <div className="mb-4 pb-3 border-b border-white/10">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-lg">{emoji}</span>
+                          <h4
+                            className="font-bold flex-1 break-words overflow-hidden"
+                            style={{
+                              fontSize: `calc(${customStyle.fontSize} + 4px)`,
+                              fontFamily: customStyle.fontFamily,
+                              color: customStyle.textColor,
+                              lineHeight: '1.3',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            {title}
+                          </h4>
+                        </div>
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {tags.slice(0, 3).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 text-xs rounded-full border backdrop-blur-sm"
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                                  color: customStyle.textColor,
+                                  opacity: 0.8
+                                }}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {tags.length > 3 && (
+                              <span
+                                className="px-2 py-1 text-xs rounded-full border backdrop-blur-sm"
+                                style={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                                  color: customStyle.textColor,
+                                  opacity: 0.6
+                                }}
+                              >
+                                +{tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Content Preview */}
+                    <div
+                      className="leading-relaxed break-words overflow-hidden"
+                      style={{
+                        fontSize: customStyle.fontSize,
+                        fontFamily: customStyle.fontFamily,
+                        color: customStyle.textColor,
+                        opacity: 0.9,
+                        lineHeight: '1.6'
+                      }}
+                    >
+                      {content ? (
+                        <div
+                          className="prose-preview overflow-hidden"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 8,
+                            WebkitBoxOrient: 'vertical',
+                            textOverflow: 'ellipsis',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word',
+                            hyphens: 'auto'
+                          }}
+                          dangerouslySetInnerHTML={{
+                            __html: parseMarkdown(
+                              content.length > 300
+                                ? content.substring(0, 300) + "..."
+                                : content
+                            ),
+                          }}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-24 text-center">
+                          <span 
+                            className="text-sm italic"
+                            style={{ 
+                              color: customStyle.textColor, 
+                              opacity: 0.5 
+                            }}
+                          >
+                            Your note content will appear here with the selected styling...
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Fade out effect for overflow */}
+                    {content && content.length > 300 && (
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                        style={{
+                          background: `linear-gradient(transparent, ${customStyle.backgroundColor})`
                         }}
                       />
-                    ) : (
-                      <span className="text-gray-400">
-                        Your note content will appear here with the selected
-                        styling...
-                      </span>
                     )}
                   </div>
+                  
+                  {/* Preview Actions */}
+                  <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-4">
+                      <span className="flex items-center">
+                        <Type className="h-3 w-3 mr-1" />
+                        {content.length} chars
+                      </span>
+                      <span className="flex items-center">
+                        <Hash className="h-3 w-3 mr-1" />
+                        {tags.length} tags
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: customStyle.backgroundColor }}
+                      />
+                      <span>Preview</span>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              </div>
               </div>
             </motion.div>
           </div>
