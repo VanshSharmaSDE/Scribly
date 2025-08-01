@@ -5,7 +5,6 @@ import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
 import DynamicStatCard from '../components/DynamicStatCard';
 import useStatistics from '../hooks/useStatistics';
-import Feedback from '../components/Feedback';
 
 const ValueCard = ({ icon: Icon, title, description, delay = 0 }) => (
   <motion.div
@@ -30,39 +29,38 @@ const ValueCard = ({ icon: Icon, title, description, delay = 0 }) => (
 );
 
 const About = () => {
-  const [showFeedback, setShowFeedback] = useState(false);
   const { statistics, loading: statsLoading } = useStatistics();
 
   const values = [
     {
       icon: Brain,
-      title: 'AI-Powered',
-      description: 'Leveraging cutting-edge AI technology to enhance your writing and creative process with intelligent insights.',
+      title: 'Open Source AI',
+      description: 'Transparent AI integration with Google Gemini. Every algorithm is auditable, ensuring trust and privacy in your creative process.',
     },
     {
       icon: Share2,
-      title: 'Collaboration',
-      description: 'Advanced sharing capabilities that enable seamless collaboration and knowledge sharing across teams.',
+      title: 'Community-Driven',
+      description: 'Built by the community, for the community. Every feature request and contribution helps shape the future of Scribly.',
     },
     {
       icon: Users,
       title: 'User-Centric',
-      description: 'Every feature is designed with our users in mind, focusing on simplicity and effectiveness.',
+      description: 'Every feature is designed with our users in mind, prioritizing simplicity, effectiveness, and user data ownership.',
     },
     {
       icon: Target,
       title: 'Innovation',
-      description: 'We constantly push boundaries to bring you the latest in note-taking technology.',
+      description: 'We constantly push boundaries through collaborative development, bringing you cutting-edge features without compromise.',
     },
     {
       icon: Heart,
-      title: 'Passion',
-      description: 'Built by creators, for creators. We understand the importance of capturing every idea.',
+      title: 'Transparency',
+      description: 'No hidden features, no data mining, no vendor lock-in. What you see in our code is exactly what you get.',
     },
     {
       icon: Award,
       title: 'Excellence',
-      description: 'We strive for perfection in every detail, from design to performance.',
+      description: 'Community code reviews and collaborative development ensure perfection in every detail, from design to performance.',
     },
   ];
 
@@ -78,29 +76,29 @@ const About = () => {
             transition={{ duration: 0.8 }}
             className="text-center mb-20"
           >
-            {/* Beta Tag */}
+            {/* Stable Release Tag */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="inline-flex items-center px-4 py-2 rounded-full mb-6 border"
               style={{
-                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
-                borderColor: 'rgba(147, 51, 234, 0.3)',
-                color: '#9333ea'
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)',
+                borderColor: 'rgba(34, 197, 94, 0.3)',
+                color: '#22c55e'
               }}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Beta • AI-Enhanced</span>
+              <span className="text-sm font-semibold">Stable v0.5.0 • Open Source</span>
             </motion.div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
               About <span className="gradient-text">Scribly</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
-              We believe that every great idea deserves a beautiful home. Scribly combines 
-              powerful AI technology with intuitive design to revolutionize how you capture, 
-              organize, and share your thoughts.
+              Born from the open-source community, built for creators everywhere. Scribly combines 
+              powerful AI technology with transparent, community-driven development to create 
+              the future of intelligent note-taking.
             </p>
           </motion.div>
 
@@ -156,9 +154,10 @@ const About = () => {
                 transition={{ duration: 0.6 }}
                 className="text-gray-300 text-lg leading-relaxed mb-6"
               >
-                Founded in 2024, Scribly emerged from a simple frustration: existing note-taking 
-                apps were either too complex or too simple. We wanted something that could grow 
-                with our ideas, support our creativity, and look beautiful while doing it.
+                Founded in 2024 as an open-source initiative, Scribly emerged from a simple 
+                frustration: existing note-taking apps were either too complex, too simple, 
+                or locked users into proprietary ecosystems. We wanted something transparent, 
+                community-driven, and beautiful.
               </motion.p>
               
               <motion.p
@@ -167,10 +166,10 @@ const About = () => {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-gray-300 text-lg leading-relaxed mb-6"
               >
-                Our breakthrough came with integrating Google's Gemini 2.5 Pro AI, transforming 
-                Scribly from a simple note-taking app into an intelligent writing companion. 
-                Combined with advanced sharing capabilities and professional export features, 
-                we've created a platform that truly understands modern content creation needs.
+                Our breakthrough came with integrating Google's Gemini AI in a completely 
+                transparent way, transforming Scribly from a simple note-taking app into an 
+                intelligent writing companion. Every line of code is open-source, auditable, 
+                and privacy-first by design.
               </motion.p>
               
               <motion.p
@@ -179,10 +178,10 @@ const About = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-gray-300 text-lg leading-relaxed"
               >
-                Today, Scribly is trusted by creators, students, professionals, and dreamers 
-                around the world. From AI-powered content enhancement to enterprise-level 
-                sharing with detailed analytics, we're revolutionizing how people capture and 
-                organize their thoughts in the digital age.
+                Today, Scribly v0.5.0 represents our stable release milestone, trusted by a 
+                growing community of creators, students, and professionals. With community 
+                contributions driving innovation, we're building the future of note-taking 
+                together, one commit at a time.
               </motion.p>
             </div>
           </motion.div>
@@ -199,11 +198,11 @@ const About = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Our Values
+              Our Open Source Values
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              These principles guide everything we do and help us create products 
-              that truly make a difference.
+              These principles guide our community-driven development and help us create 
+              software that truly serves everyone.
             </p>
           </motion.div>
 
@@ -219,48 +218,328 @@ const About = () => {
         </div>
       </section>
 
-      {/* Team Section */}
+      {/* Features Section */}
       <section className="relative z-10 py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="bg-black/40 backdrop-blur-xl border rounded-2xl p-12"
-            style={{
-              background: 'linear-gradient(135deg, rgba(79, 112, 226, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%)',
-              borderColor: 'rgba(79, 112, 226, 0.3)'
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Join Our Beta Journey
+              Open Source Features
+              <span className="block" style={{ color: '#4F70E2' }}>Built by the Community</span>
             </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              We're in active development, constantly improving and adding new features. 
-              Join our beta community and help shape the future of intelligent note-taking.
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Transparent, secure, and constantly evolving with contributions from developers worldwide.
             </p>
-            <motion.button
-              onClick={() => setShowFeedback(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block font-medium py-3 px-8 rounded-lg transition-colors duration-300 text-white cursor-pointer"
-              style={{
-                backgroundColor: '#4F70E2',
-                '&:hover': {
-                  backgroundColor: '#3A5BC7'
-                }
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#3A5BC7'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#4F70E2'}
-            >
-              Share Beta Feedback
-            </motion.button>
           </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
+              }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,112,226,0.2) 0%, rgba(79,112,226,0.1) 100%)'
+                }}
+              >
+                <Brain className="w-6 h-6" style={{ color: '#4F70E2' }} />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">AI-Powered Writing</h3>
+              <p className="text-gray-200 leading-relaxed">Get intelligent suggestions powered by Google Gemini. Open-source AI integration that respects your privacy and data ownership.</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
+              }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,112,226,0.2) 0%, rgba(79,112,226,0.1) 100%)'
+                }}
+              >
+                <Share2 className="w-6 h-6" style={{ color: '#4F70E2' }} />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">Advanced Sharing</h3>
+              <p className="text-gray-200 leading-relaxed">Create multiple shareable links with custom expiration dates. All sharing features are transparent and community-audited.</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
+              }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,112,226,0.2) 0%, rgba(79,112,226,0.1) 100%)'
+                }}
+              >
+                <Users className="w-6 h-6" style={{ color: '#4F70E2' }} />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">Community-Driven</h3>
+              <p className="text-gray-200 leading-relaxed">Built by the community, for the community. Every feature request and contribution helps shape the future of Scribly.</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
+              }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,112,226,0.2) 0%, rgba(79,112,226,0.1) 100%)'
+                }}
+              >
+                <Target className="w-6 h-6" style={{ color: '#4F70E2' }} />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">Innovation</h3>
+              <p className="text-gray-200 leading-relaxed">We constantly push boundaries through collaborative development, bringing you cutting-edge features without compromise.</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
+              }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,112,226,0.2) 0%, rgba(79,112,226,0.1) 100%)'
+                }}
+              >
+                <Heart className="w-6 h-6" style={{ color: '#4F70E2' }} />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">Transparency</h3>
+              <p className="text-gray-200 leading-relaxed">No hidden features, no data mining, no vendor lock-in. What you see in our code is exactly what you get.</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 hover:bg-white/10 transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
+              }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-300"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79,112,226,0.2) 0%, rgba(79,112,226,0.1) 100%)'
+                }}
+              >
+                <Award className="w-6 h-6" style={{ color: '#4F70E2' }} />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-4">Excellence</h3>
+              <p className="text-gray-200 leading-relaxed">Community code reviews and collaborative development ensure perfection in every detail, from design to performance.</p>
+            </motion.div>
+          </div>
         </div>
       </section>
-      
-      {/* Feedback Modal */}
-      <Feedback isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Version History Section */}
+      <section className="relative z-10 py-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Version History
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              Follow our journey from the first beta to stable release. Each version 
+              brought new features and improvements to enhance your note-taking experience.
+            </p>
+          </motion.div>
+
+          <div className="space-y-8">
+            {/* v0.5.0 - Stable Release */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.5.0
+                </div>
+                <h3 className="text-2xl font-bold text-white">Stable Release - AI Integration</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Google Gemini Integration:</strong> Create notes just by prompt using AI</li>
+                <li>• <strong>Smart Tagging:</strong> Automatic tag generation by title using Gemini</li>
+                <li>• <strong>AI Content Generation:</strong> Add intelligent content suggestions by Gemini</li>
+                <li>• <strong>Custom API Key:</strong> Use your own Google Gemini API key</li>
+                <li>• <strong>Enhanced Settings:</strong> Easy API key setup and configuration</li>
+                <li>• <strong>AI Usage Guide:</strong> Comprehensive how-to-use AI features documentation</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.4.2 - Bug Fixes */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.4.2
+                </div>
+                <h3 className="text-2xl font-bold text-white">Stability & Bug Fixes</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Bug Fixes:</strong> Resolved critical issues and improved stability</li>
+                <li>• <strong>Performance Improvements:</strong> Enhanced overall application performance</li>
+                <li>• <strong>Beta to Stable Transition:</strong> Prepared codebase for stable release</li>
+                <li>• <strong>Code Optimization:</strong> Cleaned up and optimized core functionalities</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.4.0 - Advanced Features */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.4.0
+                </div>
+                <h3 className="text-2xl font-bold text-white">Advanced Features & Export</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Markdown Export:</strong> Download notes in README/Markdown format</li>
+                <li>• <strong>Markdown Support:</strong> Full markdown rendering in notes</li>
+                <li>• <strong>Auto-save Feature:</strong> Automatic saving for seamless experience</li>
+                <li>• <strong>Enhanced Animations:</strong> Added smooth animations in dashboard and notes</li>
+                <li>• <strong>Breadcrumb Navigation:</strong> Easy navigation throughout the application</li>
+                <li>• <strong>Starred Feature:</strong> Mark important notes for quick access</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.3.0 - Note Customization */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.3.0
+                </div>
+                <h3 className="text-2xl font-bold text-white">Rich Note Features</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Advanced Toolbar:</strong> Enhanced note editing with rich features</li>
+                <li>• <strong>Share Note Feature:</strong> Share notes with custom links and expiration</li>
+                <li>• <strong>Background Colors:</strong> Customize note appearance with color themes</li>
+                <li>• <strong>Font Customization:</strong> Choose from multiple font styles</li>
+                <li>• <strong>Size Customization:</strong> Adjust text size for better readability</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.2.1 - UI Polish */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="bg-gradient-to-r from-teal-500/10 to-green-500/10 border border-teal-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-teal-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.2.1
+                </div>
+                <h3 className="text-2xl font-bold text-white">UI Polish & Fixes</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>UI Animations:</strong> Added smooth animations throughout the interface</li>
+                <li>• <strong>Authentication Fixes:</strong> Resolved bugs in user authentication flow</li>
+                <li>• <strong>Authorization Improvements:</strong> Enhanced security and user permissions</li>
+                <li>• <strong>Visual Enhancements:</strong> Improved overall user experience</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.2.0 - Dashboard & Security */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-indigo-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.2.0
+                </div>
+                <h3 className="text-2xl font-bold text-white">Personalized Experience</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Personalized Dashboard:</strong> Custom user dashboard with personal notes</li>
+                <li>• <strong>Enhanced Security:</strong> Improved data protection and user privacy</li>
+                <li>• <strong>Gradient UI:</strong> Beautiful gradient designs throughout the interface</li>
+                <li>• <strong>Forgot Password:</strong> Password recovery functionality added</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.1.0 - Foundation */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="bg-gradient-to-r from-gray-500/10 to-slate-500/10 border border-gray-500/30 rounded-2xl p-8"
+            >
+              <div className="flex items-center mb-4">
+                <div className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.1.0
+                </div>
+                <h3 className="text-2xl font-bold text-white">Foundation Release</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Basic Note-Taking:</strong> Simple and clean note creation and editing</li>
+                <li>• <strong>Core UI Development:</strong> Initial user interface design and layout</li>
+                <li>• <strong>User Authentication:</strong> Secure user registration and login system</li>
+                <li>• <strong>Authorization System:</strong> Role-based access control implementation</li>
+                <li>• <strong>Basic Features:</strong> Essential note management functionality</li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
     </ProfessionalBackground>
   );
 };

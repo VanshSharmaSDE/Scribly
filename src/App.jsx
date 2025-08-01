@@ -13,11 +13,6 @@ import ScrollToTop from "./components/ScrollToTop";
 import Landing from "./pages/Landing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Features from "./pages/Features";
-import Beta from "./pages/Beta";
-import FutureUpdates from "./pages/FutureUpdates";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -63,12 +58,7 @@ function AppContent() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/features" element={<Features />} />
-        <Route path="/beta" element={<Beta />} />
-        <Route path="/future-updates" element={<FutureUpdates />} />
         <Route path="/statistics" element={<Statistics />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

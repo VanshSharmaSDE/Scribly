@@ -154,7 +154,7 @@ const Login = () => {
               <label className="flex items-center group cursor-pointer">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                  className="w-4 h-4 text-blue-700 bg-gray-800 border-gray-600 rounded focus:ring-blue-700 focus:ring-2"
                 />
                 <span className="ml-3 text-sm text-gray-300 group-hover:text-white transition-colors">Remember me</span>
               </label>
@@ -171,7 +171,7 @@ const Login = () => {
                 type="submit"
                 loading={isLoading}
                 disabled={isLoading}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
+                className="w-full bg-blue-700 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-700/20 hover:shadow-blue-700/30"
                 size="lg"
               >
                 {isLoading ? (

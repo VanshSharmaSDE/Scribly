@@ -16,7 +16,6 @@ const Signup = () => {
     password: '',
     confirmPassword: ''
   });
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,8 +46,6 @@ const Signup = () => {
     else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
-    if (!acceptTerms) newErrors.terms = 'You must accept the Terms of Service and Privacy Policy';
     
     return newErrors;
   };
@@ -90,7 +87,6 @@ const Signup = () => {
           password: '',
           confirmPassword: ''
         });
-        setAcceptTerms(false);
       }
       
     } catch (error) {
@@ -181,7 +177,6 @@ const Signup = () => {
                     onClick={() => {
                       setEmailSent(false);
                       setUserEmail('');
-                      setAcceptTerms(false);
                     }}
                     variant="outline"
                     className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
@@ -290,57 +285,11 @@ const Signup = () => {
               error={errors.confirmPassword}
             />
 
-            {/* Terms and Privacy Policy Acceptance */}
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setAcceptTerms(!acceptTerms)}
-                  className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-                    acceptTerms
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'border-gray-500 hover:border-gray-400'
-                  }`}
-                >
-                  {acceptTerms && <Check className="w-3 h-3 text-white" />}
-                </button>
-                <label className="text-sm text-gray-300 leading-relaxed">
-                  I agree to the{' '}
-                  <Link
-                    to="/terms"
-                    className="text-blue-400 hover:text-blue-300 transition-colors duration-300 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link
-                    to="/privacy"
-                    className="text-blue-400 hover:text-blue-300 transition-colors duration-300 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Privacy Policy
-                  </Link>
-                </label>
-              </div>
-              {errors.terms && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-red-400 text-sm"
-                >
-                  {errors.terms}
-                </motion.p>
-              )}
-            </div>
-
             <Button
               type="submit"
               loading={isLoading}
               disabled={isLoading}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30"
             >
               {isLoading ? (
                 'Creating Account...'

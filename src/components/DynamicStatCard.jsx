@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 
-const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay = 0, loading = false }) => {
+const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay = 0, loading = false, triggerAnimation = false }) => {
   const [count, setCount] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !triggerAnimation) return;
     
     const timer = setTimeout(() => {
       setHasStarted(true);
     }, delay * 1000);
 
     return () => clearTimeout(timer);
-  }, [delay, loading]);
+  }, [delay, loading, triggerAnimation]);
 
   useEffect(() => {
     if (!hasStarted) return;
@@ -69,27 +69,34 @@ const CounterAnimation = ({ end, duration = 2, suffix = '', prefix = '', delay =
   );
 };
 
-const DynamicStatCard = ({ endNumber, label, delay = 0, suffix = '+', prefix = '', showStar = false, loading = false }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, delay }}
-    viewport={{ once: true }}
-    className="text-center"
-  >
-    <div className="text-4xl font-bold text-white mb-2">
-      <CounterAnimation 
-        end={endNumber} 
-        duration={2.5} 
-        suffix={showStar ? '★' : suffix} 
-        prefix={prefix}
-        delay={delay}
-        loading={loading}
-      />
-    </div>
-    <div className="text-gray-400 text-sm">{label}</div>
-  </motion.div>
-);
+const DynamicStatCard = ({ endNumber, label, delay = 0, suffix = '+', prefix = '', showStar = false, loading = false }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay }}
+      viewport={{ once: true }}
+      className="text-center"
+    >
+      <div className="text-4xl font-bold text-white mb-2">
+        <CounterAnimation 
+          end={endNumber} 
+          duration={2.5} 
+          suffix={showStar ? '★' : suffix} 
+          prefix={prefix}
+          delay={delay}
+          loading={loading}
+          triggerAnimation={isInView}
+        />
+      </div>
+      <div className="text-gray-400 text-sm">{label}</div>
+    </motion.div>
+  );
+};
 
 export default DynamicStatCard;
 

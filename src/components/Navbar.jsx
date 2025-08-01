@@ -55,7 +55,7 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
                 }}
               >
                 <Sparkles className="w-3 h-3 mr-1" />
-                BETA
+                v0.5.0
               </span>
             </div>
           </Link>
@@ -104,7 +104,7 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
                   </Button>
                 </Link>
                 <Link to="/signup">
-                  <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white border-0">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white border-0">
                     Sign Up
                   </Button>
                 </Link>
