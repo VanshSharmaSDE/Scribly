@@ -11,10 +11,12 @@ import {
   Twitter,
   Sparkles,
 } from "lucide-react";
+import toast from 'react-hot-toast';
 import Button from "../components/Button";
 import Input from "../components/Input";
 import ProfessionalBackground from "../components/ProfessionalBackground";
 import Breadcrumb from "../components/Breadcrumb";
+import contactService from '../services/contactService';
 
 const ContactInfo = ({ icon: Icon, title, content, delay = 0 }) => (
   <motion.div
@@ -54,22 +56,33 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Create mailto link with form data
-    const subject = encodeURIComponent(
-      formData.subject || "Contact from Scribly Website"
-    );
-    const body = encodeURIComponent(
-      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
-    );
-    window.location.href = `mailto:hello@scribly.com?subject=${subject}&body=${body}`;
-
-    setIsSubmitting(false);
-    setSubmitStatus("success");
-    setFormData({ name: "", email: "", subject: "", message: "" });
-
-    setTimeout(() => {
-      setSubmitStatus(null);
-    }, 5000);
+    try {
+      // Show loading toast
+      const loadingToast = toast.loading('Sending your message...');
+      
+      // Submit form data using EmailJS
+      const result = await contactService.submitContactForm(formData);
+      
+      toast.dismiss(loadingToast);
+      
+      if (result.success) {
+        setSubmitStatus("success");
+        setFormData({ name: "", email: "", subject: "", message: "" });
+        toast.success('Message sent successfully! We\'ll get back to you soon.');
+      } else {
+        setSubmitStatus("error");
+        toast.error(result.error || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      setSubmitStatus("error");
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setSubmitStatus(null);
+      }, 5000);
+    }
   };
 
   const contactInfo = [
@@ -179,6 +192,18 @@ const Contact = () => {
                   >
                     <p className="text-green-400">
                       Thank you for your message! We'll get back to you soon.
+                    </p>
+                  </motion.div>
+                )}
+
+                {submitStatus === "error" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-900/20 border border-red-500/20 rounded-lg p-4 mb-6"
+                  >
+                    <p className="text-red-400">
+                      Sorry, there was an error sending your message. Please try again.
                     </p>
                   </motion.div>
                 )}

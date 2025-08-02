@@ -55,6 +55,9 @@ const Footer = () => {
             <div className="space-y-4">
               <Button
                 href="https://github.com/VanshSharmaSDE/Scribly"
+                onClick={() => {
+                  window.open('https://github.com/VanshSharmaSDE/Scribly', '_blank');
+                }}
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05 }}

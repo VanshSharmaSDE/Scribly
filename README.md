@@ -1,22 +1,21 @@
-# 📝 Scribly - The Ultimate Modern Notes App
+# 📝 Scribly - Open Source AI-Powered Notes App
 
-> **Trans### 🌐 **Revolutionary Sharing Features**
-- **Public Sharing**: Generate unique shareable links for any note
-- **Anonymous Access**: Anyone can view shared notes without creating an account
-- **Download Support**: Shared notes can be downloaded as beautifully formatted Markdown files
-- **Creator Attribution**: Professional sharing pages with author information
-- **Expiration Control**: Links automatically expire after 30 days for securityour thoughts into beautifully organized digital notes with AI-powered features**
+> **Transform your thoughts into beautifully organized digital notes with AI-powered features**
 
-Scribly is a cutting-edge notes application that combines stunning design, powerful functionality, and artificial intelligence to revolutionize how you capture, organize, and share your ideas. Built with modern web technologies, Scribly offers an unparalleled note-taking experience for professionals, students, and creatives alike.
+Scribly is an open-source notes application that combines stunning design, powerful functionality, and artificial intelligence to revolutionize how you capture, organize, and share your ideas. Built with modern web technologies and driven by community contributions, Scribly offers an unparalleled note-taking experience for professionals, students, and creatives alike.
+
+**🎉 Now Stable v0.5.0 - Ready for Production Use!**
 
 ## 🌟 Why Choose Scribly?
 
 - ✨ **Beautiful & Intuitive**: Professional dark theme with smooth animations
-- 🧠 **AI-Powered**: Intelligent content generation and smart tagging
+- 🧠 **AI-Powered**: Intelligent content generation with Google Gemini integration
 - 🔗 **Public Sharing**: Share notes with unique links, no login required
 - 📱 **Fully Responsive**: Perfect experience on desktop, tablet, and mobile
 - 🚀 **Lightning Fast**: Built with modern React and optimized for speed
 - 🎨 **Highly Customizable**: Personalize every aspect of your notes
+- 🌍 **Open Source**: MIT licensed, community-driven development
+- 🔒 **Privacy-First**: Your data remains yours, transparent and secure
 
 ## ✨ Complete Feature Set
 
@@ -36,9 +35,10 @@ Scribly is a cutting-edge notes application that combines stunning design, power
 - **Auto-Save**: Never lose your work with intelligent auto-saving
 - **Real-time Preview**: See your markdown rendered beautifully as you type
 
-### 🤖 **AI-Powered Intelligence**
-- **AI Content Generation**: Create comprehensive notes from just a title
-- **Smart Tag Generation**: Automatically generate relevant tags for organization
+### 🤖 **AI-Powered Intelligence (v0.5.0)**
+- **AI Content Generation**: Create comprehensive notes from just a title using Google Gemini
+- **Smart Tag Generation**: Automatically generate relevant tags for organization with AI
+- **Custom API Key Support**: Use your own Google Gemini API key for AI features
 - **Multiple Note Types**: Specialized AI templates for different content types:
   - 📋 Meeting Notes with agendas and action items
   - 🎯 Project Plans with timelines and milestones
@@ -47,8 +47,9 @@ Scribly is a cutting-edge notes application that combines stunning design, power
   - 💡 Creative Ideas with implementation steps
   - 👤 Personal Reflections and journaling
   - 💼 Business Documents with professional formatting
-- **Gemini AI Integration**: Powered by Google's latest Gemini 2.5 Pro model
+- **Gemini 2.5 Pro Integration**: Powered by Google's latest AI model
 - **Intelligent Fallbacks**: Template-based generation when AI is unavailable
+- **Settings Integration**: Easy AI configuration through user settings
 
 ### 🏷️ **Smart Organization System**
 - **Dynamic Tagging**: Create, edit, and organize with unlimited custom tags
@@ -58,10 +59,10 @@ Scribly is a cutting-edge notes application that combines stunning design, power
 - **Favorites System**: Star important notes for quick access
 - **Grid & List Views**: Choose your preferred visualization style
 
-### � **Revolutionary Sharing Features**
+### 🌐 **Revolutionary Sharing Features**
 - **Public Sharing**: Generate unique shareable links for any note
 - **Anonymous Access**: Anyone can view shared notes without creating an account
-- **Download Support**: Shared notes can be downloaded as text files
+- **Download Support**: Shared notes can be downloaded as beautifully formatted Markdown files
 - **Creator Attribution**: Professional sharing pages with author information
 - **Expiration Control**: Links automatically expire after 30 days for security
 - **Revoke Anytime**: Full control over shared content with instant revocation
@@ -84,12 +85,13 @@ Scribly is a cutting-edge notes application that combines stunning design, power
 - **Responsive Navigation**: Mobile-optimized navigation and touch interactions
 - **Professional Breadcrumbs**: Clear navigation hierarchy
 
-### � **Secure Authentication System**
+### 🔐 **Secure Authentication System**
 - **Email/Password**: Secure account creation and login
 - **Password Recovery**: Easy password reset with email verification
 - **Session Management**: Secure session handling with auto-logout
 - **User Profiles**: Personalized account management
 - **Data Privacy**: Your notes are private and secure by default
+- **Open Source Security**: Transparent security through community auditing
 
 ### 💾 **Data Management**
 - **Cloud Storage**: Powered by Appwrite for reliable data persistence
@@ -103,11 +105,15 @@ Scribly is a cutting-edge notes application that combines stunning design, power
 ### Quick Start
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/scribly.git
+git clone https://github.com/VanshSharmaSDE/Scribly.git
 
 # Install dependencies
-cd scribly
+cd Scribly
 npm install
+
+# Set up environment variables
+cp .env.example .env
+# Add your Appwrite and Google Gemini API credentials
 
 # Start development server
 npm run dev
@@ -137,7 +143,8 @@ npm run preview
 
 ### Backend Power
 - **Appwrite**: Open-source backend-as-a-service
-- **Google Gemini AI**: Advanced AI content generation
+- **Google Gemini AI**: Advanced AI content generation (v0.5.0)
+- **EmailJS**: Contact form email delivery
 - **Real-time Database**: Instant data synchronization
 - **Cloud Storage**: Reliable file and data storage
 - **Authentication**: Secure user management
@@ -215,26 +222,66 @@ scribly/
 - ✅ Edge 90+
 - 📱 All modern mobile browsers
 
-## 🚧 **Roadmap & Future Features**
+## � **Version History**
 
-### ✅ Completed Features
-- [x] Complete UI/UX with dark theme
-- [x] Full note CRUD operations
-- [x] AI content generation with Gemini 2.5 Pro
-- [x] Smart tagging system
-- [x] Public sharing with unique links
-- [x] Comprehensive emoji picker (1000+ emojis)
-- [x] Template system for different note types
-- [x] Custom styling and themes
-- [x] Responsive design for all devices
-- [x] Real-time auto-save functionality
+### 🎉 v0.5.0 - Stable Release (Current)
+**AI Integration & Production Ready**
+- ✅ **Google Gemini Integration**: Create notes from prompts using AI
+- ✅ **Smart Tagging**: Automatic tag generation by title using Gemini
+- ✅ **AI Content Generation**: Intelligent content suggestions by Gemini
+- ✅ **Custom API Key**: Use your own Google Gemini API key
+- ✅ **Enhanced Settings**: Easy API key setup and configuration
+- ✅ **Production Ready**: Stable release for production use
+- ✅ **Open Source**: MIT licensed, community-driven development
+
+### 🔧 v0.4.2 - Stability & Bug Fixes
+- ✅ **Bug Fixes**: Resolved critical issues and improved stability
+- ✅ **Performance Improvements**: Enhanced overall application performance
+- ✅ **Code Optimization**: Cleaned up and optimized core functionalities
+- ✅ **Beta to Stable Transition**: Prepared codebase for stable release
+
+### 🚀 v0.4.0 - Advanced Features & Export
+- ✅ **Markdown Export**: Download notes in README/Markdown format
+- ✅ **Markdown Support**: Full markdown rendering in notes
+- ✅ **Auto-save Feature**: Automatic saving for seamless experience
+- ✅ **Enhanced Animations**: Added smooth animations in dashboard and notes
+- ✅ **Breadcrumb Navigation**: Easy navigation throughout the application
+- ✅ **Starred Feature**: Mark important notes for quick access
+
+### 🎨 v0.3.0 - Rich Note Features
+- ✅ **Advanced Toolbar**: Enhanced note editing with rich features
+- ✅ **Share Note Feature**: Share notes with custom links and expiration
+- ✅ **Background Colors**: Customize note appearance with color themes
+- ✅ **Font Customization**: Choose from multiple font styles
+- ✅ **Size Customization**: Adjust text size for better readability
+
+### 🎨 v0.2.1 - UI Polish & Fixes
+- ✅ **UI Animations**: Added smooth animations throughout the interface
+- ✅ **Authentication Fixes**: Resolved bugs in user authentication flow
+- ✅ **Authorization Improvements**: Enhanced security and user permissions
+- ✅ **Visual Enhancements**: Improved overall user experience
+
+### 🏠 v0.2.0 - Personalized Experience
+- ✅ **Personalized Dashboard**: Custom user dashboard with personal notes
+- ✅ **Enhanced Security**: Improved data protection and user privacy
+- ✅ **Gradient UI**: Beautiful gradient designs throughout the interface
+- ✅ **Forgot Password**: Password recovery functionality added
+
+### 🌱 v0.1.0 - Foundation Release
+- ✅ **Basic Note-Taking**: Simple and clean note creation and editing
+- ✅ **Core UI Development**: Initial user interface design and layout
+- ✅ **User Authentication**: Secure user registration and login system
+- ✅ **Authorization System**: Role-based access control implementation
+- ✅ **Basic Features**: Essential note management functionality
+
+## � **Roadmap & Future Features**
 
 ### 🔄 In Development
 - [ ] Collaborative editing
 - [ ] Note version history
 - [ ] Advanced search with filters
 - [ ] Bulk operations
-- [ ] Import/Export functionality
+- [ ] Enhanced import/export functionality
 
 ### 🔮 Future Enhancements
 - [ ] Mobile apps (iOS/Android)
@@ -243,47 +290,47 @@ scribly/
 - [ ] API for third-party integrations
 - [ ] Team workspaces
 - [ ] Advanced analytics
+- [ ] Multi-language support
+- [ ] Advanced AI features
 
-## 📈 **Use Cases**
+## 🤝 **Contributing to Open Source**
 
-### For Professionals
-- 📋 Meeting minutes with AI-generated summaries
-- 📊 Project documentation with custom styling
-- 💼 Business proposals with professional templates
-- 🔗 Client presentations via public sharing
+We welcome contributions from developers worldwide! Here's how you can help:
 
-### For Students
-- 📚 Lecture notes with smart organization
-- 🔬 Research papers with structured templates
-- 📝 Study guides with AI assistance
-- 🎯 Assignment tracking with tags
+### 🚀 **Getting Started**
+1. **Fork the Repository**: Click the "Fork" button on GitHub
+2. **Clone Your Fork**: `git clone https://github.com/YOUR_USERNAME/Scribly.git`
+3. **Install Dependencies**: `npm install`
+4. **Create a Branch**: `git checkout -b feature/amazing-feature`
+5. **Make Changes**: Implement your feature or fix
+6. **Test Thoroughly**: Ensure everything works properly
+7. **Submit a PR**: Create a Pull Request with a clear description
 
-### For Creatives
-- 💡 Idea capture with instant AI expansion
-- 🎨 Creative projects with visual customization
-- ✍️ Writing drafts with markdown support
-- 🌟 Inspiration boards with emoji integration
+### 💡 **How to Contribute**
+- 🐛 **Bug Reports**: Found a bug? Open an issue with detailed steps to reproduce
+- 💻 **Code Contributions**: New features, bug fixes, performance improvements
+- 📖 **Documentation**: Help improve our docs and guides
+- 🎨 **Design**: UI/UX improvements and design suggestions
+- � **Translations**: Help make Scribly available in more languages
+- 🧪 **Testing**: Help test new features and report issues
 
-### For Teams
-- 🤝 Shared knowledge bases
-- 📋 Process documentation
-- 🎯 Goal tracking and planning
-- 🔄 Workflow documentation
-
-## 🤝 **Contributing**
-
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
+### 📋 **Contribution Guidelines**
+- Follow the existing code style and conventions
+- Write clear commit messages
+- Include tests for new features
+- Update documentation as needed
+- Be respectful and collaborative in discussions
 
 ## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 **Support**
+## 🆘 **Support & Contact**
 
-- 📧 Email: support@scribly.app
-- 💬 Discord: [Join our community](https://discord.gg/scribly)
-- 📖 Documentation: [docs.scribly.app](https://docs.scribly.app)
-- 🐛 Bug Reports: [GitHub Issues](https://github.com/yourusername/scribly/issues)
+- 📧 **Email**: [scribly.server@gmail.com](mailto:scribly.server@gmail.com)
+- � **Bug Reports**: [GitHub Issues](https://github.com/VanshSharmaSDE/Scribly/issues)
+- � **Discussions**: [Join the conversation](https://github.com/VanshSharmaSDE/Scribly/discussions)
+- ⭐ **Star us on GitHub** if you find Scribly helpful!
 
 ---
 
@@ -291,8 +338,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   
 ### 🚀 **Ready to Transform Your Note-Taking?**
 
-**[Try Scribly Now](https://scribly.app) • [View Demo](https://demo.scribly.app) • [Documentation](https://docs.scribly.app)**
+**[Try Scribly Now](https://scribly-app.vercel.app) • [GitHub Repository](https://github.com/VanshSharmaSDE/Scribly)**
 
-*Made with ❤️ by developers who understand the power of great notes*
+*Made with ❤️ by the Open Source Community*
+
+**Scribly v0.5.0 - Stable Release**
 
 </div>

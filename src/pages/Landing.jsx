@@ -450,6 +450,9 @@ const Landing = () => {
             <div className="mt-8 text-center">
               <Button
                 href="https://github.com/your-username/scribly"
+                onClick={() => {
+                  window.open('https://github.com/VanshSharmaSDE/Scribly', '_blank');
+                }}
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05 }}
