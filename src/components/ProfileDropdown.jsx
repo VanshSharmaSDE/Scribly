@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, LogOut, Camera, Mail, Edit3, Save, X, Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -23,6 +23,24 @@ const ProfileDropdown = () => {
   });
   const { user, logout, updateUserInContext } = useAuth();
   const navigate = useNavigate();
+
+  // Listen for custom event to open settings
+  useEffect(() => {
+    const handleOpenSettings = (event) => {
+      setShowSettingsModal(true);
+      // Optional: focus on specific tab if provided
+      if (event.detail?.tab) {
+        // You can extend SettingsModal to accept initial tab if needed
+        console.log('Opening settings with tab:', event.detail.tab);
+      }
+    };
+
+    window.addEventListener('openSettings', handleOpenSettings);
+    
+    return () => {
+      window.removeEventListener('openSettings', handleOpenSettings);
+    };
+  }, []);
 
   // Fallback data if user is not fully loaded
   const defaultUser = {

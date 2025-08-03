@@ -34,6 +34,8 @@ class SettingsService {
   getDefaultSettings() {
     return {
       geminiApiKey: '',
+      aiProvider: 'gemini', // 'gemini' or 'local'
+      localModelPath: '',
       autoSaveEnabled: true,
       autoSaveInterval: 30 // seconds
     };
@@ -53,6 +55,8 @@ class SettingsService {
       const settingsData = {
         userId: user.$id,
         geminiApiKey: settings.geminiApiKey || '',
+        aiProvider: settings.aiProvider || 'gemini',
+        localModelPath: settings.localModelPath || '',
         autoSaveEnabled: settings.autoSaveEnabled ?? true,
         autoSaveInterval: settings.autoSaveInterval ?? 30,
         updatedAt: new Date().toISOString()
@@ -97,6 +101,38 @@ class SettingsService {
     }
   }
 
+  // Update AI provider
+  async updateAiProvider(userId, provider) {
+    try {
+      const currentSettings = await this.getUserSettings(userId);
+      const updatedSettings = {
+        ...currentSettings,
+        aiProvider: provider
+      };
+      
+      return await this.saveUserSettings(updatedSettings, userId);
+    } catch (error) {
+
+      throw error;
+    }
+  }
+
+  // Update local model path
+  async updateLocalModelPath(userId, modelPath) {
+    try {
+      const currentSettings = await this.getUserSettings(userId);
+      const updatedSettings = {
+        ...currentSettings,
+        localModelPath: modelPath
+      };
+      
+      return await this.saveUserSettings(updatedSettings, userId);
+    } catch (error) {
+
+      throw error;
+    }
+  }
+
   // Update auto-save preferences
   async updateAutoSaveSettings(userId, autoSaveEnabled, autoSaveInterval) {
     try {
@@ -119,6 +155,28 @@ class SettingsService {
     try {
       const settings = await this.getUserSettings();
       return settings.geminiApiKey || '';
+    } catch (error) {
+
+      return '';
+    }
+  }
+
+  // Get AI provider
+  async getAiProvider() {
+    try {
+      const settings = await this.getUserSettings();
+      return settings.aiProvider || 'gemini';
+    } catch (error) {
+
+      return 'gemini';
+    }
+  }
+
+  // Get local model path
+  async getLocalModelPath() {
+    try {
+      const settings = await this.getUserSettings();
+      return settings.localModelPath || '';
     } catch (error) {
 
       return '';

@@ -535,19 +535,32 @@ const NoteEdit = () => {
     setGeneratingTags(true);
 
     try {
-      const userApiKey = await settingsService.getGeminiApiKey();
-
-      if (!userApiKey) {
-        toast.error("Please set your Google Gemini API key in settings");
-        return;
-      }
+      // Get user's AI settings
+      const settings = await settingsService.getUserSettings(user.$id);
+      const aiProvider = settings?.aiProvider || 'gemini';
 
       // Show loading toast
       const loadingToast = toast.loading("Generating AI tags...");
 
       try {
-        // Initialize AI service
-        aiService.initialize(userApiKey);
+        // Initialize AI service based on provider
+        if (aiProvider === 'local') {
+          if (settings?.localModelPath) {
+            await aiService.setProvider('local', { modelPath: settings.localModelPath });
+          } else {
+            toast.error("Please configure local AI model in settings");
+            toast.dismiss(loadingToast);
+            return;
+          }
+        } else {
+          const userApiKey = settings?.geminiApiKey;
+          if (!userApiKey) {
+            toast.error("Please set your Google Gemini API key in settings");
+            toast.dismiss(loadingToast);
+            return;
+          }
+          await aiService.setProvider('gemini', { apiKey: userApiKey });
+        }
 
         // Generate tags based on title and content
         const generatedTags = await aiService.generateTagsForNote(title, content);
@@ -598,15 +611,26 @@ const NoteEdit = () => {
     setGeneratingNote(true);
 
     try {
-      const userApiKey = await settingsService.getGeminiApiKey();
+      // Get user's AI settings
+      const settings = await settingsService.getUserSettings(user.$id);
+      const aiProvider = settings?.aiProvider || 'gemini';
 
-      if (!userApiKey) {
-        toast.error("Please set your Google Gemini API key in settings");
-        return;
+      // Initialize AI service based on provider
+      if (aiProvider === 'local') {
+        if (settings?.localModelPath) {
+          await aiService.setProvider('local', { modelPath: settings.localModelPath });
+        } else {
+          toast.error("Please configure local AI model in settings");
+          return;
+        }
+      } else {
+        const userApiKey = settings?.geminiApiKey;
+        if (!userApiKey) {
+          toast.error("Please set your Google Gemini API key in settings");
+          return;
+        }
+        await aiService.setProvider('gemini', { apiKey: userApiKey });
       }
-
-      // Initialize AI service
-      aiService.initialize(userApiKey);
 
       // Generate note content
       const generatedNote = await aiService.generateNote({
@@ -643,15 +667,26 @@ const NoteEdit = () => {
     setGeneratingNote(true);
 
     try {
-      const userApiKey = await settingsService.getGeminiApiKey();
+      // Get user's AI settings
+      const settings = await settingsService.getUserSettings(user.$id);
+      const aiProvider = settings?.aiProvider || 'gemini';
 
-      if (!userApiKey) {
-        toast.error("Please set your Google Gemini API key in settings");
-        return;
+      // Initialize AI service based on provider
+      if (aiProvider === 'local') {
+        if (settings?.localModelPath) {
+          await aiService.setProvider('local', { modelPath: settings.localModelPath });
+        } else {
+          toast.error("Please configure local AI model in settings");
+          return;
+        }
+      } else {
+        const userApiKey = settings?.geminiApiKey;
+        if (!userApiKey) {
+          toast.error("Please set your Google Gemini API key in settings");
+          return;
+        }
+        await aiService.setProvider('gemini', { apiKey: userApiKey });
       }
-
-      // Initialize AI service
-      aiService.initialize(userApiKey);
 
       // Generate content based on title using the new method
       const generatedContent = await aiService.generateContentFromTitle(title, {
@@ -2142,15 +2177,15 @@ Brief description of what you're researching
 
   return (
     <ProfessionalBackground>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-16">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Breadcrumb noteTitle={!id ? null : title} />
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={handleBackNavigation}
-                className={`px-4 py-2 text-gray-400 hover:text-white rounded-lg border transition-all duration-200 ${
+                className={`px-4 py-2 text-gray-400 hover:text-white rounded-lg border transition-all duration-200 text-sm sm:text-base ${
                   hasUnsavedChanges
                     ? "border-orange-500/50 hover:border-orange-400"
                     : "border-blue-500/50 hover:border-blue-400"
@@ -2173,16 +2208,16 @@ Brief description of what you're researching
                 </span>
               )}
 
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-white">
                 {!id ? "Create Note" : "Edit Note"}
               </h1>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 w-full sm:w-auto">
               <Button
                 onClick={handleSave}
                 loading={saving}
-                className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto text-sm sm:text-base"
               >
                 {saving ? "Saving..." : "Save Note"}
               </Button>
@@ -2190,21 +2225,21 @@ Brief description of what you're researching
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col xl:flex-row gap-6 lg:gap-8">
           {/* Main Editor */}
-          <div className="flex-1 order-1 lg:order-1">
+          <div className="flex-1 order-1 xl:order-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl overflow-hidden"
             >
               {/* Title and Emoji */}
-              <div className="p-6 border-b border-gray-700/50">
-                <div className="flex items-center space-x-4 mb-4">
+              <div className="p-4 sm:p-6 border-b border-gray-700/50">
+                <div className="flex items-center space-x-3 sm:space-x-4 mb-4">
                   <select
                     value={emoji}
                     onChange={(e) => setEmoji(e.target.value)}
-                    className="text-3xl bg-transparent border-none outline-none cursor-pointer"
+                    className="text-2xl sm:text-3xl bg-transparent border-none outline-none cursor-pointer"
                   >
                     {emojiOptions.map((e) => (
                       <option key={e} value={e}>
@@ -2218,7 +2253,7 @@ Brief description of what you're researching
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Note title..."
-                    className="flex-1 text-2xl font-bold bg-transparent border-none outline-none text-white placeholder-gray-400"
+                    className="flex-1 text-xl sm:text-2xl font-bold bg-transparent border-none outline-none text-white placeholder-gray-400"
                   />
                 </div>
 
@@ -2235,39 +2270,39 @@ Brief description of what you're researching
               </div>
 
               {/* Toolbar */}
-              <div className="p-6 border-b border-gray-700/50 space-y-4">
+              <div className="p-4 sm:p-6 border-b border-gray-700/50 space-y-4">
                 {/* Main Toolbar */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 flex-wrap">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-2 flex-wrap gap-2">
                     {/* Text Formatting Group */}
                     <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
                         onClick={() => insertText("**", "**")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
                         title="Bold (Ctrl+B)"
                       >
-                        <Bold className="h-4 w-4" />
+                        <Bold className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => insertText("*", "*")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Italic (Ctrl+I)"
                       >
-                        <Italic className="h-4 w-4" />
+                        <Italic className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => insertText("<u>", "</u>")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Underline (Ctrl+U)"
                       >
-                        <Underline className="h-4 w-4" />
+                        <Underline className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => insertText("~~", "~~")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
                         title="Strikethrough"
                       >
-                        <Strikethrough className="h-4 w-4" />
+                        <Strikethrough className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     </div>
 
@@ -2275,29 +2310,29 @@ Brief description of what you're researching
                     <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
                         onClick={() => insertAtNewLine("# ")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
                         title="Heading 1"
                       >
-                        <Heading1 className="h-4 w-4" />
+                        <Heading1 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => insertAtNewLine("## ")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 border-r border-gray-600/30 transition-all duration-200"
                         title="Heading 2"
                       >
-                        <Heading2 className="h-4 w-4" />
+                        <Heading2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => insertAtNewLine("### ")}
-                        className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
+                        className="p-2 sm:p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-r-lg transition-all duration-200"
                         title="Heading 3"
                       >
-                        <Heading3 className="h-4 w-4" />
+                        <Heading3 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     </div>
 
-                    {/* Lists & Structure Group */}
-                    <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
+                    {/* Lists & Structure Group - Hidden on small screens */}
+                    <div className="hidden sm:flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
                         onClick={() => insertList("unordered")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
@@ -2328,8 +2363,8 @@ Brief description of what you're researching
                       </button>
                     </div>
 
-                    {/* Content Elements Group */}
-                    <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
+                    {/* Content Elements Group - Hidden on small screens */}
+                    <div className="hidden md:flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
                         onClick={() => insertAtNewLine("> ")}
                         className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200"
@@ -2361,21 +2396,22 @@ Brief description of what you're researching
                     </div>
                   </div>
 
-                  <span className="text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-600/30 font-mono">
+                  <span className="text-xs sm:text-sm text-gray-400 bg-gray-800/40 px-3 py-2 rounded-lg border border-gray-600/30 font-mono self-start lg:self-auto">
                     {content.length} chars
                   </span>
                 </div>
 
                 {/* Secondary Toolbar - Templates, Emojis & Quick Inserts */}
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center space-x-3 flex-wrap">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap gap-2">
                     {/* Templates Dropdown */}
                     <div className="relative group">
-                      <button className="px-4 py-2.5 text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Templates
+                      <button className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max">
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Templates</span>
+                        <span className="sm:hidden">Temp</span>
                       </button>
-                      <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl py-2 min-w-[220px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
+                      <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl py-2 min-w-[200px] sm:min-w-[220px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
                         <button
                           onClick={() => insertTemplate("meeting")}
                           className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
@@ -2416,11 +2452,12 @@ Brief description of what you're researching
 
                     {/* Callouts Dropdown */}
                     <div className="relative group">
-                      <button className="px-4 py-2.5 text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max">
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        Callouts
+                      <button className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max">
+                        <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Callouts</span>
+                        <span className="sm:hidden">Call</span>
                       </button>
-                      <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
+                      <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl py-2 min-w-[180px] sm:min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
                         <button
                           onClick={() => insertCallout("info")}
                           className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors flex items-center"
@@ -2470,101 +2507,104 @@ Brief description of what you're researching
                     <div className="relative emoji-picker-container">
                       <button
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="px-4 py-2.5 text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max"
+                        className="px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 hover:text-white rounded-lg border border-gray-600/50 transition-all duration-200 flex items-center min-w-max"
                       >
-                        <Smile className="h-4 w-4 mr-2" />
-                        Emojis
+                        <Smile className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Emojis</span>
+                        <span className="sm:hidden">😀</span>
                       </button>
 
                       {showEmojiPicker && (
-                        <div className="absolute top-full left-0 mt-2 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl w-96 max-h-96 overflow-hidden z-30">
-                          {/* Emoji Search */}
-                          <div className="p-4 border-b border-gray-700/50">
-                            <div className="relative">
-                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                              <input
-                                type="text"
-                                placeholder="Search emojis..."
-                                value={emojiSearchTerm}
-                                onChange={(e) =>
-                                  setEmojiSearchTerm(e.target.value)
-                                }
-                                className="w-full pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors"
-                              />
+                        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/20" onClick={() => setShowEmojiPicker(false)}>
+                          <div className="bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl w-80 sm:w-96 max-h-80 sm:max-h-96 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                            {/* Emoji Search */}
+                            <div className="p-3 sm:p-4 border-b border-gray-700/50">
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                                <input
+                                  type="text"
+                                  placeholder="Search emojis..."
+                                  value={emojiSearchTerm}
+                                  onChange={(e) =>
+                                    setEmojiSearchTerm(e.target.value)
+                                  }
+                                  className="w-full pl-8 sm:pl-10 pr-4 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                />
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Quick Emojis */}
-                          <div className="p-4 border-b border-gray-700/50">
-                            <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
-                              Quick Access
-                            </h4>
-                            <div className="grid grid-cols-10 gap-1">
-                              {quickEmojis.map((emoji, index) => (
-                                <button
-                                  key={index}
-                                  onClick={() => {
-                                    insertEmoji(emoji);
-                                    setShowEmojiPicker(false);
-                                  }}
-                                  className="p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-lg hover:scale-110"
-                                  title={`Insert ${emoji}`}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
+                            {/* Quick Emojis */}
+                            <div className="p-3 sm:p-4 border-b border-gray-700/50">
+                              <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                                Quick Access
+                              </h4>
+                              <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
+                                {quickEmojis.map((emoji, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => {
+                                      insertEmoji(emoji);
+                                      setShowEmojiPicker(false);
+                                    }}
+                                    className="p-1.5 sm:p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-base sm:text-lg hover:scale-110"
+                                    title={`Insert ${emoji}`}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Emoji Categories */}
-                          <div className="max-h-64 overflow-y-auto p-4 space-y-4">
-                            {Object.entries(getFilteredEmojis()).map(
-                              ([category, emojis]) => (
-                                <div key={category}>
-                                  <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
-                                    {category}
-                                  </h4>
-                                  <div className="grid grid-cols-10 gap-1">
-                                    {emojis.slice(0, 50).map((emoji, index) => (
-                                      <button
-                                        key={index}
-                                        onClick={() => {
-                                          insertEmoji(emoji);
-                                          setShowEmojiPicker(false);
-                                        }}
-                                        className="p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-lg hover:scale-110"
-                                        title={`Insert ${emoji}`}
-                                      >
-                                        {emoji}
-                                      </button>
-                                    ))}
+                            {/* Emoji Categories */}
+                            <div className="max-h-48 sm:max-h-64 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+                              {Object.entries(getFilteredEmojis()).map(
+                                ([category, emojis]) => (
+                                  <div key={category}>
+                                    <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+                                      {category}
+                                    </h4>
+                                    <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
+                                      {emojis.slice(0, 40).map((emoji, index) => (
+                                        <button
+                                          key={index}
+                                          onClick={() => {
+                                            insertEmoji(emoji);
+                                            setShowEmojiPicker(false);
+                                          }}
+                                          className="p-1.5 sm:p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-base sm:text-lg hover:scale-110"
+                                          title={`Insert ${emoji}`}
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    {emojis.length > 40 && (
+                                      <p className="text-xs text-gray-500 mt-2">
+                                        +{emojis.length - 40} more emojis in this
+                                        category
+                                      </p>
+                                    )}
                                   </div>
-                                  {emojis.length > 50 && (
-                                    <p className="text-xs text-gray-500 mt-2">
-                                      +{emojis.length - 50} more emojis in this
-                                      category
-                                    </p>
-                                  )}
-                                </div>
-                              )
-                            )}
-                          </div>
+                                )
+                              )}
+                            </div>
 
-                          {/* Close button */}
-                          <div className="p-3 border-t border-gray-700/50 bg-gray-800/60">
-                            <button
-                              onClick={() => setShowEmojiPicker(false)}
-                              className="w-full px-3 py-2 text-sm text-gray-400 hover:text-white transition-colors"
-                            >
-                              Close Emoji Picker
-                            </button>
+                            {/* Close button */}
+                            <div className="p-2 sm:p-3 border-t border-gray-700/50 bg-gray-800/60">
+                              <button
+                                onClick={() => setShowEmojiPicker(false)}
+                                className="w-full px-3 py-2 text-xs sm:text-sm text-gray-400 hover:text-white transition-colors"
+                              >
+                                Close Emoji Picker
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Date/Time Group */}
-                    <div className="flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
+                    {/* Date/Time Group - Hidden on small screens */}
+                    <div className="hidden md:flex items-center bg-gray-800/60 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg">
                       <button
                         onClick={insertCurrentDate}
                         className="px-3 py-2.5 text-xs text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-l-lg border-r border-gray-600/30 transition-all duration-200 flex items-center min-w-max"
@@ -2584,13 +2624,12 @@ Brief description of what you're researching
                     </div>
                   </div>
                 </div>
-
                 {/* Note Type Selector for AI */}
-                <div className="flex items-center justify-end space-x-2 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-end space-y-2 sm:space-y-0 sm:space-x-2 w-full">
                   <select
                     value={selectedNoteType}
                     onChange={(e) => setSelectedNoteType(e.target.value)}
-                    className="text-xs bg-gray-800/60 border border-gray-600/50 text-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="text-xs bg-gray-800/60 border border-gray-600/50 text-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-full sm:w-auto"
                   >
                     <option value="general">General</option>
                     <option value="meeting">Meeting</option>
@@ -2608,7 +2647,7 @@ Brief description of what you're researching
                     onClick={handleGenerateContentFromTitle}
                     size="sm"
                     disabled={generatingNote || !title.trim()}
-                    className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5"
+                    className="bg-gradient-to-r items-center flex from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5 w-full sm:w-auto justify-center"
                   >
                     {generatingNote ? (
                       <>
@@ -2626,48 +2665,49 @@ Brief description of what you're researching
 
                 {/* Quick Shortcuts Info */}
                 <div className="pt-3 border-t border-gray-700/30">
-                  <div className="flex items-center justify-between text-xs text-gray-400 flex-wrap gap-2">
-                    <div className="flex items-center space-x-2 flex-wrap">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between text-xs text-gray-400 gap-2">
+                    <div className="flex items-center space-x-2 flex-wrap gap-1">
                       <span className="font-medium text-gray-300">
                         Shortcuts:
                       </span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono text-xs">
                         Ctrl+B
                       </span>
                       <span className="text-gray-500">=</span>
-                      <span>Bold</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                      <span className="hidden sm:inline">Bold</span>
+                      <span className="sm:hidden">B</span>
+                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono text-xs">
                         Ctrl+I
                       </span>
                       <span className="text-gray-500">=</span>
-                      <span>Italic</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                      <span className="hidden sm:inline">Italic</span>
+                      <span className="sm:hidden">I</span>
+                      <span className="hidden md:inline px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono text-xs">
                         Ctrl+U
                       </span>
-                      <span className="text-gray-500">=</span>
-                      <span>Underline</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                      <span className="hidden md:inline text-gray-500">=</span>
+                      <span className="hidden md:inline">Underline</span>
+                      <span className="hidden lg:inline px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono text-xs">
                         ---
                       </span>
-                      <span className="text-gray-500">=</span>
-                      <span>Horizontal Line</span>
-                      <span className="px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono">
+                      <span className="hidden lg:inline text-gray-500">=</span>
+                      <span className="hidden lg:inline">Horizontal Line</span>
+                      <span className="hidden lg:inline px-2 py-1 bg-gray-800/60 rounded border border-gray-600/30 font-mono text-xs">
                         Tab
                       </span>
-                      <span className="text-gray-500">=</span>
-                      <span>Indent</span>
+                      <span className="hidden lg:inline text-gray-500">=</span>
+                      <span className="hidden lg:inline">Indent</span>
                     </div>
-                    <div className="flex items-center space-x-2 flex-wrap"></div>
                   </div>
                 </div>
               </div>
 
               {/* Content Editor */}
-              <div className="p-6 min-h-[500px]">
+              <div className="p-4 sm:p-6 min-h-[400px] sm:min-h-[500px]">
                 <div className="mb-4">
-                  <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-gray-400 mb-2 gap-2">
                     <span>Content</span>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
                       <span>Lines: {content.split("\n").length}</span>
                       <span>
                         Words:{" "}
@@ -2739,7 +2779,7 @@ Brief description of what you're researching
 📝 Or try keyboard shortcuts: Ctrl+B (Bold), Ctrl+I (Italic), Ctrl+U (Underline)
 📋 Type --- and press Enter for a horizontal line
 📝 Press Enter in a list to continue the list automatically"
-                  className="w-full h-96 bg-transparent border-none outline-none placeholder-gray-400 resize-none leading-relaxed"
+                  className="w-full h-80 sm:h-96 bg-transparent border-none outline-none placeholder-gray-400 resize-none leading-relaxed text-sm sm:text-base"
                   style={{
                     fontFamily: customStyle.fontFamily,
                     fontSize: customStyle.fontSize,
@@ -2751,34 +2791,34 @@ Brief description of what you're researching
           </div>
 
           {/* Customization Sidebar */}
-          <div className="w-full lg:w-96 order-2 lg:order-2">
+          <div className="w-full xl:w-96 order-2 xl:order-2">
             <motion.div
               initial={{ opacity: 0, x: 20 }} 
               animate={{ opacity: 1, x: 0 }}
               className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl h-full flex flex-col"
             >
-              <div className="p-6 border-b border-gray-700/50">
-                <h3 className="text-xl font-bold text-white flex items-center">
-                  <Palette className="h-5 w-5 mr-2 text-blue-400" />
+              <div className="p-4 sm:p-6 border-b border-gray-700/50">
+                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
+                  <Palette className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-400" />
                   Customization
                 </h3>
               </div>
               
-              <div className="flex-1 overflow-y-auto space-y-6"
+              <div className="flex-1 overflow-y-auto space-y-4 sm:space-y-6"
                 style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: '#374151 #1f2937'
                 }}
               >
-              <div className="px-6">
+              <div className="px-4 sm:px-6">
 
               {/* Background Color Picker */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4 mt-2">
+              <div className="mb-4 sm:mb-6">
+                <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4 mt-2">
                   Background Color
                 </label>
 
-                <div className="mb-4">
+                <div className="mb-3 sm:mb-4">
                   <input
                     type="color"
                     value={customStyle.backgroundColor}
@@ -2788,14 +2828,14 @@ Brief description of what you're researching
                         backgroundColor: e.target.value,
                       }))
                     }
-                    className="w-full h-12 rounded-xl border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
+                    className="w-full h-10 sm:h-12 rounded-xl border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
                   />
                   <p className="text-xs text-gray-400 mt-2">
                     Current: {customStyle.backgroundColor}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
                   {backgroundOptions.map((bg) => (
                     <button
                       key={bg.color}
@@ -2805,7 +2845,7 @@ Brief description of what you're researching
                           backgroundColor: bg.color,
                         }))
                       }
-                      className={`group relative w-full h-12 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
+                      className={`group relative w-full h-10 sm:h-12 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
                         customStyle.backgroundColor === bg.color
                           ? "border-white shadow-lg"
                           : "border-gray-600 hover:border-gray-400"
@@ -2815,7 +2855,7 @@ Brief description of what you're researching
                     >
                       {customStyle.backgroundColor === bg.color && (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-4 h-4 bg-white rounded-full shadow-lg"></div>
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg"></div>
                         </div>
                       )}
                     </button>
@@ -2824,7 +2864,7 @@ Brief description of what you're researching
               </div>
 
               {/* Font Family */}
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <label className="block text-sm font-semibold text-gray-200 mb-3">
                   Font Family
                 </label>
@@ -2836,7 +2876,7 @@ Brief description of what you're researching
                       fontFamily: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm sm:text-base"
                 >
                   {fontFamilyOptions.map((font) => (
                     <option
@@ -2851,7 +2891,7 @@ Brief description of what you're researching
               </div>
 
               {/* Font Size */}
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <label className="block text-sm font-semibold text-gray-200 mb-3">
                   Font Size
                 </label>
@@ -2863,7 +2903,7 @@ Brief description of what you're researching
                       fontSize: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm sm:text-base"
                 >
                   {fontSizeOptions.map((size) => (
                     <option
@@ -2878,11 +2918,11 @@ Brief description of what you're researching
               </div>
 
               {/* Text Color */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4">
+              <div className="mb-4 sm:mb-6">
+                <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4">
                   Text Color
                 </label>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <button
                     onClick={() =>
                       setCustomStyle((prev) => ({
@@ -2890,7 +2930,7 @@ Brief description of what you're researching
                         textColor: "#ffffff",
                       }))
                     }
-                    className={`flex-1 h-10 rounded-lg border-2 bg-white transition-all duration-300 ${
+                    className={`flex-1 h-8 sm:h-10 rounded-lg border-2 bg-white transition-all duration-300 ${
                       customStyle.textColor === "#ffffff"
                         ? "border-blue-400"
                         : "border-gray-600 hover:border-gray-400"
@@ -2903,7 +2943,7 @@ Brief description of what you're researching
                         textColor: "#000000",
                       }))
                     }
-                    className={`flex-1 h-10 rounded-lg border-2 bg-black transition-all duration-300 ${
+                    className={`flex-1 h-8 sm:h-10 rounded-lg border-2 bg-black transition-all duration-300 ${
                       customStyle.textColor === "#000000"
                         ? "border-blue-400"
                         : "border-gray-600 hover:border-gray-400"
@@ -2918,20 +2958,20 @@ Brief description of what you're researching
                         textColor: e.target.value,
                       }))
                     }
-                    className="flex-1 h-10 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
+                    className="flex-1 h-8 sm:h-10 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
                   />
                 </div>
               </div>
 
               {/* Preview */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-4 flex items-center">
-                  <Eye className="h-4 w-4 mr-2 text-blue-400" />
+              <div className="mb-4 sm:mb-6">
+                <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4 flex items-center">
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-blue-400" />
                   Live Preview
                 </label>
                 <div className="relative">
                   <div
-                    className="p-6 rounded-xl border-2 border-gray-600/50 min-h-[180px] max-h-[400px] overflow-hidden transition-all duration-300 backdrop-blur-sm shadow-lg hover:border-blue-500/30 hover:shadow-xl"
+                    className="p-4 sm:p-6 rounded-xl border-2 border-gray-600/50 min-h-[160px] sm:min-h-[180px] max-h-[350px] sm:max-h-[400px] overflow-hidden transition-all duration-300 backdrop-blur-sm shadow-lg hover:border-blue-500/30 hover:shadow-xl"
                     style={{ 
                       backgroundColor: customStyle.backgroundColor,
                       backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%)'
@@ -2939,13 +2979,13 @@ Brief description of what you're researching
                   >
                     {/* Title Preview */}
                     {title && (
-                      <div className="mb-4 pb-3 border-b border-white/10">
+                      <div className="mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-white/10">
                         <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-lg">{emoji}</span>
+                          <span className="text-base sm:text-lg">{emoji}</span>
                           <h4
                             className="font-bold flex-1 break-words overflow-hidden"
                             style={{
-                              fontSize: `calc(${customStyle.fontSize} + 4px)`,
+                              fontSize: `calc(${customStyle.fontSize} + 2px)`,
                               fontFamily: customStyle.fontFamily,
                               color: customStyle.textColor,
                               lineHeight: '1.3',
@@ -3008,7 +3048,7 @@ Brief description of what you're researching
                           className="prose-preview overflow-hidden"
                           style={{
                             display: '-webkit-box',
-                            WebkitLineClamp: 8,
+                            WebkitLineClamp: 6,
                             WebkitBoxOrient: 'vertical',
                             textOverflow: 'ellipsis',
                             wordWrap: 'break-word',
@@ -3017,31 +3057,31 @@ Brief description of what you're researching
                           }}
                           dangerouslySetInnerHTML={{
                             __html: parseMarkdown(
-                              content.length > 300
-                                ? content.substring(0, 300) + "..."
+                              content.length > 250
+                                ? content.substring(0, 250) + "..."
                                 : content
                             ),
                           }}
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-24 text-center">
+                        <div className="flex items-center justify-center h-16 sm:h-24 text-center">
                           <span 
-                            className="text-sm italic"
+                            className="text-xs sm:text-sm italic"
                             style={{ 
                               color: customStyle.textColor, 
                               opacity: 0.5 
                             }}
                           >
-                            Your note content will appear here with the selected styling...
+                            Your note content will appear here...
                           </span>
                         </div>
                       )}
                     </div>
                     
                     {/* Fade out effect for overflow */}
-                    {content && content.length > 300 && (
+                    {content && content.length > 250 && (
                       <div 
-                        className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
+                        className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 pointer-events-none"
                         style={{
                           background: `linear-gradient(transparent, ${customStyle.backgroundColor})`
                         }}
@@ -3050,8 +3090,8 @@ Brief description of what you're researching
                   </div>
                   
                   {/* Preview Actions */}
-                  <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-between mt-2 sm:mt-3 text-xs text-gray-400">
+                    <div className="flex items-center space-x-2 sm:space-x-4">
                       <span className="flex items-center">
                         <Type className="h-3 w-3 mr-1" />
                         {content.length} chars

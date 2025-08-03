@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import html2canvas from 'html2canvas';
 import { 
   Download,
   Calendar,
@@ -9,7 +10,10 @@ import {
   Share,
   User,
   ArrowLeft,
-  Copy
+  Copy,
+  ChevronDown,
+  FileText,
+  Image
 } from 'lucide-react';
 import notesService from '../services/notesService';
 import Button from '../components/Button';
@@ -23,6 +27,9 @@ const SharedNoteView = () => {
   const [creator, setCreator] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef(null);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     const fetchSharedNote = async () => {
@@ -51,6 +58,20 @@ const SharedNoteView = () => {
     }
   }, [shareToken]);
 
+  // Close download menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target)) {
+        setShowDownloadMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const formatDate = (date) => {
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
@@ -74,6 +95,93 @@ const SharedNoteView = () => {
     toast.success('Note downloaded as Markdown', {
       duration: 2000,
     });
+    setShowDownloadMenu(false);
+  };
+
+  const handleDownloadPNG = async () => {
+    try {
+      if (!contentRef.current) {
+        toast.error('Content not ready for download');
+        return;
+      }
+
+      // Show loading toast
+      const toastId = toast.loading('Generating PNG...');
+
+      // Create a temporary container for the content
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '800px';
+      tempContainer.style.padding = '40px';
+      tempContainer.style.backgroundColor = '#111827';
+      tempContainer.style.color = '#ffffff';
+      tempContainer.style.fontFamily = 'Inter, sans-serif';
+      tempContainer.style.lineHeight = '1.6';
+      
+      // Clone the content
+      const contentClone = contentRef.current.cloneNode(true);
+      
+      // Add title to the content
+      const titleDiv = document.createElement('div');
+      titleDiv.style.fontSize = '32px';
+      titleDiv.style.fontWeight = 'bold';
+      titleDiv.style.marginBottom = '24px';
+      titleDiv.style.color = '#ffffff';
+      titleDiv.textContent = note.title;
+      
+      // Add creator info if available
+      if (creator) {
+        const creatorDiv = document.createElement('div');
+        creatorDiv.style.fontSize = '14px';
+        creatorDiv.style.color = '#9CA3AF';
+        creatorDiv.style.marginBottom = '20px';
+        creatorDiv.textContent = `By ${creator.name}`;
+        tempContainer.appendChild(titleDiv);
+        tempContainer.appendChild(creatorDiv);
+      } else {
+        tempContainer.appendChild(titleDiv);
+      }
+      
+      tempContainer.appendChild(contentClone);
+      document.body.appendChild(tempContainer);
+
+      // Generate canvas
+      const canvas = await html2canvas(tempContainer, {
+        backgroundColor: '#111827',
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        width: 800,
+        height: tempContainer.scrollHeight + 80
+      });
+
+      // Remove temporary container
+      document.body.removeChild(tempContainer);
+
+      // Create download link
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${note.title}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.dismiss(toastId);
+        toast.success('Note downloaded as PNG', {
+          duration: 2000,
+        });
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('Error generating PNG:', error);
+      toast.error('Failed to generate PNG');
+    }
+    setShowDownloadMenu(false);
   };
 
   const handleCopyLink = () => {
@@ -90,10 +198,10 @@ const SharedNoteView = () => {
   if (loading) {
     return (
       <ProfessionalBackground>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 min-h-screen">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pt-12 sm:pt-16 min-h-screen">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-700 rounded mb-4 w-1/4"></div>
-            <div className="h-12 bg-gray-700 rounded mb-6 w-3/4"></div>
+            <div className="h-6 sm:h-8 bg-gray-700 rounded mb-4 w-1/4"></div>
+            <div className="h-8 sm:h-12 bg-gray-700 rounded mb-6 w-3/4"></div>
             <div className="space-y-4">
               <div className="h-4 bg-gray-700 rounded w-full"></div>
               <div className="h-4 bg-gray-700 rounded w-5/6"></div>
@@ -108,15 +216,15 @@ const SharedNoteView = () => {
   if (error) {
     return (
       <ProfessionalBackground>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 min-h-screen">
-          <div className="text-center py-20">
-            <div className="text-6xl mb-6 opacity-50">🔗</div>
-            <h2 className="text-2xl font-semibold text-gray-200 mb-3">Unable to Load Shared Note</h2>
-            <p className="text-gray-400 mb-8">{error}</p>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pt-12 sm:pt-16 min-h-screen">
+          <div className="text-center py-12 sm:py-20">
+            <div className="text-4xl sm:text-6xl mb-4 sm:mb-6 opacity-50">🔗</div>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-200 mb-3 px-4">Unable to Load Shared Note</h2>
+            <p className="text-gray-400 mb-6 sm:mb-8 px-4 text-sm sm:text-base break-words">{error}</p>
             <div className="space-x-4">
               <Button 
                 onClick={handleBackToScribly} 
-                className="bg-blue-500 hover:bg-blue-600 text-white border-0"
+                className="bg-blue-500 hover:bg-blue-600 text-white border-0 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
               >
                 Go to Scribly
               </Button>
@@ -130,14 +238,14 @@ const SharedNoteView = () => {
   if (!note) {
     return (
       <ProfessionalBackground>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-16 min-h-screen">
-          <div className="text-center py-20">
-            <div className="text-6xl mb-6 opacity-50">📝</div>
-            <h2 className="text-2xl font-semibold text-gray-200 mb-3">Shared note not found</h2>
-            <p className="text-gray-400 mb-8">This shared note may have been removed or the link has expired.</p>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pt-12 sm:pt-16 min-h-screen">
+          <div className="text-center py-12 sm:py-20">
+            <div className="text-4xl sm:text-6xl mb-4 sm:mb-6 opacity-50">📝</div>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-200 mb-3 px-4">Shared note not found</h2>
+            <p className="text-gray-400 mb-6 sm:mb-8 px-4 text-sm sm:text-base">This shared note may have been removed or the link has expired.</p>
             <Button 
               onClick={handleBackToScribly} 
-              className="bg-blue-500 hover:bg-blue-600 text-white border-0"
+              className="bg-blue-500 hover:bg-blue-600 text-white border-0 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
             >
               Go to Scribly
             </Button>
@@ -165,11 +273,11 @@ const SharedNoteView = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-blue-500/20 border border-blue-500/50 text-blue-300 px-6 py-4 rounded-lg backdrop-blur-sm shadow-lg mb-6"
+            className="bg-blue-500/20 border border-blue-500/50 text-blue-300 px-4 sm:px-6 py-4 rounded-lg backdrop-blur-sm shadow-lg mb-6"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-3">
-                <Share className="h-5 w-5" />
+                <Share className="h-5 w-5 flex-shrink-0" />
                 <div>
                   <div className="font-medium">Shared Note</div>
                   <div className="text-sm text-blue-200/80">
@@ -182,18 +290,19 @@ const SharedNoteView = () => {
                   variant="outline"
                   onClick={handleCopyLink}
                   size="sm"
-                  className="border-blue-400/50 flex item-center text-blue-300 hover:bg-blue-400/10"
+                  className="border-blue-400/50 flex items-center text-blue-300 hover:bg-blue-400/10 text-xs sm:text-sm px-2 sm:px-3"
                 >
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy Link
+                  <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="hidden xs:inline">Copy Link</span>
+                  <span className="xs:hidden">Copy</span>
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleBackToScribly}
                   size="sm"
-                  className="border-blue-400/50 flex item-center text-blue-300 hover:bg-blue-400/10"
+                  className="border-blue-400/50 flex items-center text-blue-300 hover:bg-blue-400/10 text-xs sm:text-sm px-2 sm:px-3"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   Scribly
                 </Button>
               </div>
@@ -205,50 +314,82 @@ const SharedNoteView = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mt-4"
           >
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl">{note.emoji || '📝'}</div>
-                <div>
-                  <h1 className="text-4xl md:text-5xl font-bold text-white">{note.title}</h1>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="text-3xl sm:text-4xl flex-shrink-0">{note.emoji || '📝'}</div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white break-words leading-tight">{note.title}</h1>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={handleDownload}
-                  className="border-gray-600 flex item-center text-gray-300 hover:bg-gray-700 hover:border-gray-500"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
+              <div className="flex items-center justify-end sm:justify-start space-x-2 flex-shrink-0">
+                {/* Download Dropdown */}
+                <div className="relative" ref={downloadMenuRef}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500 flex items-center space-x-1 text-sm px-3 py-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Download</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                  
+                  {showDownloadMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50"
+                    >
+                      <div className="py-1">
+                        <button
+                          onClick={handleDownload}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                        >
+                          <FileText className="h-4 w-4 mr-3" />
+                          Download as MD
+                        </button>
+                        <button
+                          onClick={handleDownloadPNG}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                        >
+                          <Image className="h-4 w-4 mr-3" />
+                          Download as PNG
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
               </div>
             </div>
             
-            <div className="flex flex-wrap items-center gap-6 text-sm text-gray-400 mb-8">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start gap-3 sm:gap-6 text-sm text-gray-400 mb-8">
               {creator && (
                 <div className="flex items-center">
-                  <User className="h-4 w-4 mr-2" />
-                  <span>Created by {creator.name}</span>
-                  {creator.email && (
-                    <span className="ml-1 text-gray-500">({creator.email})</span>
-                  )}
+                  <User className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="break-words">
+                    Created by {creator.name}
+                    {creator.email && (
+                      <span className="ml-1 text-gray-500 hidden sm:inline">({creator.email})</span>
+                    )}
+                  </span>
                 </div>
               )}
               
               <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>Last updated {formatDate(note.$updatedAt)}</span>
+                <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="break-words">Last updated {formatDate(note.$updatedAt)}</span>
               </div>
               
               {note.tags && note.tags.length > 0 && (
-                <div className="flex items-center">
-                  <Tag className="h-4 w-4 mr-2" />
+                <div className="flex items-start w-full sm:w-auto">
+                  <Tag className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
                   <div className="flex flex-wrap gap-2">
                     {note.tags.map(tag => (
                       <span
                         key={tag}
-                        className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                        className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 break-all"
                       >
                         #{tag}
                       </span>
@@ -265,16 +406,17 @@ const SharedNoteView = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-8"
+          className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 sm:p-6 lg:p-8"
         >
           <div 
-            className="prose prose-invert max-w-none"
+            ref={contentRef}
+            className="prose prose-invert max-w-none prose-sm sm:prose-base"
             style={{ 
               backgroundColor: customStyle.backgroundColor,
               color: customStyle.textColor,
               fontFamily: customStyle.fontFamily,
-              fontSize: customStyle.fontSize,
-              padding: '2rem',
+              fontSize: window.innerWidth < 640 ? '14px' : customStyle.fontSize,
+              padding: window.innerWidth < 640 ? '1rem' : '2rem',
               borderRadius: '0.75rem',
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}
@@ -292,14 +434,14 @@ const SharedNoteView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-12 text-center py-8 border-t border-gray-700/50"
+          className="mt-8 sm:mt-12 text-center py-6 sm:py-8 border-t border-gray-700/50"
         >
-          <p className="text-gray-400 mb-4">
+          <p className="text-gray-400 mb-4 text-sm sm:text-base px-4">
             Want to create your own notes like this?
           </p>
           <Button
             onClick={handleBackToScribly}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 px-8 py-3"
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
           >
             Try Scribly for Free
           </Button>

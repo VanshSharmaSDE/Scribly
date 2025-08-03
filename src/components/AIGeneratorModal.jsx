@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Wand2, Save, Edit, Loader2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -7,12 +7,14 @@ import Input from './Input';
 import aiService from '../services/aiService';
 import { parseMarkdown } from '../utils/markdown';
 import { useSettings } from '../contexts/SettingsContext';
+import settingsService from '../services/settingsService';
 
 const AIGeneratorModal = ({ 
   isOpen, 
   onClose, 
   onSaveNote, 
-  onEditNote 
+  onEditNote,
+  isAIConfigured = true // Default to true since Dashboard pre-checks this
 }) => {
   const { settings } = useSettings();
   const [prompt, setPrompt] = useState('');
@@ -57,20 +59,55 @@ const AIGeneratorModal = ({
       return;
     }
 
-    // Check if API key is available
-    const apiKey = settings?.geminiApiKey;
-    if (!apiKey) {
-      toast.error('Please set your Gemini API key in settings to use AI features.');
+    if (!isAIConfigured) {
+      toast.error('Please configure AI provider in settings first.');
       return;
     }
 
     setIsGenerating(true);
     try {
+      // Initialize AI service based on user settings
+      const userSettings = await settingsService.getUserSettings();
+      
+      if (userSettings.aiProvider === 'local') {
+        if (!userSettings.localModelPath) {
+          toast.error('Please select a local AI model in settings first.');
+          return;
+        }
+        
+        // For local AI, check if it's initialized, if not, show error
+        const localAIService = (await import('../services/localAIService')).default;
+        if (!localAIService.isReady()) {
+          toast.error('Local AI model is not initialized. Please use the dashboard notification to initialize it first.');
+          return;
+        }
+        
+        await aiService.setProvider('local', { modelPath: userSettings.localModelPath });
+      } else {
+        const apiKey = settings?.geminiApiKey;
+        if (!apiKey) {
+          toast.error('Please set your Gemini API key in settings to use AI features.');
+          return;
+        }
+        await aiService.setProvider('gemini', { apiKey });
+      }
+
       const noteData = await aiService.generateNote(prompt, noteOptions);
+      
+      // Validate the generated note data
+      if (!noteData || typeof noteData !== 'object') {
+        throw new Error('Invalid note data received from AI service');
+      }
+      
+      if (!noteData.title || !noteData.content) {
+        throw new Error('Incomplete note data - missing title or content');
+      }
+      
+      console.log('Generated note data:', noteData);
       setGeneratedNote(noteData);
     } catch (error) {
-
-      // Handle error (you might want to show a toast or error message)
+      console.error('Error generating note:', error);
+      toast.error('Failed to generate note: ' + error.message);
     } finally {
       setIsGenerating(false);
     }
@@ -216,14 +253,14 @@ const AIGeneratorModal = ({
 
                 {/* Generate Button */}
                 <div className="flex flex-col items-center pt-4 space-y-3">
-                  {!settings?.geminiApiKey && (
+                  {!isAIConfigured && (
                     <div className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-300 text-sm text-center">
-                      ⚠️ Please set your Gemini API key in settings to use AI features
+                      ⚠️ Please configure AI provider in settings (Gemini API key or local model)
                     </div>
                   )}
                   <Button
                     onClick={handleGenerate}
-                    disabled={!prompt.trim() || isGenerating || !settings?.geminiApiKey}
+                    disabled={!prompt.trim() || isGenerating || !isAIConfigured}
                     variant="primary"
                     className="px-8 items-center flex py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700"
                   >
@@ -254,28 +291,42 @@ const AIGeneratorModal = ({
                 {/* Note Preview */}
                 <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
                   <div className="flex items-center space-x-3 mb-4">
-                    <span className="text-2xl">{generatedNote.emoji}</span>
-                    <h4 className="text-xl font-semibold text-white">{generatedNote.title}</h4>
+                    <span className="text-2xl">{generatedNote?.emoji || '📝'}</span>
+                    <h4 className="text-xl font-semibold text-white">{generatedNote?.title || 'Untitled Note'}</h4>
                   </div>
 
                   <div className="prose prose-invert max-w-none mb-4">
                     <div 
                       className="text-gray-300 leading-relaxed"
                       dangerouslySetInnerHTML={{ 
-                        __html: parseMarkdown(generatedNote.content)
+                        __html: parseMarkdown(generatedNote?.content || 'No content generated.')
                       }} 
                     />
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {generatedNote.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+                    {(generatedNote?.tags || []).map((tag, index) => {
+                      // Enhanced security: Ensure tag is safe to render
+                      let safeTag = typeof tag === 'string' ? tag : String(tag || 'unknown');
+                      
+                      // Security check for dangerous patterns
+                      if (safeTag.includes('[object') || 
+                          safeTag.includes('function') || 
+                          safeTag.includes('prototype') ||
+                          safeTag.includes('constructor') ||
+                          safeTag.includes('__proto__')) {
+                        safeTag = 'filtered';
+                      }
+                      
+                      return (
+                        <span
+                          key={index}
+                          className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                        >
+                          #{safeTag}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 

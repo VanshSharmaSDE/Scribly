@@ -136,64 +136,64 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden"
+          className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-6 border-b border-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-4 sm:p-6 border-b border-gray-700 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Share className="h-6 w-6 text-blue-400" />
+                  <Share className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Shared Links Manager</h2>
-                  <p className="text-gray-400">Manage all your shared note links</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">Shared Links Manager</h2>
+                  <p className="text-sm sm:text-base text-gray-400">Manage all your shared note links</p>
                 </div>
               </div>
               <Button
                 variant="outline"
                 onClick={onClose}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                className="border-gray-600 text-gray-300 hover:bg-gray-700 self-start sm:self-auto"
               >
                 Close
               </Button>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="bg-gray-800/50 rounded-lg p-3 sm:p-4 border border-gray-700/50">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-green-500/20 rounded-lg">
-                    <ExternalLink className="h-5 w-5 text-green-400" />
+                    <ExternalLink className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{getTotalLinks()}</p>
-                    <p className="text-sm text-gray-400">Active Links</p>
+                    <p className="text-xl sm:text-2xl font-bold text-white">{getTotalLinks()}</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Active Links</p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+              <div className="bg-gray-800/50 rounded-lg p-3 sm:p-4 border border-gray-700/50">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-purple-500/20 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-purple-400" />
+                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{getTotalClicks()}</p>
-                    <p className="text-sm text-gray-400">Total Views</p>
+                    <p className="text-xl sm:text-2xl font-bold text-white">{getTotalClicks()}</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Total Views</p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+              <div className="bg-gray-800/50 rounded-lg p-3 sm:p-4 border border-gray-700/50">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Eye className="h-5 w-5 text-blue-400" />
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{allShareLinks.length}</p>
-                    <p className="text-sm text-gray-400">Shared Notes</p>
+                    <p className="text-xl sm:text-2xl font-bold text-white">{allShareLinks.length}</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Shared Notes</p>
                   </div>
                 </div>
               </div>
@@ -201,7 +201,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[60vh]">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -215,14 +215,14 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
             ) : (
               <div className="space-y-6">
                 {allShareLinks.map((noteData) => (
-                  <div key={noteData.note.$id} className="border border-gray-700 rounded-lg p-6 bg-gray-800/30">
+                  <div key={noteData.note.$id} className="border border-gray-700 rounded-lg p-4 sm:p-6 bg-gray-800/30">
                     {/* Note Header */}
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className="text-2xl">{noteData.note.emoji || '📝'}</div>
+                        <div className="text-xl sm:text-2xl">{noteData.note.emoji || '📝'}</div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{noteData.note.title}</h3>
-                          <p className="text-sm text-gray-400">
+                          <h3 className="text-base sm:text-lg font-semibold text-white">{noteData.note.title}</h3>
+                          <p className="text-xs sm:text-sm text-gray-400">
                             {noteData.links.length} active link{noteData.links.length !== 1 ? 's' : ''}
                           </p>
                         </div>
@@ -230,7 +230,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
                       <Button
                         variant="outline"
                         onClick={() => handleCreateNewLink(noteData.note.$id, noteData.note.title)}
-                        className="border-green-600 flex item-center text-green-400 hover:bg-green-600/10"
+                        className="border-green-600 flex items-center text-green-400 hover:bg-green-600/10 text-sm w-full sm:w-auto justify-center"
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         New Link
@@ -240,40 +240,42 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
                     {/* Share Links */}
                     <div className="space-y-3">
                       {noteData.links.map((link) => (
-                        <div key={link.token} className="border border-gray-600 rounded-lg p-4 bg-gray-900/50">
-                          <div className="flex items-center justify-between">
+                        <div key={link.token} className="border border-gray-600 rounded-lg p-3 sm:p-4 bg-gray-900/50">
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             <div className="flex-1">
                               {editingLink === link.token ? (
-                                <div className="flex items-center space-x-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                                   <input
                                     type="text"
                                     value={newLinkName}
                                     onChange={(e) => setNewLinkName(e.target.value)}
-                                    className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-white flex-1"
+                                    className="bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white flex-1 text-sm"
                                     placeholder="Enter link name"
                                     autoFocus
                                   />
-                                  <Button
-                                    onClick={() => handleUpdateLinkName(noteData.note.$id, link.token, newLinkName)}
-                                    className="bg-green-500 hover:bg-green-600 text-white border-0 px-3 py-1"
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                      setEditingLink(null);
-                                      setNewLinkName('');
-                                    }}
-                                    className="border-gray-600 text-gray-300 px-3 py-1"
-                                  >
-                                    Cancel
-                                  </Button>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      onClick={() => handleUpdateLinkName(noteData.note.$id, link.token, newLinkName)}
+                                      className="bg-green-500 hover:bg-green-600 text-white border-0 px-3 py-2 text-sm flex-1 sm:flex-none"
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingLink(null);
+                                        setNewLinkName('');
+                                      }}
+                                      className="border-gray-600 text-gray-300 px-3 py-2 text-sm flex-1 sm:flex-none"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : (
                                 <div>
                                   <div className="flex items-center space-x-2">
-                                    <p className="font-medium text-white">{link.name}</p>
+                                    <p className="font-medium text-white text-sm sm:text-base">{link.name}</p>
                                     <Button
                                       variant="ghost"
                                       onClick={() => {
@@ -285,7 +287,7 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
                                       <Edit3 className="h-3 w-3" />
                                     </Button>
                                   </div>
-                                  <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-xs sm:text-sm text-gray-400 mt-1">
                                     <div className="flex items-center space-x-1">
                                       <Calendar className="h-3 w-3" />
                                       <span>Created {formatDate(link.createdAt)}</span>
@@ -304,27 +306,30 @@ const SharedLinksManager = ({ isOpen, onClose, notes }) => {
                             </div>
 
                             {editingLink !== link.token && (
-                              <div className="flex items-center space-x-2 ml-4">
+                              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 sm:ml-4">
                                 <Button
                                   variant="outline"
                                   onClick={() => handleCopyLink(link.shareUrl)}
-                                  className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
+                                  className="border-blue-600 text-blue-400 hover:bg-blue-600/10 text-sm px-3 py-2"
                                 >
-                                  <Copy className="h-4 w-4" />
+                                  <Copy className="h-4 w-4 sm:mr-1" />
+                                  <span className="hidden sm:inline">Copy</span>
                                 </Button>
                                 <Button
                                   variant="outline"
                                   onClick={() => window.open(link.shareUrl, '_blank')}
-                                  className="border-green-600 text-green-400 hover:bg-green-600/10"
+                                  className="border-green-600 text-green-400 hover:bg-green-600/10 text-sm px-3 py-2"
                                 >
-                                  <ExternalLink className="h-4 w-4" />
+                                  <ExternalLink className="h-4 w-4 sm:mr-1" />
+                                  <span className="hidden sm:inline">Open</span>
                                 </Button>
                                 <Button
                                   variant="outline"
                                   onClick={() => handleRevokeLink(noteData.note.$id, link.token)}
-                                  className="border-red-600 text-red-400 hover:bg-red-600/10"
+                                  className="border-red-600 text-red-400 hover:bg-red-600/10 text-sm px-3 py-2"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 sm:mr-1" />
+                                  <span className="hidden sm:inline">Delete</span>
                                 </Button>
                               </div>
                             )}

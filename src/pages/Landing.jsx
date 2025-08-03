@@ -117,7 +117,7 @@ const Landing = () => {
               }}
             >
               <Star className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Stable v0.5.0 • Open Source</span>
+              <span className="text-sm font-semibold">Stable v0.6.0 • Open Source</span>
             </motion.div>
             
             <motion.h1 
@@ -422,13 +422,13 @@ const Landing = () => {
               background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(79,112,226,0.05) 100%)'
             }}
           >
-            <h3 className="text-2xl font-bold text-white mb-6 text-center">Quick Start Commands</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-6 text-center">Quick Start Commands</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <h4 className="text-lg font-semibold text-white mb-3">Setup Development</h4>
-                <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm">
+                <h4 className="text-base sm:text-lg font-semibold text-white mb-3">Setup Development</h4>
+                <div className="bg-gray-900 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm overflow-x-auto">
                   <div className="text-gray-400 mb-1"># Clone your fork</div>
-                  <div className="text-green-400">git clone https://github.com/YOUR_USERNAME/scribly.git</div>
+                  <div className="text-green-400 break-all">git clone https://github.com/YOUR_USERNAME/scribly.git</div>
                   <div className="text-gray-400 mb-1 mt-3"># Install dependencies</div>
                   <div className="text-green-400">npm install</div>
                   <div className="text-gray-400 mb-1 mt-3"># Start development server</div>
@@ -436,14 +436,14 @@ const Landing = () => {
                 </div>
               </div>
               <div>
-                <h4 className="text-lg font-semibold text-white mb-3">Contribution Workflow</h4>
-                <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm">
+                <h4 className="text-base sm:text-lg font-semibold text-white mb-3">Contribution Workflow</h4>
+                <div className="bg-gray-900 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm overflow-x-auto">
                   <div className="text-gray-400 mb-1"># Create feature branch</div>
-                  <div className="text-blue-400">git checkout -b feature/amazing-feature</div>
+                  <div className="text-blue-400 break-all">git checkout -b feature/amazing-feature</div>
                   <div className="text-gray-400 mb-1 mt-3"># Commit your changes</div>
-                  <div className="text-blue-400">git commit -m "Add amazing feature"</div>
+                  <div className="text-blue-400 break-all">git commit -m "Add amazing feature"</div>
                   <div className="text-gray-400 mb-1 mt-3"># Push to your fork</div>
-                  <div className="text-blue-400">git push origin feature/amazing-feature</div>
+                  <div className="text-blue-400 break-all">git push origin feature/amazing-feature</div>
                 </div>
               </div>
             </div>
@@ -490,7 +490,7 @@ const Landing = () => {
               Join the Open Source Community
             </h2>
             <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto">
-              Scribly v0.5.0 is stable and ready for production. Join our thriving 
+              Scribly v0.6.0 is stable and ready for production. Join our thriving 
               community of contributors and help shape the future of note-taking.
             </p>
             <motion.div

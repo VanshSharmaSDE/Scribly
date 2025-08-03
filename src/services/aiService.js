@@ -1,14 +1,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import settingsService from './settingsService';
+import localAIService from './localAIService';
 
 class AIService {
   constructor() {
     this.apiKey = null;
     this.genAI = null;
     this.model = null;
+    this.currentProvider = 'gemini'; // 'gemini' or 'local'
   }
 
-  // Initialize with API key
+  // Initialize with API key (for Gemini)
   initialize(apiKey) {
     if (!apiKey) {
       throw new Error("Google Gemini API key is required");
@@ -20,6 +22,7 @@ class AIService {
     try {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(apiKey);
+      this.currentProvider = 'gemini';
 
       // Use single model without complex configuration
       this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
@@ -28,6 +31,79 @@ class AIService {
       this.forceCleanup();
       throw new Error(`Failed to initialize AI service: ${error.message}`);
     }
+  }
+
+  // Initialize local AI model
+  async initializeLocal(modelPath) {
+    try {
+      // Check if local AI is already initialized with the same model
+      if (this.currentProvider === 'local' && localAIService.isReady() && localAIService.getCurrentModel() === modelPath) {
+        console.log('Local AI already initialized with the same model');
+        return true;
+      }
+      
+      // Only cleanup if switching providers or models
+      if (this.currentProvider !== 'local') {
+        this.forceCleanup();
+      }
+      
+      this.currentProvider = 'local';
+      
+      // Initialize the local AI service with the model
+      await localAIService.initializeModel(modelPath);
+      
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to initialize local AI model: ${error.message}`);
+    }
+  }
+
+  // Set the AI provider
+  async setProvider(provider, config = {}) {
+    try {
+      if (provider === 'gemini' && config.apiKey) {
+        this.initialize(config.apiKey);
+      } else if (provider === 'local' && config.modelPath) {
+        await this.initializeLocal(config.modelPath);
+      } else {
+        // Try to auto-initialize based on stored settings
+        const settings = await settingsService.getUserSettings();
+        
+        if (provider === 'gemini' && settings.geminiApiKey) {
+          this.initialize(settings.geminiApiKey);
+        } else if (provider === 'local' && settings.localModelPath) {
+          // Check if model is already ready
+          if (!localAIService.isReady() || localAIService.getCurrentModel() !== settings.localModelPath) {
+            // Try auto-initialization first
+            const autoInitResult = await localAIService.autoInitialize();
+            if (!autoInitResult.success) {
+              throw new Error(`Local AI model not ready. Please initialize the model "${settings.localModelPath}" first or test the model in settings.`);
+            }
+          }
+        } else {
+          throw new Error(`Missing configuration for ${provider} provider`);
+        }
+      }
+      
+      this.currentProvider = provider;
+    } catch (error) {
+      throw new Error(`Failed to set AI provider: ${error.message}`);
+    }
+  }
+
+  // Get current provider
+  getCurrentProvider() {
+    return this.currentProvider;
+  }
+
+  // Check if AI service is ready
+  isReady() {
+    if (this.currentProvider === 'gemini') {
+      return this.model !== null;
+    } else if (this.currentProvider === 'local') {
+      return localAIService.isReady();
+    }
+    return false;
   }
 
   // Force complete cleanup of all instances
@@ -93,22 +169,49 @@ class AIService {
     }
   }
 
-  // Check if AI service is initialized
-  isInitialized() {
-    return this.genAI && this.model;
-  }
-
-  // Ensure AI service is initialized with the latest API key
+  // Ensure AI service is initialized with the latest settings
   async ensureInitialized() {
-    if (!this.isInitialized()) {
-      const apiKey = await this.getApiKey();
-      if (apiKey) {
-        this.initialize(apiKey);
+    try {
+      const settings = await settingsService.getUserSettings();
+      const provider = settings.aiProvider || 'gemini';
+      
+      if (provider === 'gemini') {
+        if (!this.isInitialized() || this.currentProvider !== 'gemini') {
+          const apiKey = settings.geminiApiKey;
+          if (apiKey) {
+            this.initialize(apiKey);
+            return true;
+          }
+          return false;
+        }
+        return true;
+      } else if (provider === 'local') {
+        if (!localAIService.isReady() || this.currentProvider !== 'local') {
+          const modelPath = settings.localModelPath;
+          if (modelPath) {
+            await this.initializeLocal(modelPath);
+            return true;
+          }
+          return false;
+        }
         return true;
       }
+      
+      return false;
+    } catch (error) {
+      console.error('Failed to ensure AI initialization:', error);
       return false;
     }
-    return true;
+  }
+
+  // Check if current provider is initialized
+  isInitialized() {
+    if (this.currentProvider === 'gemini') {
+      return this.model !== null;
+    } else if (this.currentProvider === 'local') {
+      return localAIService.isReady();
+    }
+    return false;
   }
 
   // API Key management methods
@@ -249,6 +352,34 @@ class AIService {
 
   // Generate note content based on user prompt
   async generateNote(prompt, options = {}) {
+    // Route to appropriate provider
+    try {
+      let result;
+      if (this.currentProvider === 'local') {
+        result = await this.generateNoteWithLocal(prompt, options);
+      } else {
+        result = await this.generateNoteWithGemini(prompt, options);
+      }
+      
+      // Double-check the result is valid
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid note data structure returned');
+      }
+      
+      if (!result.title || !result.content) {
+        throw new Error('Note data missing required fields (title or content)');
+      }
+      
+      console.log('generateNote final result:', result);
+      return result;
+    } catch (error) {
+      console.error('generateNote failed:', error);
+      throw error;
+    }
+  }
+
+  // Generate note using Gemini AI
+  async generateNoteWithGemini(prompt, options = {}) {
     const isReady = await this.ensureInitialized();
     if (!isReady) {
       throw new Error(
@@ -328,6 +459,120 @@ USER REQUEST: ${prompt}`;
       return noteData;
     } catch (error) {
       return this.handleApiError(error, 'generate note');
+    }
+  }
+
+  // Generate note using local AI
+  async generateNoteWithLocal(prompt, options = {}) {
+    try {
+      if (!localAIService.isReady()) {
+        throw new Error("Local AI model not ready. Please initialize a model first.");
+      }
+
+      const {
+        includeTitle = true,
+        includeTags = true,
+        noteType = "general",
+        language = "English",
+        tone = "professional",
+      } = options;
+
+      // Create a comprehensive prompt for note generation
+      const systemPrompt = `You are an intelligent note-taking assistant. Generate a well-structured note based on the user's request.
+
+IMPORTANT FORMATTING REQUIREMENTS:
+- Return ONLY a valid JSON object with this exact structure:
+{
+  "title": "Note title",
+  "content": "Note content in markdown format",
+  "tags": ["tag1", "tag2", "tag3"],
+  "emoji": "📝"
+}
+
+CONTENT GUIDELINES:
+- Title should be concise and descriptive (max 100 characters)
+- Content should be well-formatted using markdown syntax
+- Use headers (##), bullet points (-), bold (**text**), italic (*text*) appropriately
+- Include relevant information, examples, and structure
+- Content should be comprehensive but not overly long
+- Language: ${language}
+- Tone: ${tone}
+- Note type: ${noteType}
+
+TAGS GUIDELINES:
+- Generate 3-5 relevant tags that categorize the note
+- Tags should be lowercase, single words or short phrases
+- Tags should help with organization and searchability
+
+EMOJI GUIDELINES:
+- Choose an appropriate emoji that represents the note content
+- Use relevant emojis like 📝, 📚, 💡, 🎯, 📊, 🔍, etc.
+
+USER REQUEST: ${prompt}
+
+Return only the JSON object, nothing else:`;
+
+      const text = await localAIService.generateText(systemPrompt, {
+        temperature: 0.7,
+        maxTokens: 800
+      });
+
+      if (!text || text.length === 0) {
+        throw new Error("Empty response from local AI model");
+      }
+
+      console.log('Local AI note response:', text);
+
+      // Try to parse the JSON response
+      let noteData;
+      try {
+        // First, try to parse the entire response as JSON
+        noteData = JSON.parse(text.trim());
+        console.log('Successfully parsed entire response as JSON:', noteData);
+      } catch (fullParseError) {
+        console.warn('Full JSON parse failed, trying to extract JSON:', fullParseError.message);
+        
+        try {
+          // Clean the response text to extract JSON
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            noteData = JSON.parse(jsonMatch[0]);
+            console.log('Parsed note data from match:', noteData);
+          } else {
+            throw new Error("No valid JSON found in response");
+          }
+        } catch (parseError) {
+          console.warn('JSON parse failed, creating fallback note data:', parseError.message);
+          // Fallback: create note data from raw text
+          noteData = {
+            title: this.extractTitleFromText(text) || "AI Generated Note",
+            content: text.replace(/```json[\s\S]*?```/g, "").trim() || text,
+            tags: this.extractTagsFromText(text, prompt),
+            emoji: this.selectEmojiFromContent(text, prompt),
+          };
+          console.log('Created fallback note data:', noteData);
+        }
+      }
+
+      // Ensure noteData has the required structure
+      if (!noteData || typeof noteData !== 'object') {
+        console.warn('Invalid note data structure, creating fallback');
+        noteData = {
+          title: "AI Generated Note",
+          content: text || "No content generated.",
+          tags: ["ai-generated"],
+          emoji: "📝"
+        };
+      }
+
+      // Validate and clean the response
+      noteData = this.validateNoteData(noteData);
+      console.log('Final validated note data:', noteData);
+
+      return noteData;
+    } catch (error) {
+      console.error('Local AI note generation failed:', error);
+      throw new Error(`Failed to generate note with local AI: ${error.message}`);
     }
   }
 
@@ -416,20 +661,66 @@ USER REQUEST: ${prompt}`;
   }
 
   // Validate and clean note data
+  // Validate and sanitize note data - Enhanced security against object injection
   validateNoteData(noteData) {
-    return {
-      title: (noteData.title || "Untitled Note").slice(0, 100),
-      content: noteData.content || "No content generated.",
+    if (!noteData || typeof noteData !== 'object') {
+      console.warn('Invalid noteData provided to validateNoteData:', noteData);
+      return {
+        title: "AI Generated Note",
+        content: "No content generated.",
+        tags: ["ai-generated"],
+        emoji: "📝"
+      };
+    }
+
+    const validated = {
+      title: String(noteData.title || "Untitled Note").slice(0, 100),
+      content: String(noteData.content || "No content generated."),
       tags: Array.isArray(noteData.tags)
-        ? noteData.tags.slice(0, 5).map((tag) =>
-            String(tag)
+        ? noteData.tags.slice(0, 5).map((tag) => {
+            // Enhanced security against object injection
+            if (typeof tag === 'object' && tag !== null) {
+              // Handle object injection - extract meaningful string representation
+              if (tag.toString && typeof tag.toString === 'function') {
+                tag = tag.toString();
+              } else if (tag.name && typeof tag.name === 'string') {
+                tag = tag.name;
+              } else if (tag.value && typeof tag.value === 'string') {
+                tag = tag.value;
+              } else {
+                // Reject complex objects
+                return null;
+              }
+            }
+            
+            const stringTag = String(tag);
+            
+            // Security check: reject dangerous patterns
+            if (stringTag.includes('[object') || 
+                stringTag.includes('function') || 
+                stringTag.includes('prototype') ||
+                stringTag.includes('constructor') ||
+                stringTag.includes('__proto__')) {
+              return null;
+            }
+            
+            return stringTag
               .toLowerCase()
               .replace(/[^a-z0-9\s-]/g, "")
-              .trim()
-          )
+              .replace(/\s+/g, "-")
+              .trim();
+          }).filter(tag => tag !== null && tag.length > 0)
         : ["ai-generated"],
-      emoji: noteData.emoji || "📝",
+      emoji: String(noteData.emoji || "📝"),
     };
+
+    // Ensure tags array is not empty
+    if (validated.tags.length === 0) {
+      validated.tags = ["ai-generated"];
+    }
+
+    console.log('Validated note data:', validated);
+    return validated;
   }
 
   // Generate content based on title using AI
@@ -443,6 +734,23 @@ USER REQUEST: ${prompt}`;
       language = "English",
       tone = "professional",
       length = "medium", // short, medium, long
+    } = options;
+
+    // Route to appropriate provider
+    if (this.currentProvider === 'local') {
+      return this.generateContentWithLocal(title, options);
+    } else {
+      return this.generateContentWithGemini(title, options);
+    }
+  }
+
+  // Generate content using Gemini API
+  async generateContentWithGemini(title, options = {}) {
+    const {
+      noteType = "general",
+      language = "English", 
+      tone = "professional",
+      length = "medium",
     } = options;
 
     // Check if AI service is available
@@ -478,6 +786,50 @@ USER REQUEST: ${prompt}`;
       return content;
     } catch (error) {
       return this.handleApiError(error, 'generate content from title');
+    }
+  }
+
+  // Generate content using local AI model
+  async generateContentWithLocal(title, options = {}) {
+    const {
+      noteType = "general",
+      language = "English",
+      tone = "professional", 
+      length = "medium",
+    } = options;
+
+    try {
+      if (!localAIService.isReady()) {
+        throw new Error("Local AI model not ready");
+      }
+
+      const prompt = this.createContentPrompt(
+        title,
+        noteType,
+        language,
+        tone,
+        length
+      );
+
+      const text = await localAIService.generateText(prompt, {
+        temperature: 0.7,
+        maxTokens: length === 'short' ? 300 : length === 'medium' ? 600 : 1000
+      });
+
+      if (!text || text.length === 0) {
+        return this.generateContentFallback(title, options);
+      }
+
+      // Try to extract markdown content from response
+      let content = this.extractContentFromResponse(text);
+
+      // Validate and clean the content
+      content = this.validateContent(content, title);
+
+      return content;
+    } catch (error) {
+      console.error('Local AI generation failed:', error);
+      return this.generateContentFallback(title, options);
     }
   }
 
@@ -916,35 +1268,47 @@ Provide more detailed information and context here.
 
   // Generate tags based on title and content
   async generateTagsForNote(title, content) {
+    // Route to appropriate provider
+    if (this.currentProvider === 'local') {
+      return this.generateTagsWithLocal(title, content);
+    } else {
+      return this.generateTagsWithGemini(title, content);
+    }
+  }
+
+  // Generate tags using Gemini API
+  async generateTagsWithGemini(title, content) {
     const isReady = await this.ensureInitialized();
     if (!isReady) {
       return this.generateTagsFallback(title, content);
     }
 
     try {
-      const prompt = `Create 3-5 relevant tags for this note:
+      const prompt = `You are a tag generation assistant. Analyze the following note and generate 3-5 relevant tags for organizing it.
 
 Title: "${title}"
 Content: "${content.slice(0, 500)}${content.length > 500 ? "..." : ""}"
 
-Rules:
+Instructions:
+- Generate tags that help categorize and organize this specific note
 - Tags should be lowercase
-- Use single words or short phrases  
-- Focus on main topics and themes
-- Make tags useful for organizing notes
+- Use single words or short phrases separated by hyphens
+- Focus on the main topics, themes, and categories
+- Make tags useful for searching and filtering notes
 
-Examples:
-- Meeting notes → ["meeting", "discussion", "planning"]
-- Recipe → ["cooking", "food", "recipes"]
-- Project plan → ["project", "planning", "business"]
+For a note with title "ChatGPT vs Gemini", good tags would be: ["ai", "comparison", "chatgpt", "gemini", "technology"]
+For a note about "Meeting with team", good tags would be: ["meeting", "team", "work", "discussion"]
+For a note about "Chocolate cake recipe", good tags would be: ["recipe", "dessert", "baking", "chocolate"]
 
-Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
+Respond with ONLY a JSON array of strings, nothing else:
+["tag1", "tag2", "tag3"]`;
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text().trim();
 
       if (!text || text.length === 0) {
+        console.log('Empty AI response, using fallback');
         return this.generateSmartTagsFallback(title, content);
       }
 
@@ -955,7 +1319,50 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
       const jsonMatch = text.match(/\[[\s\S]*?\]/);
       if (jsonMatch) {
         try {
-          tags = JSON.parse(jsonMatch[0]);
+          const parsedData = JSON.parse(jsonMatch[0]);
+          
+          // Security check: ensure parsed data is actually an array of simple values
+          if (Array.isArray(parsedData)) {
+            // Check if this is an array of strings (what we want)
+            const firstItem = parsedData[0];
+            if (typeof firstItem === 'string') {
+              tags = parsedData.filter(item => typeof item === 'string');
+            } else if (typeof firstItem === 'object' && firstItem !== null) {
+              // Handle case where AI returned array of objects instead of strings
+              console.log('AI returned objects instead of strings, extracting values');
+              tags = parsedData
+                .filter(item => typeof item === 'object' && item !== null)
+                .map(item => {
+                  // Try to extract meaningful string from object
+                  if (typeof item.title === 'string' && item.title !== title) {
+                    return item.title.toLowerCase().replace(/\s+/g, '-');
+                  } else if (typeof item.name === 'string') {
+                    return item.name.toLowerCase().replace(/\s+/g, '-');
+                  } else if (typeof item.tag === 'string') {
+                    return item.tag.toLowerCase().replace(/\s+/g, '-');
+                  }
+                  return null;
+                })
+                .filter(tag => tag !== null && tag.length > 1 && tag.length < 25);
+            } else {
+              // Filter for safe simple values
+              tags = parsedData.filter(item => {
+                // Only allow strings, numbers, or simple objects with safe properties
+                if (typeof item === 'string' || typeof item === 'number') {
+                  return true;
+                }
+                if (typeof item === 'object' && item !== null) {
+                  // Check if it's a simple object with safe properties
+                  const keys = Object.keys(item);
+                  return keys.length <= 3 && keys.every(key => 
+                    ['name', 'value', 'tag', 'label'].includes(key) && 
+                    typeof item[key] === 'string'
+                  );
+                }
+                return false;
+              });
+            }
+          }
         } catch (parseError) {
           // Try alternative parsing - extract content between quotes
           const quotedContent = text.match(/"([^"]+)"/g);
@@ -970,8 +1377,25 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
           const trimmed = line.trim();
           if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
             try {
-              tags = JSON.parse(trimmed);
-              break;
+              const parsedLine = JSON.parse(trimmed);
+              
+              // Security check: ensure parsed data is safe
+              if (Array.isArray(parsedLine)) {
+                tags = parsedLine.filter(item => {
+                  if (typeof item === 'string' || typeof item === 'number') {
+                    return true;
+                  }
+                  if (typeof item === 'object' && item !== null) {
+                    const keys = Object.keys(item);
+                    return keys.length <= 3 && keys.every(key => 
+                      ['name', 'value', 'tag', 'label'].includes(key) && 
+                      typeof item[key] === 'string'
+                    );
+                  }
+                  return false;
+                });
+                break;
+              }
             } catch (e) {
               continue;
             }
@@ -1000,18 +1424,45 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
         }
       }
 
-      // Validate and clean tags
+      // Validate and clean tags - Enhanced security against object injection
       if (Array.isArray(tags) && tags.length > 0) {
         const cleanedTags = tags
           .slice(0, 5)
-          .map((tag) =>
-            String(tag)
+          .map((tag) => {
+            // Convert any input to string and validate type
+            if (typeof tag === 'object' && tag !== null) {
+              // Handle object injection - extract meaningful string representation
+              if (tag.toString && typeof tag.toString === 'function') {
+                tag = tag.toString();
+              } else if (tag.name && typeof tag.name === 'string') {
+                tag = tag.name;
+              } else if (tag.value && typeof tag.value === 'string') {
+                tag = tag.value;
+              } else {
+                // Reject complex objects
+                return null;
+              }
+            }
+            
+            // Ensure we have a string
+            const stringTag = String(tag);
+            
+            // Additional security: reject if it looks like serialized object data
+            if (stringTag.includes('[object') || 
+                stringTag.includes('function') || 
+                stringTag.includes('prototype') ||
+                stringTag.includes('constructor') ||
+                stringTag.includes('__proto__')) {
+              return null;
+            }
+            
+            return stringTag
               .toLowerCase()
               .replace(/[^\w\s-]/g, "") // Remove special chars except hyphens
               .replace(/\s+/g, "-") // Replace spaces with hyphens
-              .trim()
-          )
-          .filter((tag) => tag.length > 1 && tag.length < 25) // Reasonable length
+              .trim();
+          })
+          .filter((tag) => tag !== null && tag.length > 1 && tag.length < 25) // Reasonable length
           .filter(
             (tag) => !["note", "text", "content", "document"].includes(tag)
           ); // Remove generic tags
@@ -1034,8 +1485,169 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
     }
   }
 
+  // Generate tags using local AI model
+  async generateTagsWithLocal(title, content) {
+    try {
+      if (!localAIService.isReady()) {
+        console.warn('Local AI not ready, using fallback tags');
+        return this.generateTagsFallback(title, content);
+      }
+
+      const prompt = `You are a tag generation assistant. Analyze the following note and generate 3-5 relevant tags for organizing it.
+
+Title: "${title}"
+Content: "${content.slice(0, 500)}${content.length > 500 ? "..." : ""}"
+
+Instructions:
+- Generate tags that help categorize and organize this specific note
+- Tags should be lowercase
+- Use single words or short phrases separated by hyphens
+- Focus on the main topics, themes, and categories
+- Make tags useful for searching and filtering notes
+
+For a note with title "ChatGPT vs Gemini", good tags would be: ["ai", "comparison", "chatgpt", "gemini", "technology"]
+For a note about "Meeting with team", good tags would be: ["meeting", "team", "work", "discussion"]
+For a note about "Chocolate cake recipe", good tags would be: ["recipe", "dessert", "baking", "chocolate"]
+
+Respond with ONLY a JSON array of strings, nothing else:
+["tag1", "tag2", "tag3"]`;
+
+      const text = await localAIService.generateText(prompt, {
+        temperature: 0.7,
+        maxTokens: 100
+      });
+
+      if (!text || text.length === 0) {
+        console.warn('Empty response from local AI, using fallback');
+        return this.generateTagsFallback(title, content);
+      }
+
+      console.log('Local AI tag response:', text);
+
+      // Try to extract JSON array from response
+      let tags = [];
+
+      // Look for JSON array pattern
+      const jsonMatch = text.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
+        try {
+          const parsedData = JSON.parse(jsonMatch[0]);
+          
+          // Security check: ensure parsed data is actually an array of simple values
+          if (Array.isArray(parsedData)) {
+            // Check if this is an array of strings (what we want)
+            const firstItem = parsedData[0];
+            if (typeof firstItem === 'string') {
+              tags = parsedData.filter(item => typeof item === 'string');
+            } else if (typeof firstItem === 'object' && firstItem !== null) {
+              // Handle case where AI returned array of objects instead of strings
+              console.log('Local AI returned objects instead of strings, extracting values');
+              tags = parsedData
+                .filter(item => typeof item === 'object' && item !== null)
+                .map(item => {
+                  // Try to extract meaningful string from object
+                  if (typeof item.title === 'string' && item.title !== title) {
+                    return item.title.toLowerCase().replace(/\s+/g, '-');
+                  } else if (typeof item.name === 'string') {
+                    return item.name.toLowerCase().replace(/\s+/g, '-');
+                  } else if (typeof item.tag === 'string') {
+                    return item.tag.toLowerCase().replace(/\s+/g, '-');
+                  }
+                  return null;
+                })
+                .filter(tag => tag !== null && tag.length > 1 && tag.length < 25);
+            } else {
+              // Filter for safe simple values
+              tags = parsedData.filter(item => {
+                // Only allow strings, numbers, or simple objects with safe properties
+                if (typeof item === 'string' || typeof item === 'number') {
+                  return true;
+                }
+                if (typeof item === 'object' && item !== null) {
+                  // Check if it's a simple object with safe properties
+                  const keys = Object.keys(item);
+                  return keys.length <= 3 && keys.every(key => 
+                    ['name', 'value', 'tag', 'label'].includes(key) && 
+                    typeof item[key] === 'string'
+                  );
+                }
+                return false;
+              });
+            }
+          }
+          
+          console.log('Parsed tags from JSON:', tags);
+        } catch (parseError) {
+          console.warn('JSON parse failed, trying alternative parsing');
+          // Try alternative parsing - extract content between quotes
+          const quotedContent = text.match(/"([^"]+)"/g);
+          if (quotedContent) {
+            tags = quotedContent.map((item) => item.replace(/"/g, ""));
+            console.log('Parsed tags from quotes:', tags);
+          }
+        }
+      }
+
+      // Validate and clean tags - Enhanced security against object injection
+      if (Array.isArray(tags) && tags.length > 0) {
+        const cleanedTags = tags
+          .slice(0, 5)
+          .map((tag) => {
+            // Convert any input to string and validate type
+            if (typeof tag === 'object' && tag !== null) {
+              // Handle object injection - extract meaningful string representation
+              if (tag.toString && typeof tag.toString === 'function') {
+                tag = tag.toString();
+              } else if (tag.name && typeof tag.name === 'string') {
+                tag = tag.name;
+              } else if (tag.value && typeof tag.value === 'string') {
+                tag = tag.value;
+              } else {
+                // Reject complex objects
+                return null;
+              }
+            }
+            
+            // Ensure we have a string
+            const stringTag = String(tag);
+            
+            // Additional security: reject if it looks like serialized object data
+            if (stringTag.includes('[object') || 
+                stringTag.includes('function') || 
+                stringTag.includes('prototype') ||
+                stringTag.includes('constructor') ||
+                stringTag.includes('__proto__')) {
+              return null;
+            }
+            
+            return stringTag
+              .toLowerCase()
+              .replace(/[^\w\s-]/g, "")
+              .replace(/\s+/g, "-")
+              .trim();
+          })
+          .filter((tag) => tag !== null && tag.length > 1 && tag.length < 25)
+          .filter((tag) => !["note", "text", "content", "document"].includes(tag));
+
+        console.log('Cleaned tags:', cleanedTags);
+        
+        if (cleanedTags.length > 0) {
+          return cleanedTags;
+        }
+      }
+      
+      console.warn('No valid tags extracted, using fallback');
+      return this.generateTagsFallback(title, content);
+    } catch (error) {
+      console.error('Local AI tag generation failed:', error);
+      return this.generateTagsFallback(title, content);
+    }
+  }
+
   // Smart fallback tag generation without AI
   generateSmartTagsFallback(title, content) {
+    console.log('Using smart fallback tag generation for title:', title, 'content length:', content?.length);
+    
     const text = (
       String(title || "") +
       " " +
@@ -1166,10 +1778,13 @@ Return only the tags as a JSON array: ["tag1", "tag2", "tag3"]`;
     // Content length-based tags
     const contentLength = String(content || "").length;
     if (contentLength > 2000) tags.add("detailed");
-    if (contentLength < 200) tags.add("quick-note");
+    // Only add quick-note if content is very short AND no other meaningful tags found
+    if (contentLength < 100 && tags.size === 0) tags.add("quick-note");
 
     // Convert to array and limit
     const finalTags = Array.from(tags).slice(0, 5);
+    
+    console.log('Smart fallback generated tags:', finalTags);
 
     // If no specific tags found, use intelligent defaults based on content
     if (finalTags.length === 0) {

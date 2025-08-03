@@ -10,13 +10,11 @@ const TagManager = ({ tags = [], onTagsChange, noteTitle = '', noteContent = '',
 
   // Sync internal state with props when tags change from parent
   useEffect(() => {
-
     setCurrentTags(tags);
   }, [tags]);
 
   // Debug current tags
   useEffect(() => {
-
   }, [currentTags]);
 
   const predefinedTags = [
@@ -77,31 +75,44 @@ const TagManager = ({ tags = [], onTagsChange, noteTitle = '', noteContent = '',
         
         {/* Current Tags Display */}
         <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-white/5 border border-white/20 rounded-lg">
-          {currentTags && currentTags.length > 0 ? (
-            currentTags.map((tag) => (
-              <motion.span
-                key={tag}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center px-2 py-1 text-xs rounded-full"
-                style={{
-                  backgroundColor: 'rgba(79, 112, 226, 0.2)',
-                  color: '#4F70E2'
-                }}
-              >
-                <Hash className="h-3 w-3 mr-1" />
-                {tag}
-                <button
-                  onClick={() => handleRemoveTag(tag)}
-                  className="ml-1 text-red-400 hover:text-red-300"
+          {currentTags && currentTags.length > 0 ? 
+            currentTags.map((tag, index) => {
+              // Security: Ensure tag is a string and safe to render
+              const safeTag = typeof tag === 'string' ? tag : String(tag);
+              
+              // Additional security check
+              if (safeTag.includes('[object') || 
+                  safeTag.includes('function') || 
+                  safeTag.includes('prototype') ||
+                  safeTag.includes('constructor')) {
+                return null; // Skip dangerous tags
+              }
+              
+              return (
+                <motion.span
+                  key={`${safeTag}-${index}`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="inline-flex items-center px-2 py-1 text-xs rounded-full"
+                  style={{
+                    backgroundColor: 'rgba(79, 112, 226, 0.2)',
+                    color: '#4F70E2'
+                  }}
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </motion.span>
-            ))
-          ) : (
+                  <Hash className="h-3 w-3 mr-1" />
+                  {safeTag}
+                  <button
+                    onClick={() => handleRemoveTag(safeTag)}
+                    className="ml-1 text-red-400 hover:text-red-300"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </motion.span>
+              );
+            }).filter(Boolean) // Remove null entries
+           : 
             <span className="text-gray-500 text-xs italic"></span>
-          )}
+          }
           
           <button
             onClick={() => setIsOpen(true)}

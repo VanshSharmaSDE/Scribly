@@ -89,7 +89,7 @@ const About = () => {
               }}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Stable v0.5.0 • Open Source</span>
+              <span className="text-sm font-semibold">Stable v0.6.0 • Open Source</span>
             </motion.div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
@@ -178,7 +178,7 @@ const About = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-gray-300 text-lg leading-relaxed"
               >
-                Today, Scribly v0.5.0 represents our stable release milestone, trusted by a 
+                Today, Scribly v0.6.0 represents our stable release milestone, trusted by a 
                 growing community of creators, students, and professionals. With community 
                 contributions driving innovation, we're building the future of note-taking 
                 together, one commit at a time.
@@ -385,11 +385,40 @@ const About = () => {
           </motion.div>
 
           <div className="space-y-8">
-            {/* v0.5.0 - Stable Release */}
+            {/* v0.6.0 - Major Mobile & Local AI Update */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
+              className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-8 relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-4">
+                <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-semibold border border-purple-500/30">
+                  LATEST
+                </span>
+              </div>
+              <div className="flex items-center mb-4">
+                <div className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.6.0
+                </div>
+                <h3 className="text-2xl font-bold text-white">Major Mobile & Local AI Revolution</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Local AI Support (BETA):</strong> Unlimited AI usage with browser-based models - complete privacy!</li>
+                <li>• <strong>PNG Note Export:</strong> Download your notes as high-quality PNG images</li>
+                <li>• <strong>100% Mobile Responsive:</strong> Fully optimized Dashboard, NoteView, and NoteEdit for mobile devices</li>
+                <li>• <strong>Performance Optimization:</strong> Significantly improved loading times and app responsiveness</li>
+                <li>• <strong>Enhanced UI Design:</strong> Refined design improvements across Home, About, Contact, and Footer pages</li>
+                <li>• <strong>Touch-Friendly Interface:</strong> Optimized for seamless mobile and tablet experience</li>
+                <li>• <strong>Local AI Models:</strong> Run AI models directly in your browser - no internet required after download</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.5.0 - Stable Release */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
               className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -410,13 +439,13 @@ const About = () => {
 
             {/* v0.4.2 - Bug Fixes */}
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-8"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
-                <div className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                <div className="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
                   v0.4.2
                 </div>
                 <h3 className="text-2xl font-bold text-white">Stability & Bug Fixes</h3>
@@ -431,9 +460,9 @@ const About = () => {
 
             {/* v0.4.0 - Advanced Features */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -454,9 +483,9 @@ const About = () => {
 
             {/* v0.3.0 - Note Customization */}
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
               className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -476,9 +505,9 @@ const About = () => {
 
             {/* v0.2.1 - UI Polish */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
               className="bg-gradient-to-r from-teal-500/10 to-green-500/10 border border-teal-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -497,9 +526,9 @@ const About = () => {
 
             {/* v0.2.0 - Dashboard & Security */}
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
+              initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
               className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -518,9 +547,9 @@ const About = () => {
 
             {/* v0.1.0 - Foundation */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
               className="bg-gradient-to-r from-gray-500/10 to-slate-500/10 border border-gray-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
