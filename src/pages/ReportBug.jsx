@@ -10,15 +10,18 @@ import {
   Github,
   Twitter,
   Sparkles,
+  Bug,
+  AlertTriangle,
+  FileText,
 } from "lucide-react";
 import toast from 'react-hot-toast';
 import Button from "../components/Button";
 import Input from "../components/Input";
 import ProfessionalBackground from "../components/ProfessionalBackground";
 import Breadcrumb from "../components/Breadcrumb";
-import contactService from '../services/contactService';
+import bugReportService from '../services/bugReportService';
 
-const ContactInfo = ({ icon: Icon, title, content, delay = 0 }) => (
+const BugReportInfo = ({ icon: Icon, title, content, delay = 0 }) => (
   <motion.div
     initial={{ opacity: 0, x: -50 }}
     whileInView={{ opacity: 1, x: 0 }}
@@ -38,12 +41,12 @@ const ContactInfo = ({ icon: Icon, title, content, delay = 0 }) => (
   </motion.div>
 );
 
-const Contact = () => {
+const ReportBug = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    subject: "",
-    message: "",
+    bugSummary: "",
+    bugDescription: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null);
@@ -58,25 +61,25 @@ const Contact = () => {
 
     try {
       // Show loading toast
-      const loadingToast = toast.loading('Sending your message...');
+      const loadingToast = toast.loading('Submitting your bug report...');
       
       // Submit form data using EmailJS
-      const result = await contactService.submitContactForm(formData);
+      const result = await bugReportService.submitBugReport(formData);
       
       toast.dismiss(loadingToast);
       
       if (result.success) {
         setSubmitStatus("success");
-        setFormData({ name: "", email: "", subject: "", message: "" });
-        toast.success('Message sent successfully! We\'ll get back to you soon.');
+        setFormData({ name: "", email: "", bugSummary: "", bugDescription: "" });
+        toast.success('Bug report submitted successfully! We\'ll investigate this issue.');
       } else {
         setSubmitStatus("error");
-        toast.error(result.error || 'Failed to send message. Please try again.');
+        toast.error(result.error || 'Failed to submit bug report. Please try again.');
       }
     } catch (error) {
-      console.error('Contact form error:', error);
+      console.error('Bug report submission error:', error);
       setSubmitStatus("error");
-      toast.error('Failed to send message. Please try again.');
+      toast.error('Failed to submit bug report. Please try again.');
     } finally {
       setIsSubmitting(false);
       setTimeout(() => {
@@ -85,15 +88,15 @@ const Contact = () => {
     }
   };
 
-  const contactInfo = [
+  const bugReportInfo = [
     {
-      icon: Mail,
-      title: "General Inquiries",
+      icon: Bug,
+      title: "Bug Reports",
       content: "scribly.server@gmail.com",
     },
     {
-      icon: MessageCircle,
-      title: "Beta Feedback",
+      icon: AlertTriangle,
+      title: "Critical Issues",
       content: "scribly.server@gmail.com",
     },
     {
@@ -124,23 +127,23 @@ const Contact = () => {
                 className="inline-flex items-center px-4 py-2 rounded-full mb-6 border"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)",
-                  borderColor: "rgba(34, 197, 94, 0.3)",
-                  color: "#22c55e",
+                    "linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(79, 112, 226, 0.1) 100%)",
+                  borderColor: "rgba(239, 68, 68, 0.3)",
+                  color: "#ef4444",
                 }}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
+                <Bug className="w-4 h-4 mr-2" />
                 <span className="text-sm font-semibold">
-                  We'd Love to Hear From You
+                  Help Us Improve Scribly
                 </span>
               </motion.div>
 
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
-                Get in <span className="gradient-text">Touch</span>
+                Report a <span className="gradient-text">Bug</span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-                Have questions, feedback, or just want to say hello? We're here
-                to help and excited to hear from our community.
+                Found an issue? Help us make Scribly better by reporting bugs 
+                and technical problems you encounter.
               </p>
             </motion.div>
 
@@ -153,18 +156,17 @@ const Contact = () => {
                   transition={{ duration: 0.6 }}
                 >
                   <h2 className="text-3xl font-bold text-white mb-8">
-                    Let's Start a Conversation
+                    Help Us Fix Issues Faster
                   </h2>
                   <p className="text-gray-300 text-lg mb-8">
-                    Whether you're facing a technical issue, have feature
-                    requests, or want to explore partnership opportunities, our
-                    team is here to help.
+                    Your bug reports are crucial for improving Scribly. Please provide 
+                    as much detail as possible to help us reproduce and fix the issue quickly.
                   </p>
                 </motion.div>
 
                 <div className="space-y-8">
-                  {contactInfo.map((info, index) => (
-                    <ContactInfo
+                  {bugReportInfo.map((info, index) => (
+                    <BugReportInfo
                       key={info.title}
                       {...info}
                       delay={index * 0.1}
@@ -181,7 +183,7 @@ const Contact = () => {
                 className="bg-black/40 border border-white/20 rounded-2xl p-8"
               >
                 <h2 className="text-2xl font-bold text-white mb-8">
-                  Send us a Message
+                  Submit Bug Report
                 </h2>
 
                 {submitStatus === "success" && (
@@ -191,7 +193,7 @@ const Contact = () => {
                     className="bg-green-900/20 border border-green-500/20 rounded-lg p-4 mb-6"
                   >
                     <p className="text-green-400">
-                      Thank you for your message! We'll get back to you soon.
+                      Thank you for your bug report! We'll investigate this issue and get back to you soon.
                     </p>
                   </motion.div>
                 )}
@@ -203,7 +205,7 @@ const Contact = () => {
                     className="bg-red-900/20 border border-red-500/20 rounded-lg p-4 mb-6"
                   >
                     <p className="text-red-400">
-                      Sorry, there was an error sending your message. Please try again.
+                      Sorry, there was an error submitting your bug report. Please try again.
                     </p>
                   </motion.div>
                 )}
@@ -230,24 +232,24 @@ const Contact = () => {
                   </div>
 
                   <Input
-                    label="Subject"
-                    name="subject"
-                    value={formData.subject}
+                    label="Bug Summary"
+                    name="bugSummary"
+                    value={formData.bugSummary}
                     onChange={handleChange}
-                    placeholder="What's this about?"
+                    placeholder="Brief description of the bug"
                     required
                   />
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Message
+                      Bug Description
                     </label>
                     <motion.textarea
-                      name="message"
-                      value={formData.message}
+                      name="bugDescription"
+                      value={formData.bugDescription}
                       onChange={handleChange}
                       rows={6}
-                      placeholder="Tell us more..."
+                      placeholder="Please describe the bug in detail. Include steps to reproduce, expected behavior, and actual behavior..."
                       required
                       whileFocus={{ scale: 1.01 }}
                       className="w-full px-4 py-3 bg-black/20 border-2 border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors duration-300 resize-none"
@@ -261,7 +263,7 @@ const Contact = () => {
                     disabled={isSubmitting}
                     className="w-full border border-transparent rounded-lg px-4 py-3 text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
                   >
-                    {isSubmitting ? "Sending..." : "Send Message"}
+                    {isSubmitting ? "Submitting..." : "Submit Bug Report"}
                   </Button>
                 </form>
               </motion.div>
@@ -314,4 +316,4 @@ const Contact = () => {
   );
 };
 
-export default Contact;
+export default ReportBug;

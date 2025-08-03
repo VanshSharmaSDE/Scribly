@@ -7,6 +7,7 @@ class LocalAIService {
     this.currentModel = null;
     this.progressCallback = null;
     this.isDownloading = false;
+    this.isDownloaded = false; // Track if model is downloaded but not initialized
     this.shouldCancelDownload = false;
     this.autoInitAttempted = false; // Track if auto-init was attempted
     this.downloadAbortController = null; // For cancelling downloads
@@ -105,29 +106,35 @@ class LocalAIService {
     this.progressCallback = null;
   }
 
-  // Initialize the MLC engine with a specific model
-  async initializeModel(modelPath, modelId = 'custom-model') {
+  // Download model without initializing it
+  async downloadModel(modelPath) {
     try {
-      console.log('Initializing local AI model...');
+      console.log('Starting model download...');
       
-      // Use the passed modelPath as the model ID, or default to Phi-3
       const selectedModel = modelPath || 'Phi-3-mini-4k-instruct-q4f16_1-MLC';
       
-      // Check if the same model is already loaded and ready
-      if (this.isInitialized && this.engine && this.currentModel === selectedModel) {
-        console.log('Model already loaded and ready:', selectedModel);
-        return true;
-      }
-      
-      // If a different model is loaded, clean up first
-      if (this.isInitialized && this.engine && this.currentModel !== selectedModel) {
-        console.log('Switching from', this.currentModel, 'to', selectedModel);
-        await this.cleanup();
+      // Check if the model is already downloaded
+      if (await this.isModelCached(selectedModel)) {
+        console.log('Model already downloaded:', selectedModel);
+        this.isDownloaded = true;
+        this.currentModel = selectedModel;
+        
+        if (this.progressCallback) {
+          this.progressCallback({
+            progress: 1,
+            text: 'Model already downloaded. Ready to initialize!',
+            timeElapsed: 0,
+            downloaded: true
+          });
+        }
+        
+        return { success: true, downloaded: true, message: 'Model already downloaded' };
       }
       
       // Reset cancellation flag and create new abort controller
       this.shouldCancelDownload = false;
       this.isDownloading = true;
+      this.isDownloaded = false;
       this.downloadAbortController = new AbortController();
       
       // Track if we've sent completion notification to prevent duplicates
@@ -136,6 +143,7 @@ class LocalAIService {
       // Create a promise that can be cancelled
       this.enginePromise = new Promise(async (resolve, reject) => {
         let isCancelled = false;
+        let tempEngine = null;
         
         // Set up cancellation listener
         this.downloadAbortController.signal.addEventListener('abort', () => {
@@ -156,9 +164,10 @@ class LocalAIService {
         }, 200); // Check every 200ms
         
         try {
-          const engine = await CreateMLCEngine(selectedModel, {
+          // Create engine just to trigger download - we'll dispose it after download
+          tempEngine = await CreateMLCEngine(selectedModel, {
             initProgressCallback: (report) => {
-              console.log('Model loading progress:', report);
+              console.log('Model download progress:', report);
               
               // Check if download should be cancelled
               if (this.shouldCancelDownload || this.downloadAbortController.signal.aborted || isCancelled) {
@@ -182,6 +191,14 @@ class LocalAIService {
                 // Mark as completed when progress reaches 1
                 if (report.progress >= 1) {
                   completionNotified = true;
+                  
+                  // Notify that download is complete but not initialized
+                  this.progressCallback({
+                    progress: 1,
+                    text: 'Download complete! Ready to initialize model.',
+                    timeElapsed: report.timeElapsed || 0,
+                    downloaded: true
+                  });
                 }
               }
             }
@@ -189,7 +206,7 @@ class LocalAIService {
           
           clearInterval(cancellationCheckInterval);
           if (!isCancelled) {
-            resolve(engine);
+            resolve(tempEngine);
           }
         } catch (error) {
           clearInterval(cancellationCheckInterval);
@@ -204,20 +221,26 @@ class LocalAIService {
         setTimeout(() => reject(new Error('Download timeout - operation cancelled')), 300000) // 5 minute timeout
       );
       
-      this.engine = await Promise.race([this.enginePromise, timeoutPromise]);
+      const tempEngine = await Promise.race([this.enginePromise, timeoutPromise]);
       
-      this.isInitialized = true;
-      this.currentModel = selectedModel;
+      // Clean up the temporary engine - we only needed it for downloading
+      if (tempEngine) {
+        tempEngine = null; // Let garbage collector handle cleanup
+      }
+      
       this.isDownloading = false;
+      this.isDownloaded = true;
+      this.currentModel = selectedModel;
       this.downloadAbortController = null;
       this.enginePromise = null;
       
-      console.log('Local AI model initialized successfully');
-      return true;
+      console.log('Model downloaded successfully (not yet initialized)');
+      return { success: true, downloaded: true, message: 'Model downloaded successfully' };
+      
     } catch (error) {
-      console.error('Failed to initialize local AI model:', error);
-      this.isInitialized = false;
+      console.error('Failed to download model:', error);
       this.isDownloading = false;
+      this.isDownloaded = false;
       this.downloadAbortController = null;
       this.enginePromise = null;
       
@@ -235,7 +258,7 @@ class LocalAIService {
           });
         }
         
-        return false;
+        return { success: false, cancelled: true, message: 'Download cancelled' };
       }
       
       // Notify UI of error
@@ -243,6 +266,95 @@ class LocalAIService {
         this.progressCallback({
           progress: 0,
           text: `Error: ${error.message}`,
+          timeElapsed: 0,
+          error: true
+        });
+      }
+      
+      throw error;
+    }
+  }
+
+  // Initialize the MLC engine with a specific model (assumes model is already downloaded)
+  async initializeModel(modelPath, modelId = 'custom-model') {
+    try {
+      console.log('Initializing local AI model...');
+      
+      // Use the passed modelPath as the model ID, or default to Phi-3
+      const selectedModel = modelPath || 'Phi-3-mini-4k-instruct-q4f16_1-MLC';
+      
+      // Check if the same model is already loaded and ready
+      if (this.isInitialized && this.engine && this.currentModel === selectedModel) {
+        console.log('Model already loaded and ready:', selectedModel);
+        return { success: true, message: 'Model already initialized' };
+      }
+      
+      // Check if model is downloaded first
+      if (!await this.isModelCached(selectedModel)) {
+        throw new Error('Model not downloaded. Please download the model first.');
+      }
+      
+      // If a different model is loaded, clean up first
+      if (this.isInitialized && this.engine && this.currentModel !== selectedModel) {
+        console.log('Switching from', this.currentModel, 'to', selectedModel);
+        await this.cleanup();
+      }
+      
+      // Set up progress callback for initialization
+      if (this.progressCallback) {
+        this.progressCallback({
+          progress: 0,
+          text: 'Initializing model...',
+          timeElapsed: 0,
+          initializing: true
+        });
+      }
+      
+      console.log('Creating engine for downloaded model...');
+      
+      // Create engine for the already downloaded model
+      this.engine = await CreateMLCEngine(selectedModel, {
+        initProgressCallback: (report) => {
+          console.log('Model initialization progress:', report);
+          
+          // Forward progress to UI callback
+          if (this.progressCallback) {
+            this.progressCallback({
+              progress: report.progress || 0,
+              text: report.text || 'Initializing model...',
+              timeElapsed: report.timeElapsed || 0,
+              initializing: true
+            });
+          }
+        }
+      });
+      
+      this.isInitialized = true;
+      this.isDownloaded = true;
+      this.currentModel = selectedModel;
+      
+      // Notify completion
+      if (this.progressCallback) {
+        this.progressCallback({
+          progress: 1,
+          text: 'Model initialized successfully!',
+          timeElapsed: 0,
+          initialized: true
+        });
+      }
+      
+      console.log('Local AI model initialized successfully');
+      return { success: true, message: 'Model initialized successfully' };
+      
+    } catch (error) {
+      console.error('Failed to initialize local AI model:', error);
+      this.isInitialized = false;
+      
+      // Notify UI of error
+      if (this.progressCallback) {
+        this.progressCallback({
+          progress: 0,
+          text: `Initialization failed: ${error.message}`,
           timeElapsed: 0,
           error: true
         });
@@ -357,6 +469,12 @@ class LocalAIService {
     }
   }
 
+  // Check if model is downloaded but not initialized
+  isModelDownloaded(modelId = null) {
+    const targetModel = modelId || this.currentModel;
+    return this.isDownloaded && this.currentModel === targetModel && !this.isInitialized;
+  }
+
   // Check if model is ready
   isReady() {
     return this.isInitialized && this.engine !== null;
@@ -376,9 +494,11 @@ class LocalAIService {
   getModelStatus() {
     return {
       isReady: this.isReady(),
+      isDownloaded: this.isDownloaded,
+      isInitialized: this.isInitialized,
       currentModel: this.currentModel,
       isDownloading: this.isDownloading,
-      isInitialized: this.isInitialized
+      canInitialize: this.isDownloaded && !this.isInitialized
     };
   }
 
@@ -388,7 +508,7 @@ class LocalAIService {
       // WebLLM doesn't have explicit cleanup, but we can reset our state
       this.engine = null;
       this.isInitialized = false;
-      this.currentModel = null;
+      // Keep isDownloaded and currentModel if model is still cached
     }
     
     // Cancel any ongoing downloads
@@ -452,6 +572,8 @@ class LocalAIService {
       
       // Reset our state
       await this.cleanup();
+      this.isDownloaded = false;
+      this.currentModel = null;
       
       console.log(`Model cache cleared successfully. Cleared ${clearedCaches} cache entries.`);
       return true;

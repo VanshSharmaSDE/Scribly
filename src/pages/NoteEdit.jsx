@@ -48,6 +48,7 @@ import {
   Smile,
   Search,
   Clock,
+  Settings
 } from "lucide-react";
 import Button from "../components/Button";
 import ProfessionalBackground from "../components/ProfessionalBackground";

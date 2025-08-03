@@ -14,12 +14,12 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
     ? [
         { name: 'Dashboard', path: '/dashboard', icon: Layout },
         { name: 'About', path: '/about' },
-        { name: 'Contact', path: '/contact' },
+        { name: 'Report Bug', path: '/report-bug' },
       ]
     : [
         { name: 'Home', path: '/' },
         { name: 'About', path: '/about' },
-        { name: 'Contact', path: '/contact' },
+        { name: 'Report Bug', path: '/report-bug' },
       ];
 
   const handleLogout = async () => {
@@ -55,7 +55,7 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
                 }}
               >
                 <Sparkles className="w-3 h-3 mr-1" />
-                v0.6.0
+                v0.6.1
               </span>
             </div>
           </Link>

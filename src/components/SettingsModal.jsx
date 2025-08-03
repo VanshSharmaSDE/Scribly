@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, ToggleLeft, ToggleRight, Settings, Bot, Clock, Eye, EyeOff, CheckCircle, Upload, HardDrive, Cloud, Trash2 } from 'lucide-react';
+import { X, Key, Save, ToggleLeft, ToggleRight, Settings, Bot, Clock, Eye, EyeOff, CheckCircle, Upload, HardDrive, Cloud, Trash2, Play } from 'lucide-react';
 import Button from './Button';
 import Input from './Input';
 import toast from 'react-hot-toast';
@@ -68,7 +68,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiProvider, setAiProvider] = useState(''); // Start with empty string to avoid false toast
   const [localModelPath, setLocalModelPath] = useState('');
-  const [modelStatus, setModelStatus] = useState('not-loaded'); // 'not-loaded', 'loading', 'loaded', 'error'
+  const [modelStatus, setModelStatus] = useState('not-loaded'); // 'not-loaded', 'loading', 'downloaded', 'loaded', 'error'
   const [modelInfo, setModelInfo] = useState(null);
   const [isModelInitialized, setIsModelInitialized] = useState(false);
   const [showLocalAIWarning, setShowLocalAIWarning] = useState(false);
@@ -271,9 +271,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
           return;
         }
         
-        if (progress.progress >= 1) {
-          setModelStatus('loaded');
-          setIsModelInitialized(true);
+        // Handle download completion (but not yet initialized)
+        if (progress.downloaded && progress.progress >= 1) {
+          setModelStatus('downloaded');
+          setIsModelInitialized(false);
           setModelInfo({
             name: modelId.split('-')[0] + ' ' + modelId.split('-')[1],
             id: modelId
@@ -281,12 +282,23 @@ const SettingsModal = ({ isOpen, onClose }) => {
           setTimeout(() => {
             setShowDownloadModal(false);
             localAIService.clearProgressCallback();
-            toast.success('Local AI model loaded successfully!');
+            toast.success('Model downloaded successfully! Click "Initialize" to start using it.');
           }, 1000);
+          return;
+        }
+        
+        // Handle initialization completion
+        if (progress.initialized && progress.progress >= 1) {
+          setModelStatus('loaded');
+          setIsModelInitialized(true);
+          localAIService.clearProgressCallback();
+          toast.success('Local AI model initialized successfully!');
+          return;
         }
       });
       
-      await localAIService.initializeModel(modelId);
+      // First download the model
+      await localAIService.downloadModel(modelId);
       
     } catch (error) {
       console.error('Failed to load model:', error);
@@ -299,6 +311,64 @@ const SettingsModal = ({ isOpen, onClose }) => {
       localAIService.clearProgressCallback();
       
       toast.error('Failed to load AI model: ' + error.message);
+    }
+  };
+
+  // Handle model initialization (separate from download)
+  const handleModelInitialize = async (modelId) => {
+    try {
+      setModelStatus('loading');
+      setIsModelInitialized(false);
+      
+      const localAIService = (await import('../services/localAIService')).default;
+      
+      // Clear any existing callbacks to prevent duplicates
+      localAIService.clearProgressCallback();
+      
+      // Set up progress callback for initialization
+      localAIService.setProgressCallback((progress) => {
+        setDownloadProgress(progress);
+        
+        if (progress.error) {
+          setModelStatus('error');
+          setIsModelInitialized(false);
+          localAIService.clearProgressCallback();
+          toast.error('Initialization failed: ' + progress.text);
+          return;
+        }
+        
+        // Handle initialization completion
+        if (progress.initialized && progress.progress >= 1) {
+          setModelStatus('loaded');
+          setIsModelInitialized(true);
+          localAIService.clearProgressCallback();
+          toast.success('Local AI model initialized successfully!');
+          return;
+        }
+      });
+      
+      // Initialize the downloaded model
+      const result = await localAIService.initializeModel(modelId);
+      
+      if (result.success) {
+        setModelStatus('loaded');
+        setIsModelInitialized(true);
+        setModelInfo({
+          name: modelId.split('-')[0] + ' ' + modelId.split('-')[1],
+          id: modelId
+        });
+      }
+      
+    } catch (error) {
+      console.error('Failed to initialize model:', error);
+      setModelStatus('downloaded'); // Back to downloaded state
+      setIsModelInitialized(false);
+      
+      // Clear callbacks on error
+      const localAIService = (await import('../services/localAIService')).default;
+      localAIService.clearProgressCallback();
+      
+      toast.error('Failed to initialize AI model: ' + error.message);
     }
   };
 
@@ -448,10 +518,27 @@ const SettingsModal = ({ isOpen, onClose }) => {
     try {
       const localAIService = (await import('../services/localAIService')).default;
       
-      // Check if model is already ready
-      if (localAIService.isReady() && localAIService.getCurrentModel() === modelId) {
+      // Get comprehensive model status
+      const status = localAIService.getModelStatus();
+      
+      if (status.isReady && status.currentModel === modelId) {
         setModelStatus('loaded');
         setIsModelInitialized(true);
+        setModelInfo({
+          name: modelId.split('-')[0] + ' ' + modelId.split('-')[1],
+          id: modelId
+        });
+      } else if (status.isDownloaded && status.currentModel === modelId && !status.isInitialized) {
+        setModelStatus('downloaded');
+        setIsModelInitialized(false);
+        setModelInfo({
+          name: modelId.split('-')[0] + ' ' + modelId.split('-')[1],
+          id: modelId
+        });
+      } else if (await localAIService.isModelCached(modelId)) {
+        // Model is cached but not loaded into service
+        setModelStatus('downloaded');
+        setIsModelInitialized(false);
         setModelInfo({
           name: modelId.split('-')[0] + ' ' + modelId.split('-')[1],
           id: modelId
@@ -976,6 +1063,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
                             <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                               modelStatus === 'loaded' 
                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                : modelStatus === 'downloaded'
+                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                                 : modelStatus === 'loading'
                                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                                 : modelStatus === 'error'
@@ -983,6 +1072,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                                 : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                             }`}>
                               {modelStatus === 'loaded' && 'READY'}
+                              {modelStatus === 'downloaded' && 'DOWNLOADED'}
                               {modelStatus === 'loading' && 'DOWNLOADING...'}
                               {modelStatus === 'error' && 'ERROR'}
                               {modelStatus === 'not-loaded' && 'SELECT MODEL'}
@@ -990,7 +1080,16 @@ const SettingsModal = ({ isOpen, onClose }) => {
                           </div>
                           
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2">
-                            {localModelPath && modelStatus !== 'loading' && (
+                            {localModelPath && modelStatus === 'downloaded' && (
+                              <Button
+                                onClick={() => handleModelInitialize(localModelPath)}
+                                className="bg-blue-600 items-center flex justify-center hover:bg-blue-700 text-white px-4 py-2 min-w-[120px] w-full sm:w-auto"
+                              >
+                                <Play className="h-4 w-4 mr-2" />
+                                Initialize
+                              </Button>
+                            )}
+                            {localModelPath && modelStatus !== 'loading' && modelStatus !== 'downloaded' && (
                               <>
                                 <Button
                                   onClick={testLocalModel}

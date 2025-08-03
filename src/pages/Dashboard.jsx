@@ -761,7 +761,7 @@ const Dashboard = () => {
                   }}
                 >
                   <Sparkles className="w-3 h-3 mr-2" />
-                  <span className="text-xs font-semibold">v0.6.0</span>
+                  <span className="text-xs font-semibold">v0.6.1</span>
                 </motion.div>
 
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4">

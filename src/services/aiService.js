@@ -1284,21 +1284,25 @@ Provide more detailed information and context here.
     }
 
     try {
-      const prompt = `You are a tag generation assistant. Analyze the following note and generate 3-5 relevant tags for organizing it.
+      const prompt = `You are a tag generation assistant. Generate 3-5 relevant tags based primarily on the note title.
 
 Title: "${title}"
-Content: "${content.slice(0, 500)}${content.length > 500 ? "..." : ""}"
 
 Instructions:
-- Generate tags that help categorize and organize this specific note
+- Generate tags that help categorize and organize this note based on the TITLE
 - Tags should be lowercase
 - Use single words or short phrases separated by hyphens
-- Focus on the main topics, themes, and categories
+- Focus primarily on the title, extract key topics, themes, and categories from it
 - Make tags useful for searching and filtering notes
+- DO NOT include AI-related tags unless the title is specifically about AI
+- Derive tags from the main concepts, subjects, and keywords in the title
 
-For a note with title "ChatGPT vs Gemini", good tags would be: ["ai", "comparison", "chatgpt", "gemini", "technology"]
-For a note about "Meeting with team", good tags would be: ["meeting", "team", "work", "discussion"]
-For a note about "Chocolate cake recipe", good tags would be: ["recipe", "dessert", "baking", "chocolate"]
+Examples of good tagging based on titles:
+- Title "Meeting with team about project updates" → ["meeting", "team", "project", "updates", "work"]
+- Title "Chocolate cake recipe with frosting" → ["recipe", "dessert", "chocolate", "cake", "baking"]
+- Title "Python programming tutorial for beginners" → ["programming", "python", "tutorial", "beginners", "coding"]
+- Title "Shopping list for grocery store" → ["shopping", "groceries", "list", "errands"]
+- Title "Travel plans for summer vacation" → ["travel", "vacation", "planning", "summer"]
 
 Respond with ONLY a JSON array of strings, nothing else:
 ["tag1", "tag2", "tag3"]`;
@@ -1493,21 +1497,25 @@ Respond with ONLY a JSON array of strings, nothing else:
         return this.generateTagsFallback(title, content);
       }
 
-      const prompt = `You are a tag generation assistant. Analyze the following note and generate 3-5 relevant tags for organizing it.
+      const prompt = `You are a tag generation assistant. Generate 3-5 relevant tags based primarily on the note title.
 
 Title: "${title}"
-Content: "${content.slice(0, 500)}${content.length > 500 ? "..." : ""}"
 
 Instructions:
-- Generate tags that help categorize and organize this specific note
+- Generate tags that help categorize and organize this note based on the TITLE
 - Tags should be lowercase
 - Use single words or short phrases separated by hyphens
-- Focus on the main topics, themes, and categories
+- Focus primarily on the title, extract key topics, themes, and categories from it
 - Make tags useful for searching and filtering notes
+- DO NOT include AI-related tags unless the title is specifically about AI
+- Derive tags from the main concepts, subjects, and keywords in the title
 
-For a note with title "ChatGPT vs Gemini", good tags would be: ["ai", "comparison", "chatgpt", "gemini", "technology"]
-For a note about "Meeting with team", good tags would be: ["meeting", "team", "work", "discussion"]
-For a note about "Chocolate cake recipe", good tags would be: ["recipe", "dessert", "baking", "chocolate"]
+Examples of good tagging based on titles:
+- Title "Meeting with team about project updates" → ["meeting", "team", "project", "updates", "work"]
+- Title "Chocolate cake recipe with frosting" → ["recipe", "dessert", "chocolate", "cake", "baking"]
+- Title "Python programming tutorial for beginners" → ["programming", "python", "tutorial", "beginners", "coding"]
+- Title "Shopping list for grocery store" → ["shopping", "groceries", "list", "errands"]
+- Title "Travel plans for summer vacation" → ["travel", "vacation", "planning", "summer"]
 
 Respond with ONLY a JSON array of strings, nothing else:
 ["tag1", "tag2", "tag3"]`;
@@ -1648,11 +1656,12 @@ Respond with ONLY a JSON array of strings, nothing else:
   generateSmartTagsFallback(title, content) {
     console.log('Using smart fallback tag generation for title:', title, 'content length:', content?.length);
     
-    const text = (
-      String(title || "") +
-      " " +
-      String(content || "")
-    ).toLowerCase();
+    // Prioritize title over content for tag generation
+    const titleText = String(title || "").toLowerCase();
+    const contentText = String(content || "").toLowerCase();
+    
+    // Weight title much higher than content
+    const text = titleText + " " + titleText + " " + contentText; // Title appears twice for higher weight
     const tags = new Set();
 
     // Domain-specific keywords with their associated tags
@@ -1743,19 +1752,11 @@ Respond with ONLY a JSON array of strings, nothing else:
       }
     }
 
-    // Check for content patterns
-    if (patterns.question.test(text)) tags.add("questions");
-    if (patterns.list.test(text)) tags.add("lists");
-    if (patterns.code.test(text)) tags.add("programming");
-    if (patterns.link.test(text)) tags.add("resources");
-    if (patterns.email.test(text)) tags.add("contacts");
-    if (patterns.date.test(text)) tags.add("scheduled");
-    if (patterns.number.test(text)) tags.add("data");
-
-    // Analyze title for specific patterns
+    // Analyze title for specific patterns - HIGH PRIORITY
     const titleWords = String(title || "")
       .toLowerCase()
       .split(/\s+/);
+    
     const commonTitlePatterns = {
       how: ["tutorial", "guides", "how-to"],
       why: ["analysis", "explanation", "reasoning"],
@@ -1767,13 +1768,47 @@ Respond with ONLY a JSON array of strings, nothing else:
       guide: ["guides", "tutorial", "reference"],
       tips: ["tips", "advice", "suggestions"],
       ideas: ["ideas", "brainstorming", "creative"],
+      list: ["lists", "organization", "planning"],
+      plan: ["planning", "strategy", "organization"],
+      meeting: ["meeting", "discussion", "work"],
+      project: ["project", "work", "planning"],
+      recipe: ["recipe", "cooking", "food"],
+      shopping: ["shopping", "list", "errands"],
+      travel: ["travel", "vacation", "planning"],
+      workout: ["fitness", "exercise", "health"],
+      study: ["study", "education", "learning"],
+      work: ["work", "business", "professional"],
+      personal: ["personal", "life", "individual"],
     };
 
+    // Extract meaningful words from title for direct tagging
+    const meaningfulTitleWords = titleWords
+      .filter((word) => word.length > 2)
+      .filter((word) => !["the", "and", "for", "with", "about", "from", "that", "this", "will", "have", "been", "were", "are", "was"].includes(word))
+      .slice(0, 3);
+
+    // Add meaningful title words as tags
+    meaningfulTitleWords.forEach((word) => {
+      if (word.length > 2 && word.length < 15) {
+        tags.add(word);
+      }
+    });
+
+    // Add pattern-based tags from title
     titleWords.forEach((word) => {
       if (commonTitlePatterns[word]) {
         commonTitlePatterns[word].forEach((tag) => tags.add(tag));
       }
     });
+
+    // Check for content patterns (lower priority)
+    if (patterns.question.test(text)) tags.add("questions");
+    if (patterns.list.test(text)) tags.add("lists");
+    if (patterns.code.test(text)) tags.add("programming");
+    if (patterns.link.test(text)) tags.add("resources");
+    if (patterns.email.test(text)) tags.add("contacts");
+    if (patterns.date.test(text)) tags.add("scheduled");
+    if (patterns.number.test(text)) tags.add("data");
 
     // Content length-based tags
     const contentLength = String(content || "").length;

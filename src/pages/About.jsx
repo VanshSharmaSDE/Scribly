@@ -89,7 +89,7 @@ const About = () => {
               }}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Stable v0.6.0 • Open Source</span>
+              <span className="text-sm font-semibold">Stable v0.6.1 • Open Source</span>
             </motion.div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
@@ -178,7 +178,7 @@ const About = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-gray-300 text-lg leading-relaxed"
               >
-                Today, Scribly v0.6.0 represents our stable release milestone, trusted by a 
+                Today, Scribly v0.6.1 represents our latest stable release milestone, trusted by a 
                 growing community of creators, students, and professionals. With community 
                 contributions driving innovation, we're building the future of note-taking 
                 together, one commit at a time.
@@ -385,18 +385,42 @@ const About = () => {
           </motion.div>
 
           <div className="space-y-8">
-            {/* v0.6.0 - Major Mobile & Local AI Update */}
+            {/* v0.6.1 - Bug Fixes & Local AI Optimization */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-8 relative overflow-hidden"
+              className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl p-8 relative overflow-hidden"
             >
               <div className="absolute top-4 right-4">
-                <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-semibold border border-purple-500/30">
+                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-semibold border border-emerald-500/30">
                   LATEST
                 </span>
               </div>
+              <div className="flex items-center mb-4">
+                <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.6.1
+                </div>
+                <h3 className="text-2xl font-bold text-white">Stability & AI Optimization Update</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Bug Report Page:</strong> Added dedicated bug reporting system for better user feedback</li>
+                <li>• <strong>AI Model Initialization Fix:</strong> Resolved critical issues with Local AI model startup and initialization</li>
+                <li>• <strong>AI Tag Generation Fix:</strong> Fixed errors in AI-powered tag generation for better accuracy</li>
+                <li>• <strong>Optimized Local AI:</strong> Enhanced local AI models for minimal resource usage and better performance</li>
+                <li>• <strong>Resource Efficiency:</strong> Significantly reduced memory footprint for local AI operations</li>
+                <li>• <strong>Stability Improvements:</strong> Enhanced overall app stability and error handling</li>
+                <li>• <strong>Performance Boost:</strong> Faster AI response times with optimized model configurations</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.6.0 - Major Mobile & Local AI Update */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-8"
+            >
               <div className="flex items-center mb-4">
                 <div className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
                   v0.6.0

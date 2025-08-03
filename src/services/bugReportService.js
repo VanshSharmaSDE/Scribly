@@ -1,20 +1,20 @@
 import emailjs from '@emailjs/browser';
 
-class ContactService {
+class BugReportService {
   constructor() {
     // Initialize EmailJS with your public key
     emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
   }
 
-  async submitContactForm(formData) {
+  async submitBugReport(formData) {
     try {
       // Prepare template parameters for EmailJS
       // Variable names match exactly with the EmailJS template
       const templateParams = {
         from_name: formData.name,
         from_email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
+        bug_summary: formData.bugSummary,
+        bug_description: formData.bugDescription,
         submitted_at: new Date().toLocaleString('en-US', {
           weekday: 'long',
           year: 'numeric',
@@ -33,20 +33,20 @@ class ContactService {
         templateParams
       );
 
-      console.log('Email sent successfully:', response);
+      console.log('Bug report sent successfully:', response);
 
       return {
         success: true,
         data: response
       };
     } catch (error) {
-      console.error('Contact form submission error:', error);
+      console.error('Bug report submission error:', error);
       return {
         success: false,
-        error: error.message || 'Failed to send email'
+        error: error.message || 'Failed to send bug report'
       };
     }
   }
 }
 
-export default new ContactService();
+export default new BugReportService();
