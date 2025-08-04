@@ -653,6 +653,9 @@ const Dashboard = () => {
               </motion.div>
             </div>
 
+            {/* Local AI Status Banner */}
+            <LocalAIStatusBanner />
+
             {/* Empty State */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}

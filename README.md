@@ -2,20 +2,74 @@
 
 > **Transform your thoughts into beautifully organized digital notes with AI-powered features**
 
-Scribly is an open-source notes application that combines stunning design, powerful functionality, and artificial intelligence to revolutionize how you capture, organize, and share your ideas. Built with modern web technologies and driven by community contributions, Scribly offers an unparalleled note-taking experience for professionals, students, and creatives alike.
+Scribly is an open-source notes application that combines stunning design, powerful funct## 📈 **Version History**
 
-**🎉 Now Stable v0.5.0 - Ready for Production Use!**
+### 🎉 v0.6.1 - Stability & AI Optimization Update (Curre## 🚀 **Roadmap & Future Features**
+
+### 🔄 In Development
+- [ ] Enhanc- 📧 **Email**: [scribly.server@gmail.com](mailto:scribly.server@gmail.com)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/VanshSharmaSDE/Scribly/issues) or use the in-app bug report feature
+- 💬 **Discussions**: [Join the conversation](https://github.com/VanshSharmaSDE/Scribly/discussions)
+- ⭐ **Star us on GitHub** if you find Scribly helpful!ollaborative editing
+- [ ] Advanced note version history
+- [ ] Improved local AI model selection
+- [ ] Advanced search with AI-powered filters
+- [ ] Bulk operations for note management
+- [ ] Enhanced import/export functionality
+
+### 🔮 Future Enhancements
+- [ ] Mobile apps (iOS/Android)
+- [ ] Offline support with intelligent sync
+- [ ] Plugin system for extensibility
+- [ ] API for third-party integrations
+- [ ] Team workspaces and collaboration
+- [ ] Advanced analytics and insights
+- [ ] Multi-language support
+- [ ] Advanced AI features and model training
+- [ ] Voice notes with AI transcriptionLocal AI Enhancements**
+- ✅ **Bug Report Page**: Added dedicated bug reporting system for better user feedback
+- ✅ **AI Model Initialization Fix**: Resolved critical issues with Local AI model startup and initialization
+- ✅ **AI Tag Generation Fix**: Fixed errors in AI-powered tag generation for better accuracy
+- ✅ **Optimized Local AI**: Enhanced local AI models for minimal resource usage and better performance
+- ✅ **Resource Efficiency**: Significantly reduced memory footprint for local AI operations
+- ✅ **Stability Improvements**: Enhanced overall app stability and error handling
+- ✅ **Performance Boost**: Faster AI response times with optimized model configurations
+- ✅ **Responsive AI Interface**: Mobile-optimized AI features and model initialization
+- ✅ **Focused Writing Experience**: Improved note editing interface with hidden customization panel
+
+### 🚀 v0.6.0 - Major Mobile & Local AI Revolution
+**Local AI Support & Mobile Optimization**
+- ✅ **Local AI Support (BETA)**: Unlimited AI usage with browser-based models - complete privacy!
+- ✅ **PNG Note Export**: Download your notes as high-quality PNG images
+- ✅ **100% Mobile Responsive**: Fully optimized Dashboard, NoteView, and NoteEdit for mobile devices
+- ✅ **Performance Optimization**: Significantly improved loading times and app responsiveness
+- ✅ **Enhanced UI Design**: Refined design improvements across Home, About, Contact, and Footer pages
+- ✅ **Touch-Friendly Interface**: Optimized for seamless mobile and tablet experience
+- ✅ **Local AI Models**: Run AI models directly in your browser - no internet required after download
+
+### 🎉 v0.5.0 - Stable Release
+**AI Integration & Production Ready**
+- ✅ **Google Gemini Integration**: Create notes from prompts using AI
+- ✅ **Smart Tagging**: Automatic tag generation by title using Gemini
+- ✅ **AI Content Generation**: Intelligent content suggestions by Gemini
+- ✅ **Custom API Key**: Use your own Google Gemini API key
+- ✅ **Enhanced Settings**: Easy API key setup and configuration
+- ✅ **Production Ready**: Stable release for production use
+- ✅ **Open Source**: MIT licensed, community-driven developmentnd artificial intelligence to revolutionize how you capture, organize, and share your ideas. Built with modern web technologies and driven by community contributions, Scribly offers an unparalleled note-taking experience for professionals, students, and creatives alike.
+
+**🎉 Now Stable v0.6.1 - Latest Release with Local AI & Bug Fixes!**
 
 ## 🌟 Why Choose Scribly?
 
 - ✨ **Beautiful & Intuitive**: Professional dark theme with smooth animations
-- 🧠 **AI-Powered**: Intelligent content generation with Google Gemini integration
+- 🧠 **Dual AI-Powered**: Choose between cloud AI (Gemini) or local AI for complete privacy
 - 🔗 **Public Sharing**: Share notes with unique links, no login required
 - 📱 **Fully Responsive**: Perfect experience on desktop, tablet, and mobile
 - 🚀 **Lightning Fast**: Built with modern React and optimized for speed
 - 🎨 **Highly Customizable**: Personalize every aspect of your notes
 - 🌍 **Open Source**: MIT licensed, community-driven development
-- 🔒 **Privacy-First**: Your data remains yours, transparent and secure
+- 🔒 **Privacy-First**: Your data remains yours, with optional local AI processing
+- 🛠️ **Bug Reporting**: Integrated feedback system for continuous improvement
 
 ## ✨ Complete Feature Set
 
@@ -35,10 +89,15 @@ Scribly is an open-source notes application that combines stunning design, power
 - **Auto-Save**: Never lose your work with intelligent auto-saving
 - **Real-time Preview**: See your markdown rendered beautifully as you type
 
-### 🤖 **AI-Powered Intelligence (v0.5.0)**
-- **AI Content Generation**: Create comprehensive notes from just a title using Google Gemini
-- **Smart Tag Generation**: Automatically generate relevant tags for organization with AI
-- **Custom API Key Support**: Use your own Google Gemini API key for AI features
+### 🤖 **AI-Powered Intelligence (v0.6.1)**
+- **Dual AI Providers**: Choose between Google Gemini Cloud AI or Local AI models
+- **Local AI Support**: Run AI models directly in your browser - complete privacy and unlimited usage
+- **Optimized Local Models**: Enhanced performance with minimal resource usage
+- **AI Content Generation**: Create comprehensive notes from just a title using Google Gemini or Local AI
+- **Smart Tag Generation**: Automatically generate relevant tags with improved accuracy
+- **Custom API Key Support**: Use your own Google Gemini API key for cloud AI features
+- **Model Initialization**: Easy setup and initialization of local AI models
+- **Bug Report Integration**: Dedicated bug reporting system for better user feedback
 - **Multiple Note Types**: Specialized AI templates for different content types:
   - 📋 Meeting Notes with agendas and action items
   - 🎯 Project Plans with timelines and milestones
@@ -48,8 +107,10 @@ Scribly is an open-source notes application that combines stunning design, power
   - 👤 Personal Reflections and journaling
   - 💼 Business Documents with professional formatting
 - **Gemini 2.5 Pro Integration**: Powered by Google's latest AI model
+- **Local WebLLM Integration**: Browser-based AI with complete data privacy
 - **Intelligent Fallbacks**: Template-based generation when AI is unavailable
 - **Settings Integration**: Easy AI configuration through user settings
+- **Responsive AI Interface**: Mobile-optimized AI features and initialization
 
 ### 🏷️ **Smart Organization System**
 - **Dynamic Tagging**: Create, edit, and organize with unlimited custom tags
@@ -84,6 +145,9 @@ Scribly is an open-source notes application that combines stunning design, power
 - **Drag & Drop**: Intuitive file and content management
 - **Responsive Navigation**: Mobile-optimized navigation and touch interactions
 - **Professional Breadcrumbs**: Clear navigation hierarchy
+- **Focused Writing Interface**: Distraction-free note editing with customization on demand
+- **Smart Auto-Save**: Intelligent saving with visual feedback
+- **Bug Reporting System**: Easy feedback submission for continuous improvement
 
 ### 🔐 **Secure Authentication System**
 - **Email/Password**: Secure account creation and login
@@ -143,8 +207,9 @@ npm run preview
 
 ### Backend Power
 - **Appwrite**: Open-source backend-as-a-service
-- **Google Gemini AI**: Advanced AI content generation (v0.5.0)
-- **EmailJS**: Contact form email delivery
+- **Google Gemini AI**: Advanced cloud AI content generation
+- **Local WebLLM**: Browser-based AI models for complete privacy
+- **EmailJS**: Contact and bug report email delivery
 - **Real-time Database**: Instant data synchronization
 - **Cloud Storage**: Reliable file and data storage
 - **Authentication**: Secure user management
@@ -190,15 +255,32 @@ scribly/
 
 ### Color Palette
 ```css
-/* Primary Colors */
---scribly-black: #0a0a0a;     /* Primary background */
---scribly-red: #dc2626;       /* Brand accent */
---scribly-gray: #1a1a1a;      /* Secondary background */
+/* Primary Theme Colors */
+--primary-black: #0a0a0a;      /* Main background */
+--secondary-black: #1a1a1a;    /* Secondary background */
+--dark-gray: #2a2a2a;          /* Elevated surfaces */
+--brand-blue: #4F70E2;         /* Primary brand accent */
+--brand-blue-light: #3A5BC7;   /* Secondary brand */
+--brand-blue-dark: #2A4BA6;    /* Darker brand variant */
 
-/* Note Colors */
+/* UI Element Colors */
+--slate-600: #334155;          /* Scrollbar and borders */
+--slate-700: #1e293b;         /* Hover states */
+--slate-800: #374151;         /* Text on surfaces */
+--white: #ffffff;              /* Primary text */
+
+/* Note Theme Colors */
 --deep-blue: #1e3a8a;         --forest-green: #166534;
 --crimson-red: #dc2626;       --royal-purple: #7c3aed;
 --slate-gray: #374151;        --amber-orange: #d97706;
+--emerald-green: #059669;     --indigo-blue: #4338ca;
+--rose-pink: #e11d48;         --teal-cyan: #0891b2;
+--violet-purple: #8b5cf6;    --yellow-gold: #eab308;
+
+/* Gradient Colors */
+--gradient-start: #4F70E2;     /* Primary gradient start */
+--gradient-middle: #3A5BC7;    /* Primary gradient middle */
+--gradient-end: #2A4BA6;       /* Primary gradient end */
 ```
 
 ### Typography Scale
@@ -342,6 +424,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 *Made with ❤️ by the Open Source Community*
 
-**Scribly v0.5.0 - Stable Release**
+**Scribly v0.6.1 - Latest Stable Release**
 
 </div>
