@@ -48,17 +48,20 @@ import {
   Smile,
   Search,
   Clock,
-  Settings
+  Settings,
+  Camera,
 } from "lucide-react";
 import Button from "../components/Button";
 import ProfessionalBackground from "../components/ProfessionalBackground";
 import Breadcrumb from "../components/Breadcrumb";
 import TagManager from "../components/TagManager";
 import UnsavedChangesModal from "../components/UnsavedChangesModal";
+import PhotoUpload from "../components/PhotoUpload";
 import { useAuth } from "../contexts/AuthContext";
 import notesService from "../services/notesService";
 import aiService from "../services/aiService";
 import settingsService from "../services/settingsService";
+import ocrService from "../services/ocrService";
 import { parseMarkdown } from "../utils/markdown";
 
 const NoteEdit = () => {
@@ -103,10 +106,15 @@ const NoteEdit = () => {
   const [lastAutoSave, setLastAutoSave] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiSearchTerm, setEmojiSearchTerm] = useState("");
-  const [autoSaveSettings, setAutoSaveSettings] = useState({ enabled: true, interval: 30 });
+  const [autoSaveSettings, setAutoSaveSettings] = useState({
+    enabled: true,
+    interval: 30,
+  });
   const [currentNoteId, setCurrentNoteId] = useState(id);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [processingPhoto, setProcessingPhoto] = useState(false);
 
   // Load auto-save settings on component mount
   useEffect(() => {
@@ -173,15 +181,26 @@ const NoteEdit = () => {
 
   // Track changes to detect unsaved content
   useEffect(() => {
-    const hasChanges = 
+    const hasChanges =
       title !== originalTitle ||
       content !== originalContent ||
       emoji !== originalEmoji ||
       JSON.stringify(tags) !== JSON.stringify(originalTags) ||
       JSON.stringify(customStyle) !== JSON.stringify(originalCustomStyle);
-    
+
     setHasUnsavedChanges(hasChanges);
-  }, [title, content, emoji, tags, customStyle, originalTitle, originalContent, originalEmoji, originalTags, originalCustomStyle]);
+  }, [
+    title,
+    content,
+    emoji,
+    tags,
+    customStyle,
+    originalTitle,
+    originalContent,
+    originalEmoji,
+    originalTags,
+    originalCustomStyle,
+  ]);
 
   // Auto-save functionality
   useEffect(() => {
@@ -258,7 +277,16 @@ const NoteEdit = () => {
         clearTimeout(autoSaveTimeout);
       }
     };
-  }, [title, content, emoji, tags, customStyle, user, currentNoteId, autoSaveSettings]);
+  }, [
+    title,
+    content,
+    emoji,
+    tags,
+    customStyle,
+    user,
+    currentNoteId,
+    autoSaveSettings,
+  ]);
 
   // Cleanup auto-save timeout on unmount
   useEffect(() => {
@@ -382,7 +410,7 @@ const NoteEdit = () => {
       setContent(aiNote.content);
       setEmoji(aiNote.emoji);
       setTags(aiNote.tags || []);
-      
+
       // For new AI-generated notes, original values should be empty
       setOriginalTitle("");
       setOriginalContent("");
@@ -394,7 +422,7 @@ const NoteEdit = () => {
         fontSize: "16px",
         fontFamily: "Inter, sans-serif",
       });
-      
+
       setHasUnsavedChanges(true);
       setLoading(false);
 
@@ -509,7 +537,9 @@ const NoteEdit = () => {
       // Show success toast
       toast.dismiss(loadingToast);
       toast.success(
-        !currentNoteId || !id ? "Note created successfully!" : "Note saved successfully!",
+        !currentNoteId || !id
+          ? "Note created successfully!"
+          : "Note saved successfully!",
         {
           duration: 3000,
         }
@@ -527,6 +557,125 @@ const NoteEdit = () => {
     }
   };
 
+  const handlePhotoUpload = async (file) => {
+    setProcessingPhoto(true);
+    setShowPhotoUpload(false);
+
+    try {
+      // Get user settings to determine AI preference
+      const settings = await settingsService.getUserSettings(user.$id);
+      const useLocalAI = settings?.aiProvider === "local";
+
+      // Extract text with AI enhancement
+      const ocrResults = await ocrService.extractText(file, {
+        enhanceWithAI: true,
+        useLocalAI: useLocalAI,
+      });
+
+      if (!ocrResults.text || ocrResults.text.trim().length === 0) {
+        toast.error(
+          "No text found in the image. Please try with a clearer image."
+        );
+        return;
+      }
+
+      // Use AI-enhanced content if available, otherwise use raw OCR text
+      let extractedContent = ocrResults.text; // Default to raw OCR text
+      let extractedTitle = "";
+      let extractedTags = [];
+
+      if (
+        ocrResults.enhancedNote &&
+        ocrResults.enhancedNote.enhancedNote &&
+        ocrResults.enhancedNote.enhancedNote.content
+      ) {
+        const enhanced = ocrResults.enhancedNote.enhancedNote; // Access the actual enhanced note data
+        // Use AI-enhanced content (this is the formatted, refined content)
+        extractedContent = enhanced.content;
+        extractedTitle = enhanced.title || "";
+        extractedTags = enhanced.tags || [];
+
+        const provider = ocrResults.enhancedNote.aiProvider;
+        toast.success(
+          `Text extracted and enhanced with ${
+            provider === "local" ? "Local AI" : "Gemini AI"
+          }! Using AI-refined content.`
+        );
+        console.log("Using AI-enhanced content:", {
+          title: extractedTitle,
+          contentPreview: extractedContent.substring(0, 100) + "...",
+          tags: extractedTags,
+          provider: provider,
+        });
+      } else {
+        // Fallback to raw OCR text if AI enhancement failed
+        console.warn("AI enhancement not available, using raw OCR text");
+        console.log(
+          "Using raw OCR text:",
+          extractedContent.substring(0, 100) + "..."
+        );
+        toast.success(
+          "Text extracted successfully! (No AI enhancement available)"
+        );
+      }
+
+      // If content is empty, set the extracted content
+      if (!content.trim()) {
+        setContent(extractedContent);
+      } else {
+        // Append to existing content with a separator
+        setContent((prevContent) => {
+          const separator = prevContent.trim() ? "\n\n---\n\n" : "";
+          return prevContent + separator + extractedContent;
+        });
+      }
+
+      // If title is empty, use extracted title or generate from first line
+      if (!title.trim()) {
+        if (extractedTitle) {
+          setTitle(extractedTitle);
+        } else {
+          const lines = ocrResults.text
+            .split("\n")
+            .filter((line) => line.trim());
+          if (lines.length > 0) {
+            const firstLine = lines[0].trim();
+            const generatedTitle =
+              firstLine.length > 60
+                ? firstLine.substring(0, 57) + "..."
+                : firstLine;
+            setTitle(generatedTitle);
+          }
+        }
+      }
+
+      // Add extracted tags to existing tags
+      if (extractedTags.length > 0) {
+        const newTags = extractedTags.filter((tag) => !tags.includes(tag));
+        if (newTags.length > 0) {
+          setTags((prevTags) => [...prevTags, ...newTags]);
+        }
+      } else if (!tags.includes("extracted-text")) {
+        setTags((prevTags) => [...prevTags, "extracted-text"]);
+      }
+    } catch (error) {
+      console.error("Error extracting text from image:", error);
+      toast.error("Failed to extract text from image");
+    } finally {
+      setProcessingPhoto(false);
+    }
+  };
+
+  const extractBasicTitle = (text) => {
+    const lines = text.split("\n").filter((line) => line.trim());
+    if (lines.length === 0) return "Extracted Text Note";
+
+    const firstLine = lines[0].trim();
+    return firstLine.length > 60
+      ? firstLine.substring(0, 57) + "..."
+      : firstLine;
+  };
+
   const handleGenerateTags = async () => {
     if (!title.trim() && !content.trim()) {
       toast.error("Please add a title or content first");
@@ -538,16 +687,18 @@ const NoteEdit = () => {
     try {
       // Get user's AI settings
       const settings = await settingsService.getUserSettings(user.$id);
-      const aiProvider = settings?.aiProvider || 'gemini';
+      const aiProvider = settings?.aiProvider || "gemini";
 
       // Show loading toast
       const loadingToast = toast.loading("Generating AI tags...");
 
       try {
         // Initialize AI service based on provider
-        if (aiProvider === 'local') {
+        if (aiProvider === "local") {
           if (settings?.localModelPath) {
-            await aiService.setProvider('local', { modelPath: settings.localModelPath });
+            await aiService.setProvider("local", {
+              modelPath: settings.localModelPath,
+            });
           } else {
             toast.error("Please configure local AI model in settings");
             toast.dismiss(loadingToast);
@@ -560,11 +711,14 @@ const NoteEdit = () => {
             toast.dismiss(loadingToast);
             return;
           }
-          await aiService.setProvider('gemini', { apiKey: userApiKey });
+          await aiService.setProvider("gemini", { apiKey: userApiKey });
         }
 
         // Generate tags based on title and content
-        const generatedTags = await aiService.generateTagsForNote(title, content);
+        const generatedTags = await aiService.generateTagsForNote(
+          title,
+          content
+        );
 
         if (generatedTags && generatedTags.length > 0) {
           // Merge with existing tags, avoiding duplicates
@@ -614,12 +768,14 @@ const NoteEdit = () => {
     try {
       // Get user's AI settings
       const settings = await settingsService.getUserSettings(user.$id);
-      const aiProvider = settings?.aiProvider || 'gemini';
+      const aiProvider = settings?.aiProvider || "gemini";
 
       // Initialize AI service based on provider
-      if (aiProvider === 'local') {
+      if (aiProvider === "local") {
         if (settings?.localModelPath) {
-          await aiService.setProvider('local', { modelPath: settings.localModelPath });
+          await aiService.setProvider("local", {
+            modelPath: settings.localModelPath,
+          });
         } else {
           toast.error("Please configure local AI model in settings");
           return;
@@ -630,7 +786,7 @@ const NoteEdit = () => {
           toast.error("Please set your Google Gemini API key in settings");
           return;
         }
-        await aiService.setProvider('gemini', { apiKey: userApiKey });
+        await aiService.setProvider("gemini", { apiKey: userApiKey });
       }
 
       // Generate note content
@@ -670,12 +826,14 @@ const NoteEdit = () => {
     try {
       // Get user's AI settings
       const settings = await settingsService.getUserSettings(user.$id);
-      const aiProvider = settings?.aiProvider || 'gemini';
+      const aiProvider = settings?.aiProvider || "gemini";
 
       // Initialize AI service based on provider
-      if (aiProvider === 'local') {
+      if (aiProvider === "local") {
         if (settings?.localModelPath) {
-          await aiService.setProvider('local', { modelPath: settings.localModelPath });
+          await aiService.setProvider("local", {
+            modelPath: settings.localModelPath,
+          });
         } else {
           toast.error("Please configure local AI model in settings");
           return;
@@ -686,7 +844,7 @@ const NoteEdit = () => {
           toast.error("Please set your Google Gemini API key in settings");
           return;
         }
-        await aiService.setProvider('gemini', { apiKey: userApiKey });
+        await aiService.setProvider("gemini", { apiKey: userApiKey });
       }
 
       // Generate content based on title using the new method
@@ -2216,10 +2374,29 @@ Brief description of what you're researching
 
             <div className="flex items-center space-x-3 w-full sm:w-auto">
               <Button
+                onClick={() => setShowPhotoUpload(true)}
+                variant="outline"
+                disabled={saving || processingPhoto}
+                className="border-purple-500 flex items-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all duration-300 w-full sm:w-auto text-sm sm:text-base"
+              >
+                {processingPhoto ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Extract Text
+                  </>
+                )}
+              </Button>
+              <Button
                 onClick={handleSave}
                 loading={saving}
-                className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto text-sm sm:text-base"
+                className="bg-blue-600 hover:bg-blue-700 flex items-center text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto text-sm sm:text-base"
               >
+                <Save className="w-4 h-4 mr-2" />
                 {saving ? "Saving..." : "Save Note"}
               </Button>
             </div>
@@ -2516,8 +2693,14 @@ Brief description of what you're researching
                       </button>
 
                       {showEmojiPicker && (
-                        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/20" onClick={() => setShowEmojiPicker(false)}>
-                          <div className="bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl w-80 sm:w-96 max-h-80 sm:max-h-96 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/20"
+                          onClick={() => setShowEmojiPicker(false)}
+                        >
+                          <div
+                            className="bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl w-80 sm:w-96 max-h-80 sm:max-h-96 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {/* Emoji Search */}
                             <div className="p-3 sm:p-4 border-b border-gray-700/50">
                               <div className="relative">
@@ -2565,24 +2748,26 @@ Brief description of what you're researching
                                       {category}
                                     </h4>
                                     <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
-                                      {emojis.slice(0, 40).map((emoji, index) => (
-                                        <button
-                                          key={index}
-                                          onClick={() => {
-                                            insertEmoji(emoji);
-                                            setShowEmojiPicker(false);
-                                          }}
-                                          className="p-1.5 sm:p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-base sm:text-lg hover:scale-110"
-                                          title={`Insert ${emoji}`}
-                                        >
-                                          {emoji}
-                                        </button>
-                                      ))}
+                                      {emojis
+                                        .slice(0, 40)
+                                        .map((emoji, index) => (
+                                          <button
+                                            key={index}
+                                            onClick={() => {
+                                              insertEmoji(emoji);
+                                              setShowEmojiPicker(false);
+                                            }}
+                                            className="p-1.5 sm:p-2 hover:bg-gray-700/50 rounded-md transition-all duration-200 text-base sm:text-lg hover:scale-110"
+                                            title={`Insert ${emoji}`}
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
                                     </div>
                                     {emojis.length > 40 && (
                                       <p className="text-xs text-gray-500 mt-2">
-                                        +{emojis.length - 40} more emojis in this
-                                        category
+                                        +{emojis.length - 40} more emojis in
+                                        this category
                                       </p>
                                     )}
                                   </div>
@@ -2794,7 +2979,7 @@ Brief description of what you're researching
           {/* Customization Sidebar */}
           <div className="w-full xl:w-96 order-2 xl:order-2">
             <motion.div
-              initial={{ opacity: 0, x: 20 }} 
+              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl h-full flex flex-col"
             >
@@ -2804,320 +2989,336 @@ Brief description of what you're researching
                   Customization
                 </h3>
               </div>
-              
-              <div className="flex-1 overflow-y-auto space-y-4 sm:space-y-6"
+
+              <div
+                className="flex-1 overflow-y-auto space-y-4 sm:space-y-6"
                 style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#374151 #1f2937'
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "#374151 #1f2937",
                 }}
               >
-              <div className="px-4 sm:px-6">
+                <div className="px-4 sm:px-6">
+                  {/* Background Color Picker */}
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4 mt-2">
+                      Background Color
+                    </label>
 
-              {/* Background Color Picker */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4 mt-2">
-                  Background Color
-                </label>
+                    <div className="mb-3 sm:mb-4">
+                      <input
+                        type="color"
+                        value={customStyle.backgroundColor}
+                        onChange={(e) =>
+                          setCustomStyle((prev) => ({
+                            ...prev,
+                            backgroundColor: e.target.value,
+                          }))
+                        }
+                        className="w-full h-10 sm:h-12 rounded-xl border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
+                      />
+                      <p className="text-xs text-gray-400 mt-2">
+                        Current: {customStyle.backgroundColor}
+                      </p>
+                    </div>
 
-                <div className="mb-3 sm:mb-4">
-                  <input
-                    type="color"
-                    value={customStyle.backgroundColor}
-                    onChange={(e) =>
-                      setCustomStyle((prev) => ({
-                        ...prev,
-                        backgroundColor: e.target.value,
-                      }))
-                    }
-                    className="w-full h-10 sm:h-12 rounded-xl border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
-                  />
-                  <p className="text-xs text-gray-400 mt-2">
-                    Current: {customStyle.backgroundColor}
-                  </p>
-                </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+                      {backgroundOptions.map((bg) => (
+                        <button
+                          key={bg.color}
+                          onClick={() =>
+                            setCustomStyle((prev) => ({
+                              ...prev,
+                              backgroundColor: bg.color,
+                            }))
+                          }
+                          className={`group relative w-full h-10 sm:h-12 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
+                            customStyle.backgroundColor === bg.color
+                              ? "border-white shadow-lg"
+                              : "border-gray-600 hover:border-gray-400"
+                          }`}
+                          style={{ backgroundColor: bg.color }}
+                          title={bg.name}
+                        >
+                          {customStyle.backgroundColor === bg.color && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg"></div>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-                  {backgroundOptions.map((bg) => (
-                    <button
-                      key={bg.color}
-                      onClick={() =>
+                  {/* Font Family */}
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-semibold text-gray-200 mb-3">
+                      Font Family
+                    </label>
+                    <select
+                      value={customStyle.fontFamily}
+                      onChange={(e) =>
                         setCustomStyle((prev) => ({
                           ...prev,
-                          backgroundColor: bg.color,
+                          fontFamily: e.target.value,
                         }))
                       }
-                      className={`group relative w-full h-10 sm:h-12 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
-                        customStyle.backgroundColor === bg.color
-                          ? "border-white shadow-lg"
-                          : "border-gray-600 hover:border-gray-400"
-                      }`}
-                      style={{ backgroundColor: bg.color }}
-                      title={bg.name}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm sm:text-base"
                     >
-                      {customStyle.backgroundColor === bg.color && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg"></div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      {fontFamilyOptions.map((font) => (
+                        <option
+                          key={font.value}
+                          value={font.value}
+                          className="bg-gray-800"
+                        >
+                          {font.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Font Family */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3">
-                  Font Family
-                </label>
-                <select
-                  value={customStyle.fontFamily}
-                  onChange={(e) =>
-                    setCustomStyle((prev) => ({
-                      ...prev,
-                      fontFamily: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm sm:text-base"
-                >
-                  {fontFamilyOptions.map((font) => (
-                    <option
-                      key={font.value}
-                      value={font.value}
-                      className="bg-gray-800"
+                  {/* Font Size */}
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-semibold text-gray-200 mb-3">
+                      Font Size
+                    </label>
+                    <select
+                      value={customStyle.fontSize}
+                      onChange={(e) =>
+                        setCustomStyle((prev) => ({
+                          ...prev,
+                          fontSize: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm sm:text-base"
                     >
-                      {font.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                      {fontSizeOptions.map((size) => (
+                        <option
+                          key={size.value}
+                          value={size.value}
+                          className="bg-gray-800"
+                        >
+                          {size.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Font Size */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3">
-                  Font Size
-                </label>
-                <select
-                  value={customStyle.fontSize}
-                  onChange={(e) =>
-                    setCustomStyle((prev) => ({
-                      ...prev,
-                      fontSize: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800/80 border border-gray-600 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-all duration-300 text-sm sm:text-base"
-                >
-                  {fontSizeOptions.map((size) => (
-                    <option
-                      key={size.value}
-                      value={size.value}
-                      className="bg-gray-800"
-                    >
-                      {size.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  {/* Text Color */}
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4">
+                      Text Color
+                    </label>
+                    <div className="flex gap-2 sm:gap-3">
+                      <button
+                        onClick={() =>
+                          setCustomStyle((prev) => ({
+                            ...prev,
+                            textColor: "#ffffff",
+                          }))
+                        }
+                        className={`flex-1 h-8 sm:h-10 rounded-lg border-2 bg-white transition-all duration-300 ${
+                          customStyle.textColor === "#ffffff"
+                            ? "border-blue-400"
+                            : "border-gray-600 hover:border-gray-400"
+                        }`}
+                      />
+                      <button
+                        onClick={() =>
+                          setCustomStyle((prev) => ({
+                            ...prev,
+                            textColor: "#000000",
+                          }))
+                        }
+                        className={`flex-1 h-8 sm:h-10 rounded-lg border-2 bg-black transition-all duration-300 ${
+                          customStyle.textColor === "#000000"
+                            ? "border-blue-400"
+                            : "border-gray-600 hover:border-gray-400"
+                        }`}
+                      />
+                      <input
+                        type="color"
+                        value={customStyle.textColor}
+                        onChange={(e) =>
+                          setCustomStyle((prev) => ({
+                            ...prev,
+                            textColor: e.target.value,
+                          }))
+                        }
+                        className="flex-1 h-8 sm:h-10 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
+                      />
+                    </div>
+                  </div>
 
-              {/* Text Color */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4">
-                  Text Color
-                </label>
-                <div className="flex gap-2 sm:gap-3">
-                  <button
-                    onClick={() =>
-                      setCustomStyle((prev) => ({
-                        ...prev,
-                        textColor: "#ffffff",
-                      }))
-                    }
-                    className={`flex-1 h-8 sm:h-10 rounded-lg border-2 bg-white transition-all duration-300 ${
-                      customStyle.textColor === "#ffffff"
-                        ? "border-blue-400"
-                        : "border-gray-600 hover:border-gray-400"
-                    }`}
-                  />
-                  <button
-                    onClick={() =>
-                      setCustomStyle((prev) => ({
-                        ...prev,
-                        textColor: "#000000",
-                      }))
-                    }
-                    className={`flex-1 h-8 sm:h-10 rounded-lg border-2 bg-black transition-all duration-300 ${
-                      customStyle.textColor === "#000000"
-                        ? "border-blue-400"
-                        : "border-gray-600 hover:border-gray-400"
-                    }`}
-                  />
-                  <input
-                    type="color"
-                    value={customStyle.textColor}
-                    onChange={(e) =>
-                      setCustomStyle((prev) => ({
-                        ...prev,
-                        textColor: e.target.value,
-                      }))
-                    }
-                    className="flex-1 h-8 sm:h-10 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-400 transition-all duration-300"
-                  />
-                </div>
-              </div>
-
-              {/* Preview */}
-              <div className="mb-4 sm:mb-6">
-                <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4 flex items-center">
-                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-blue-400" />
-                  Live Preview
-                </label>
-                <div className="relative">
-                  <div
-                    className="p-4 sm:p-6 rounded-xl border-2 border-gray-600/50 min-h-[160px] sm:min-h-[180px] max-h-[350px] sm:max-h-[400px] overflow-hidden transition-all duration-300 backdrop-blur-sm shadow-lg hover:border-blue-500/30 hover:shadow-xl"
-                    style={{ 
-                      backgroundColor: customStyle.backgroundColor,
-                      backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%)'
-                    }}
-                  >
-                    {/* Title Preview */}
-                    {title && (
-                      <div className="mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-white/10">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <span className="text-base sm:text-lg">{emoji}</span>
-                          <h4
-                            className="font-bold flex-1 break-words overflow-hidden"
-                            style={{
-                              fontSize: `calc(${customStyle.fontSize} + 2px)`,
-                              fontFamily: customStyle.fontFamily,
-                              color: customStyle.textColor,
-                              lineHeight: '1.3',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              textOverflow: 'ellipsis'
-                            }}
-                          >
-                            {title}
-                          </h4>
-                        </div>
-                        {tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {tags.slice(0, 3).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 text-xs rounded-full border backdrop-blur-sm"
+                  {/* Preview */}
+                  <div className="mb-4 sm:mb-6">
+                    <label className="block text-sm font-semibold text-gray-200 mb-3 sm:mb-4 flex items-center">
+                      <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-blue-400" />
+                      Live Preview
+                    </label>
+                    <div className="relative">
+                      <div
+                        className="p-4 sm:p-6 rounded-xl border-2 border-gray-600/50 min-h-[160px] sm:min-h-[180px] max-h-[350px] sm:max-h-[400px] overflow-hidden transition-all duration-300 backdrop-blur-sm shadow-lg hover:border-blue-500/30 hover:shadow-xl"
+                        style={{
+                          backgroundColor: customStyle.backgroundColor,
+                          backgroundImage:
+                            "linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%)",
+                        }}
+                      >
+                        {/* Title Preview */}
+                        {title && (
+                          <div className="mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-white/10">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-base sm:text-lg">
+                                {emoji}
+                              </span>
+                              <h4
+                                className="font-bold flex-1 break-words overflow-hidden"
                                 style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                                  fontSize: `calc(${customStyle.fontSize} + 2px)`,
+                                  fontFamily: customStyle.fontFamily,
                                   color: customStyle.textColor,
-                                  opacity: 0.8
+                                  lineHeight: "1.3",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  textOverflow: "ellipsis",
                                 }}
                               >
-                                #{tag}
-                              </span>
-                            ))}
-                            {tags.length > 3 && (
-                              <span
-                                className="px-2 py-1 text-xs rounded-full border backdrop-blur-sm"
-                                style={{
-                                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                                  color: customStyle.textColor,
-                                  opacity: 0.6
-                                }}
-                              >
-                                +{tags.length - 3}
-                              </span>
+                                {title}
+                              </h4>
+                            </div>
+                            {tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {tags.slice(0, 3).map((tag, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 text-xs rounded-full border backdrop-blur-sm"
+                                    style={{
+                                      backgroundColor:
+                                        "rgba(255, 255, 255, 0.1)",
+                                      borderColor: "rgba(255, 255, 255, 0.2)",
+                                      color: customStyle.textColor,
+                                      opacity: 0.8,
+                                    }}
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                                {tags.length > 3 && (
+                                  <span
+                                    className="px-2 py-1 text-xs rounded-full border backdrop-blur-sm"
+                                    style={{
+                                      backgroundColor:
+                                        "rgba(255, 255, 255, 0.05)",
+                                      borderColor: "rgba(255, 255, 255, 0.1)",
+                                      color: customStyle.textColor,
+                                      opacity: 0.6,
+                                    }}
+                                  >
+                                    +{tags.length - 3}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
-                      </div>
-                    )}
-                    
-                    {/* Content Preview */}
-                    <div
-                      className="leading-relaxed break-words overflow-hidden"
-                      style={{
-                        fontSize: customStyle.fontSize,
-                        fontFamily: customStyle.fontFamily,
-                        color: customStyle.textColor,
-                        opacity: 0.9,
-                        lineHeight: '1.6'
-                      }}
-                    >
-                      {content ? (
+
+                        {/* Content Preview */}
                         <div
-                          className="prose-preview overflow-hidden"
+                          className="leading-relaxed break-words overflow-hidden"
                           style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 6,
-                            WebkitBoxOrient: 'vertical',
-                            textOverflow: 'ellipsis',
-                            wordWrap: 'break-word',
-                            overflowWrap: 'break-word',
-                            hyphens: 'auto'
+                            fontSize: customStyle.fontSize,
+                            fontFamily: customStyle.fontFamily,
+                            color: customStyle.textColor,
+                            opacity: 0.9,
+                            lineHeight: "1.6",
                           }}
-                          dangerouslySetInnerHTML={{
-                            __html: parseMarkdown(
-                              content.length > 250
-                                ? content.substring(0, 250) + "..."
-                                : content
-                            ),
-                          }}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-16 sm:h-24 text-center">
-                          <span 
-                            className="text-xs sm:text-sm italic"
-                            style={{ 
-                              color: customStyle.textColor, 
-                              opacity: 0.5 
+                        >
+                          {content ? (
+                            <div
+                              className="prose-preview overflow-hidden"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 6,
+                                WebkitBoxOrient: "vertical",
+                                textOverflow: "ellipsis",
+                                wordWrap: "break-word",
+                                overflowWrap: "break-word",
+                                hyphens: "auto",
+                              }}
+                              dangerouslySetInnerHTML={{
+                                __html: parseMarkdown(
+                                  content.length > 250
+                                    ? content.substring(0, 250) + "..."
+                                    : content
+                                ),
+                              }}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-16 sm:h-24 text-center">
+                              <span
+                                className="text-xs sm:text-sm italic"
+                                style={{
+                                  color: customStyle.textColor,
+                                  opacity: 0.5,
+                                }}
+                              >
+                                Your note content will appear here...
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Fade out effect for overflow */}
+                        {content && content.length > 250 && (
+                          <div
+                            className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 pointer-events-none"
+                            style={{
+                              background: `linear-gradient(transparent, ${customStyle.backgroundColor})`,
                             }}
-                          >
-                            Your note content will appear here...
+                          />
+                        )}
+                      </div>
+
+                      {/* Preview Actions */}
+                      <div className="flex items-center justify-between mt-2 sm:mt-3 text-xs text-gray-400">
+                        <div className="flex items-center space-x-2 sm:space-x-4">
+                          <span className="flex items-center">
+                            <Type className="h-3 w-3 mr-1" />
+                            {content.length} chars
+                          </span>
+                          <span className="flex items-center">
+                            <Hash className="h-3 w-3 mr-1" />
+                            {tags.length} tags
                           </span>
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Fade out effect for overflow */}
-                    {content && content.length > 250 && (
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 pointer-events-none"
-                        style={{
-                          background: `linear-gradient(transparent, ${customStyle.backgroundColor})`
-                        }}
-                      />
-                    )}
-                  </div>
-                  
-                  {/* Preview Actions */}
-                  <div className="flex items-center justify-between mt-2 sm:mt-3 text-xs text-gray-400">
-                    <div className="flex items-center space-x-2 sm:space-x-4">
-                      <span className="flex items-center">
-                        <Type className="h-3 w-3 mr-1" />
-                        {content.length} chars
-                      </span>
-                      <span className="flex items-center">
-                        <Hash className="h-3 w-3 mr-1" />
-                        {tags.length} tags
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <div 
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: customStyle.backgroundColor }}
-                      />
-                      <span>Preview</span>
+                        <div className="flex items-center space-x-1">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              backgroundColor: customStyle.backgroundColor,
+                            }}
+                          />
+                          <span>Preview</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              </div>
               </div>
             </motion.div>
           </div>
         </div>
       </div>
+
+      {/* Photo Upload Modal */}
+      {showPhotoUpload && (
+        <PhotoUpload
+          onTextExtracted={handlePhotoUpload}
+          onClose={() => setShowPhotoUpload(false)}
+          isProcessing={processingPhoto}
+        />
+      )}
 
       {/* Unsaved Changes Modal */}
       <UnsavedChangesModal
@@ -3132,4 +3333,3 @@ Brief description of what you're researching
 };
 
 export default NoteEdit;
-

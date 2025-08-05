@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scribly OCR Capture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 380px;
+            height: 500px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .container {
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4F70E2 0%, #3A5BC7 50%, #2A4BA6 100%);
+            border-radius: 8px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #4F70E2 0%, #3A5BC7 50%, #2A4BA6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .capture-section {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #e5e5e5;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #4F70E2;
+            box-shadow: 0 0 0 3px rgba(79, 112, 226, 0.1);
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4F70E2 0%, #3A5BC7 50%, #2A4BA6 100%);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 112, 226, 0.3);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button.secondary {
+            background: #2a2a2a;
+            color: #e5e5e5;
+        }
+
+        .button.secondary:hover {
+            background: #374151;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .status.processing {
+            background: rgba(79, 112, 226, 0.1);
+            border: 1px solid rgba(79, 112, 226, 0.3);
+            color: #4F70E2;
+        }
+
+        .user-info {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .user-email {
+            font-size: 13px;
+            color: #a1a1aa;
+            margin-bottom: 5px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #e5e5e5;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #2a2a2a;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4F70E2, #3A5BC7);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff30;
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .feature-list {
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #a1a1aa;
+        }
+
+        .feature-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            color: #4F70E2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">S</div>
+            <div class="title">Scribly OCR</div>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="authSection" class="auth-section">
+            <div class="input-group">
+                <label class="label" for="email">Email</label>
+                <input type="email" id="email" class="input" placeholder="Enter your Scribly email" />
+            </div>
+            <div class="input-group">
+                <label class="label" for="password">Password</label>
+                <input type="password" id="password" class="input" placeholder="Enter your password" />
+            </div>
+            <button id="loginBtn" class="button">
+                <span id="loginText">Sign In to Scribly</span>
+            </button>
+            
+            <button id="helpBtnAuth" class="button secondary" style="margin-top: 10px;">
+                💡 Need Help? View Tutorial
+            </button>
+            
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span class="feature-icon">✨</span>
+                    Smart OCR text extraction
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔒</span>
+                    Secure note synchronization
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🏷️</span>
+                    Automatic tag generation
+                </div>
+            </div>
+        </div>
+
+        <!-- Capture Section -->
+        <div id="captureSection" class="capture-section">
+            <div class="user-info">
+                <div class="user-email" id="userEmail"></div>
+                <div class="user-name" id="userName"></div>
+            </div>
+
+            <div id="statusMessage" class="status hidden"></div>
+            
+            <div id="progressContainer" class="hidden">
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div id="progressText" style="font-size: 13px; color: #a1a1aa; margin-bottom: 15px;"></div>
+            </div>
+
+            <button id="captureBtn" class="button">
+                <span id="captureText">📸 Capture & Extract Text</span>
+            </button>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="logoutBtn" class="button secondary" style="flex: 1;">
+                    Sign Out
+                </button>
+                <button id="helpBtn" class="button secondary" style="flex: 1;">
+                    💡 Help
+                </button>
+            </div>
+
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span class="feature-icon">📱</span>
+                    Captures visible content
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🤖</span>
+                    AI-powered text extraction
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    Instant sync to dashboard
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRITICAL: Load ultimate CDN blocker FIRST -->
+    <script src="tesseract-ultimate-blocker.js"></script>
+    
+    <!-- Critical: Load override script FIRST to intercept CDN requests -->
+    <script src="tesseract-override.js"></script>
+    <script src="tesseract-config.js"></script>
+    <script src="appwrite.js"></script>
+    <script src="tesseract.js"></script>
+    <script src="test-extension.js"></script>
+    <script src="auth.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

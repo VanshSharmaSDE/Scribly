@@ -16,6 +16,7 @@ import {
   Sparkles,
   Wand2,
   Share,
+  Camera,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -82,7 +83,7 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = "grid" }) => {
         exit={{ opacity: 0, y: -20 }}
         className="group cursor-pointer"
       >
-        <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 transition-all duration-300 hover:bg-gray-800/70 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/10">
+        <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 transition-all duration-300 hover:bg-gray-800/70 hover:border-blue-600/30 hover:shadow-lg hover:shadow-blue-600/10">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-4 flex-1">
               <div className="text-2xl">{note.emoji || "📝"}</div>
@@ -197,7 +198,7 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = "grid" }) => {
       whileHover={{ y: -4 }}
       className="group cursor-pointer"
     >
-      <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 h-full flex flex-col transition-all duration-300 hover:bg-gray-800/70 hover:border-blue-500/30 hover:shadow-xl hover:shadow-blue-500/10">
+      <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 h-full flex flex-col transition-all duration-300 hover:bg-gray-800/70 hover:border-blue-600/30 hover:shadow-xl hover:shadow-blue-600/10">
         <div className="flex items-start justify-between mb-4">
           <div className="text-3xl">{note.emoji || "📝"}</div>
           <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -281,7 +282,7 @@ const NoteCard = ({ note, onDelete, onToggleStar, viewMode = "grid" }) => {
             note.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
+                className="px-3 py-1 text-xs rounded-full bg-blue-600/20 text-blue-300 border border-blue-600/30 hover:bg-blue-600/30 transition-colors"
               >
                 #{tag}
               </span>
@@ -573,7 +574,7 @@ const Dashboard = () => {
             </p>
             <Button
               onClick={() => navigate("/login")}
-              className="bg-blue-500 hover:bg-blue-600 text-white border-0"
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0"
             >
               Go to Login
             </Button>
@@ -630,7 +631,7 @@ const Dashboard = () => {
                     }}
                   >
                     <Sparkles className="w-3 h-3 mr-2" />
-                    <span className="text-xs font-semibold">v0.6.0</span>
+                    <span className="text-xs font-semibold">v0.6.1</span>
                   </motion.div>
 
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4">
@@ -684,7 +685,7 @@ const Dashboard = () => {
 
                   <Button
                     onClick={handleCreateNote}
-                    className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 items-center flex justify-center px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 items-center flex justify-center px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Manually
@@ -825,7 +826,7 @@ const Dashboard = () => {
 
                   <button
                     onClick={() => setShowAIGuide(true)}
-                    className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200 text-xs sm:text-sm text-center"
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-700/20 hover:bg-blue-700/30 border border-blue-600/30 rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200 text-xs sm:text-sm text-center"
                   >
                     How to Use AI
                   </button>
@@ -851,14 +852,14 @@ const Dashboard = () => {
                     placeholder="Search notes..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-lg sm:rounded-xl text-gray-100 placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-gray-800/70 transition-all duration-300 hover:border-gray-600 text-sm sm:text-base"
+                    className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-lg sm:rounded-xl text-gray-100 placeholder-gray-400 focus:outline-none focus:border-blue-600/50 focus:bg-gray-800/70 transition-all duration-300 hover:border-gray-600 text-sm sm:text-base"
                   />
                 </div>
 
                 <select
                   value={selectedTag}
                   onChange={(e) => setSelectedTag(e.target.value)}
-                  className="w-full sm:w-auto px-3 sm:px-4 py-3 sm:py-4 bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-lg sm:rounded-xl text-gray-100 focus:outline-none focus:border-blue-500/50 focus:bg-gray-800/70 transition-all duration-300 hover:border-gray-600 cursor-pointer text-sm sm:text-base"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-3 sm:py-4 bg-gray-900/60 backdrop-blur-sm border border-gray-700/50 rounded-lg sm:rounded-xl text-gray-100 focus:outline-none focus:border-blue-600/50 focus:bg-gray-800/70 transition-all duration-300 hover:border-gray-600 cursor-pointer text-sm sm:text-base"
                 >
                   <option value="" className="bg-gray-800">
                     All tags
@@ -878,7 +879,7 @@ const Dashboard = () => {
                     onClick={() => setViewMode("grid")}
                     className={`p-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
                       viewMode === "grid"
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-105"
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105"
                         : "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
                     }`}
                     title="Grid View"
@@ -889,7 +890,7 @@ const Dashboard = () => {
                     onClick={() => setViewMode("list")}
                     className={`p-3 rounded-lg transition-all duration-300 flex items-center justify-center ${
                       viewMode === "list"
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-105"
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105"
                         : "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
                     }`}
                     title="List View"
@@ -908,7 +909,7 @@ const Dashboard = () => {
                   </Button>
                   <Button
                     onClick={handleCreateNote}
-                    className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 hover:scale-105 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     New Note
@@ -943,13 +944,15 @@ const Dashboard = () => {
                       : "Create your first note to start building your knowledge base"}
                   </p>
                   {!searchTerm && !selectedTag && (
-                    <Button
-                      onClick={handleCreateNote}
-                      className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Create Your First Note
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Button
+                        onClick={handleCreateNote}
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
+                      >
+                        <Plus className="h-5 w-5 mr-2" />
+                        Create Your First Note
+                      </Button>
+                    </div>
                   )}
                 </div>
               </motion.div>

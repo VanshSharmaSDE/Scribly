@@ -101,7 +101,7 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
-
+        
         {/* Legacy routes for backward compatibility */}
         <Route
           path="/notes/:id"

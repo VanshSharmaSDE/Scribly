@@ -1,0 +1,70 @@
+{
+  "manifest_version": 3,
+  "name": "Scribly OCR Capture",
+  "version": "1.0.0",
+  "description": "Smart OCR capture extension for Scribly - Capture text from any webpage and save as notes",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs",
+    "cookies",
+    "scripting",
+    "desktopCapture",
+    "tabCapture"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://nyc.cloud.appwrite.io/*",
+    "https://cloud.appwrite.io/*",
+    "https://*.appwrite.io/*",
+    "https://localhost/*",
+    "http://localhost/*",
+    "https://scribly-d1lo.onrender.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; worker-src 'self'"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Scribly OCR Capture",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "tesseract/*",
+        "tesseract/worker.min.js",
+        "tesseract/tesseract-core.wasm.js",
+        "tesseract/eng.traineddata",
+        "welcome.html",
+        "welcome.js",
+        "tesseract-config.js",
+        "tesseract-ultimate-blocker.js",
+        "tesseract-override.js",
+        "test-extension.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -286,7 +286,7 @@ const NoteView = () => {
             <p className="text-gray-400 mb-6 sm:mb-8 px-4 text-sm sm:text-base">The note you're looking for doesn't exist or has been deleted.</p>
             <Button 
               onClick={() => navigate('/dashboard')} 
-              className="bg-blue-500 hover:bg-blue-600 text-white border-0 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base"
             >
               Back to Dashboard
             </Button>
@@ -392,7 +392,7 @@ const NoteView = () => {
                   )}
                 </div>
                 <Link to={`/notes/edit/${note.$id}`} className="flex-1 sm:flex-none">
-                  <Button className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white border-0 px-3 sm:px-4 py-2 text-sm sm:text-base">
+                  <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white border-0 px-3 sm:px-4 py-2 text-sm sm:text-base">
                     Edit
                   </Button>
                 </Link>
@@ -431,7 +431,7 @@ const NoteView = () => {
                     {note.tags.map(tag => (
                       <span
                         key={tag}
-                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                        className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs rounded-full bg-blue-600/20 text-blue-300 border border-blue-600/30"
                       >
                         #{tag}
                       </span>

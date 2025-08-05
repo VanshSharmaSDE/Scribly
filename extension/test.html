@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesseract Configuration Test</title>
+</head>
+<body>
+    <h1>Tesseract Configuration Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Test Tesseract paths
+        const workerPath = chrome.runtime.getURL('tesseract/worker.min.js');
+        const corePath = chrome.runtime.getURL('tesseract/tesseract-core.wasm.js');
+        const langPath = chrome.runtime.getURL('tesseract/');
+        
+        const results = document.getElementById('results');
+        
+        results.innerHTML = `
+            <p><strong>Worker Path:</strong> ${workerPath}</p>
+            <p><strong>Core Path:</strong> ${corePath}</p>
+            <p><strong>Lang Path:</strong> ${langPath}</p>
+            <p><strong>Extension ID:</strong> ${chrome.runtime.id}</p>
+            <p><strong>Test Status:</strong> <span id="status">Testing...</span></p>
+        `;
+        
+        // Test file accessibility
+        async function testFiles() {
+            try {
+                const workerResponse = await fetch(workerPath);
+                const coreResponse = await fetch(corePath);
+                const langResponse = await fetch(langPath + 'eng.traineddata');
+                
+                const status = document.getElementById('status');
+                status.innerHTML = `
+                    Worker: ${workerResponse.ok ? '✅' : '❌'} (${workerResponse.status})<br>
+                    Core: ${coreResponse.ok ? '✅' : '❌'} (${coreResponse.status})<br>
+                    Lang: ${langResponse.ok ? '✅' : '❌'} (${langResponse.status})
+                `;
+                
+                if (workerResponse.ok && coreResponse.ok && langResponse.ok) {
+                    status.style.color = 'green';
+                } else {
+                    status.style.color = 'red';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Error: ${error.message}`;
+                document.getElementById('status').style.color = 'red';
+            }
+        }
+        
+        testFiles();
+    </script>
+</body>
+</html>

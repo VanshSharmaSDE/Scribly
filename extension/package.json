@@ -1,0 +1,35 @@
+{
+  "name": "scribly-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome Extension for Scribly - Smart OCR Capture Note Taking",
+  "main": "background.js",
+  "scripts": {
+    "build": "echo 'Chrome extension ready for loading'",
+    "test": "echo 'No tests specified'",
+    "lint": "echo 'Linting not configured'",
+    "package": "zip -r scribly-extension.zip . -x node_modules/\\* .git/\\* *.zip"
+  },
+  "keywords": [
+    "chrome-extension",
+    "ocr",
+    "note-taking",
+    "scribly",
+    "appwrite",
+    "tesseract"
+  ],
+  "author": "Scribly Team",
+  "license": "MIT",
+  "dependencies": {
+    "appwrite": "^13.0.1",
+    "tesseract.js": "^4.1.1"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VanshSharmaSDE/Scribly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VanshSharmaSDE/Scribly/issues"
+  },
+  "homepage": "https://scribly-d1lo.onrender.com/login"
+}

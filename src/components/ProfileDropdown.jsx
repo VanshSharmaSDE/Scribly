@@ -338,7 +338,7 @@ const ProfileDropdown = () => {
                     </div>
                     {isEditing && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Email changes require verification
+                        {/* Email changes require verification */}
                       </p>
                     )}
                   </div>
@@ -357,7 +357,7 @@ const ProfileDropdown = () => {
                       </Button>
                       <Button
                         onClick={handleSaveProfile}
-                        className="flex-1"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                         disabled={loading || !formData.name.trim()}
                       >
                         Save Changes
@@ -369,7 +369,7 @@ const ProfileDropdown = () => {
                         setShowProfileModal(false);
                         setIsEditing(false);
                       }}
-                      className="flex-1"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       Close
                     </Button>

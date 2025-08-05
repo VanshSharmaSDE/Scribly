@@ -410,7 +410,7 @@ const About = () => {
                 <li>• <strong>Optimized Local AI:</strong> Enhanced local AI models for minimal resource usage and better performance</li>
                 <li>• <strong>Resource Efficiency:</strong> Significantly reduced memory footprint for local AI operations</li>
                 <li>• <strong>Stability Improvements:</strong> Enhanced overall app stability and error handling</li>
-                <li>• <strong>Performance Boost:</strong> Faster AI response times with optimized model configurations</li>
+                <li>• <strong>New Feature:</strong> Capture and extract text from images to create notes automatically</li>
               </ul>
             </motion.div>
 
