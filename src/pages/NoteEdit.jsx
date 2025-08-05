@@ -115,6 +115,10 @@ const NoteEdit = () => {
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [processingPhoto, setProcessingPhoto] = useState(false);
+  const [showProcessingPopup, setShowProcessingPopup] = useState(false);
+  const [processingMessages, setProcessingMessages] = useState([]);
+  const [processingStep, setProcessingStep] = useState('');
+  const [processingProgress, setProcessingProgress] = useState(0);
 
   // Load auto-save settings on component mount
   useEffect(() => {
@@ -557,27 +561,65 @@ const NoteEdit = () => {
     }
   };
 
+  // Add processing message to the popup
+  const addProcessingMessage = (message, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString();
+    const newMessage = {
+      id: Date.now(),
+      message,
+      type, // 'info', 'success', 'warning', 'error'
+      timestamp
+    };
+    setProcessingMessages(prev => [...prev, newMessage]);
+  };
+
+  // Clear processing messages
+  const clearProcessingMessages = () => {
+    setProcessingMessages([]);
+    setProcessingStep('');
+    setProcessingProgress(0);
+  };
+
   const handlePhotoUpload = async (file) => {
     setProcessingPhoto(true);
     setShowPhotoUpload(false);
+    setShowProcessingPopup(true);
+    clearProcessingMessages();
 
     try {
+      addProcessingMessage('📤 Starting photo text extraction...', 'info');
+      setProcessingStep('Initializing OCR...');
+      setProcessingProgress(10);
+
       // Get user settings to determine AI preference
       const settings = await settingsService.getUserSettings(user.$id);
       const useLocalAI = settings?.aiProvider === "local";
+
+      addProcessingMessage(`🔧 Using ${useLocalAI ? 'Local AI' : 'Gemini AI'} for enhancement`, 'info');
+      setProcessingStep('Preparing image analysis...');
+      setProcessingProgress(20);
 
       // Extract text with AI enhancement
       const ocrResults = await ocrService.extractText(file, {
         enhanceWithAI: true,
         useLocalAI: useLocalAI,
+        logger: addProcessingMessage, // Pass our logging function to OCR service
+        progressCallback: setProcessingProgress // Pass progress callback
       });
 
+      setProcessingStep('Processing results...');
+      setProcessingProgress(80);
+
       if (!ocrResults.text || ocrResults.text.trim().length === 0) {
+        addProcessingMessage('❌ No text found in image', 'error');
         toast.error(
           "No text found in the image. Please try with a clearer image."
         );
         return;
       }
+
+      addProcessingMessage(`📝 Extracted ${ocrResults.text.length} characters`, 'info');
+      setProcessingStep('Enhancing content with AI...');
 
       // Use AI-enhanced content if available, otherwise use raw OCR text
       let extractedContent = ocrResults.text; // Default to raw OCR text
@@ -596,6 +638,8 @@ const NoteEdit = () => {
         extractedTags = enhanced.tags || [];
 
         const provider = ocrResults.enhancedNote.aiProvider;
+        setProcessingStep('Applying AI-enhanced content to note...');
+        
         toast.success(
           `Text extracted and enhanced with ${
             provider === "local" ? "Local AI" : "Gemini AI"
@@ -609,6 +653,9 @@ const NoteEdit = () => {
         });
       } else {
         // Fallback to raw OCR text if AI enhancement failed
+        addProcessingMessage('⚠️ AI enhancement not available, using raw OCR text', 'warning');
+        setProcessingStep('Using raw extracted text...');
+        
         console.warn("AI enhancement not available, using raw OCR text");
         console.log(
           "Using raw OCR text:",
@@ -634,6 +681,7 @@ const NoteEdit = () => {
       if (!title.trim()) {
         if (extractedTitle) {
           setTitle(extractedTitle);
+          addProcessingMessage(`📝 Set note title: "${extractedTitle}"`, 'success');
         } else {
           const lines = ocrResults.text
             .split("\n")
@@ -645,6 +693,7 @@ const NoteEdit = () => {
                 ? firstLine.substring(0, 57) + "..."
                 : firstLine;
             setTitle(generatedTitle);
+            addProcessingMessage(`📝 Generated title from first line: "${generatedTitle}"`, 'info');
           }
         }
       }
@@ -654,12 +703,25 @@ const NoteEdit = () => {
         const newTags = extractedTags.filter((tag) => !tags.includes(tag));
         if (newTags.length > 0) {
           setTags((prevTags) => [...prevTags, ...newTags]);
+          addProcessingMessage(`🏷️ Added ${newTags.length} new tags to note`, 'success');
         }
       } else if (!tags.includes("extracted-text")) {
         setTags((prevTags) => [...prevTags, "extracted-text"]);
+        addProcessingMessage('🏷️ Added "extracted-text" tag', 'info');
       }
+
+      addProcessingMessage('✅ Photo text extraction completed successfully!', 'success');
+      setProcessingStep('Finalizing...');
+      setProcessingProgress(100);
+      
+      // Close popup after a short delay
+      setTimeout(() => {
+        setShowProcessingPopup(false);
+      }, 2000);
+
     } catch (error) {
       console.error("Error extracting text from image:", error);
+      addProcessingMessage(`❌ Error: ${error.message}`, 'error');
       toast.error("Failed to extract text from image");
     } finally {
       setProcessingPhoto(false);
@@ -3318,6 +3380,87 @@ Brief description of what you're researching
           onClose={() => setShowPhotoUpload(false)}
           isProcessing={processingPhoto}
         />
+      )}
+
+      {/* Processing Popup */}
+      {showProcessingPopup && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-6 max-w-md w-full max-h-96 overflow-hidden shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                Processing Photo
+              </h3>
+              <button
+                onClick={() => setShowProcessingPopup(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+                disabled={processingPhoto}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Current Step */}
+            <div className="mb-4 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg">
+              <p className="text-blue-200 text-sm font-medium mb-2">
+                {processingStep || 'Initializing...'}
+              </p>
+              {/* Progress Bar */}
+              <div className="w-full bg-blue-900/50 rounded-full h-2 overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${processingProgress}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs text-blue-300">Progress</span>
+                <span className="text-xs text-blue-300 font-medium">{processingProgress}%</span>
+              </div>
+            </div>
+
+            {/* Messages Log */}
+            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+              {processingMessages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
+                    message.type === 'success'
+                      ? 'bg-green-500/20 border border-green-400/30 text-green-200'
+                      : message.type === 'error'
+                      ? 'bg-red-500/20 border border-red-400/30 text-red-200'
+                      : message.type === 'warning'
+                      ? 'bg-yellow-500/20 border border-yellow-400/30 text-yellow-200'
+                      : 'bg-gray-500/20 border border-gray-400/30 text-gray-200'
+                  }`}
+                >
+                  <span className="text-xs text-gray-400 mt-0.5 min-w-16">
+                    {message.timestamp}
+                  </span>
+                  <span className="flex-1">{message.message}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Progress Indicator */}
+            {processingPhoto && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-2 text-xs text-gray-300">
+                  <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  Processing in progress...
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
       )}
 
       {/* Unsaved Changes Modal */}

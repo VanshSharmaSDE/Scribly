@@ -77,6 +77,9 @@ const PhotoUpload = ({ onTextExtracted, onClose, isProcessing = false }) => {
 
   const handleProcessImage = () => {
     if (selectedFile && onTextExtracted) {
+      // Close the PhotoUpload modal first
+      onClose();
+      // Then start processing
       onTextExtracted(selectedFile);
     }
   };

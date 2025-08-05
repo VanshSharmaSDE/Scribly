@@ -25,16 +25,24 @@ class OCRService {
 
   // Extract text from image using direct API with fallback strategies and AI enhancement
   async extractText(imageFile, options = {}) {
+    const logger = options.logger || ((msg, type) => console.log(msg));
+    const progressCallback = options.progressCallback || ((progress) => {});
+    
     try {
-      console.log('Starting text extraction...');
+      logger('🚀 Starting text extraction...', 'info');
+      progressCallback(25);
       
       // Validate the image file first
       if (!this.validateImageFile(imageFile)) {
         throw new Error('Invalid image file format. Please use JPG, PNG, GIF, or WebP.');
       }
 
+      logger('✅ Image file validated successfully', 'success');
+      logger('🔍 Trying multiple OCR strategies for best results...', 'info');
+      progressCallback(30);
+
       // Use the fallback strategy for best results
-      const result = await this.extractTextWithFallback(imageFile);
+      const result = await this.extractTextWithFallback(imageFile, logger, progressCallback);
       
       if (!result.text || result.text.trim().length === 0) {
         throw new Error('No text was detected in the image. Please try with a clearer image.');
@@ -42,34 +50,25 @@ class OCRService {
 
       const cleanedText = this.cleanText(result.text);
       
-      console.log('OCR Result Preview:', cleanedText.substring(0, 100) + '...');
-      console.log('Extraction details:', {
-        strategy: result.strategy,
-        confidence: result.confidence.toFixed(1) + '%',
-        words: result.words,
-        lines: result.lines
-      });
+      logger(`📄 OCR completed! Strategy: ${result.strategy}`, 'success');
+      progressCallback(60);
+      logger(`📊 Confidence: ${result.confidence.toFixed(1)}% | Words: ${result.words} | Lines: ${result.lines}`, 'info');
+      logger(`📝 Extracted text preview: "${cleanedText.substring(0, 80)}..."`, 'info');
 
       // Generate AI-enhanced note if requested
       let enhancedNote = null;
       if (options.enhanceWithAI !== false) { // Default to true unless explicitly disabled
         try {
-          console.log('Starting AI enhancement for text:', cleanedText.substring(0, 100) + '...');
-          enhancedNote = await this.generateEnhancedNote(cleanedText, options.useLocalAI);
-          console.log('AI enhancement completed with provider:', enhancedNote.aiProvider);
-          console.log('Enhanced note structure:', {
-            hasTitle: !!enhancedNote.enhancedNote?.title,
-            hasContent: !!enhancedNote.enhancedNote?.content,
-            contentLength: enhancedNote.enhancedNote?.content?.length || 0,
-            hasTags: !!enhancedNote.enhancedNote?.tags?.length,
-            titlePreview: enhancedNote.enhancedNote?.title,
-            contentPreview: enhancedNote.enhancedNote?.content?.substring(0, 100) + '...'
-          });
+          logger('🤖 Starting AI enhancement...', 'info');
+          progressCallback(65);
+          enhancedNote = await this.generateEnhancedNote(cleanedText, options.useLocalAI, logger, progressCallback);
+          logger(`✨ AI enhancement completed with ${enhancedNote.aiProvider}!`, 'success');
+          progressCallback(75);
         } catch (aiError) {
-          console.warn('AI enhancement failed, returning original text:', aiError.message);
+          logger(`⚠️ AI enhancement failed: ${aiError.message}`, 'warning');
         }
       } else {
-        console.log('AI enhancement disabled by options');
+        logger('⏭️ AI enhancement disabled by options', 'info');
       }
 
       return {
@@ -122,7 +121,7 @@ class OCRService {
   }
 
   // Try multiple OCR strategies for better results with enhanced accuracy
-  async extractTextWithFallback(imageFile) {
+  async extractTextWithFallback(imageFile, logger = console.log, progressCallback = () => {}) {
     const strategies = [
       {
         name: 'Premium Accuracy',
@@ -174,13 +173,13 @@ class OCRService {
 
     for (const strategy of strategies) {
       try {
-        console.log(`Trying ${strategy.name} strategy...`);
+        logger(`🔍 Trying ${strategy.name} strategy...`, 'info');
         const { data } = await Tesseract.recognize(imageFile, 'eng', strategy.config);
         
         const confidence = data.confidence;
         const text = data.text.trim();
         
-        console.log(`${strategy.name}: ${confidence.toFixed(1)}% confidence`);
+        logger(`📊 ${strategy.name}: ${confidence.toFixed(1)}% confidence`, 'info');
         
         if (confidence > bestConfidence && text.length > 0) {
           bestConfidence = confidence;
@@ -195,10 +194,11 @@ class OCRService {
 
         // If we get good confidence, use it
         if (confidence > 80) {
+          logger(`✅ Good confidence achieved with ${strategy.name}`, 'success');
           break;
         }
       } catch (error) {
-        console.warn(`${strategy.name} strategy failed:`, error.message);
+        logger(`❌ ${strategy.name} strategy failed: ${error.message}`, 'warning');
         continue;
       }
     }
@@ -207,7 +207,7 @@ class OCRService {
       throw new Error('All OCR strategies failed');
     }
 
-    console.log(`Best result from ${bestResult.strategy}: ${bestResult.confidence.toFixed(1)}% confidence`);
+    logger(`🏆 Best result from ${bestResult.strategy}: ${bestResult.confidence.toFixed(1)}% confidence`, 'success');
     return bestResult;
   }
 
@@ -233,13 +233,14 @@ class OCRService {
   }
 
   // Generate AI-enhanced note from extracted text
-  async generateEnhancedNote(extractedText, useLocalAI = false) {
+  async generateEnhancedNote(extractedText, useLocalAI = false, logger = console.log, progressCallback = () => {}) {
     try {
       const aiService = useLocalAI 
         ? (await import('../services/localAIService.js')).default 
         : (await import('../services/aiService.js')).default;
 
-      console.log('Generating AI-enhanced note...');
+      logger(`🧠 Generating AI-enhanced note with ${useLocalAI ? 'Local AI' : 'Gemini'}...`, 'info');
+      progressCallback(68);
 
       const prompt = `
 Transform this extracted text into a well-structured, comprehensive note with the following requirements:
@@ -271,23 +272,22 @@ Make sure the content is well-organized with proper Markdown formatting, clear h
       let response;
       if (useLocalAI) {
         // Local AI service uses generateText method - returns raw text
+        progressCallback(70);
         response = await localAIService.generateText(prompt);
+        progressCallback(72);
         
         // Try to parse JSON response for local AI
         try {
           const aiResult = JSON.parse(response);
-          console.log('Local AI Result (parsed):', {
-            title: aiResult.title,
-            contentLength: aiResult.content?.length,
-            tags: aiResult.tags
-          });
+          logger(`✅ Local AI generated note: "${aiResult.title}" (${aiResult.content?.length} chars)`, 'success');
+          logger(`🏷️ Generated tags: [${aiResult.tags?.join(', ')}]`, 'info');
           return {
             originalText: extractedText,
             enhancedNote: aiResult,
             aiProvider: 'local'
           };
         } catch (parseError) {
-          console.warn('Local AI JSON parse failed, using fallback structure');
+          logger('⚠️ Local AI JSON parse failed, using fallback structure', 'warning');
           // If JSON parsing fails, create structured response manually
           const aiResult = {
             title: this.extractTitleFromText(extractedText),
@@ -296,11 +296,7 @@ Make sure the content is well-organized with proper Markdown formatting, clear h
             tags: this.generateTags(extractedText),
             confidence: 75
           };
-          console.log('Local AI Result (fallback):', {
-            title: aiResult.title,
-            contentLength: aiResult.content?.length,
-            tags: aiResult.tags
-          });
+          logger(`📝 Using fallback structure: "${aiResult.title}"`, 'info');
           return {
             originalText: extractedText,
             enhancedNote: aiResult,
@@ -309,7 +305,9 @@ Make sure the content is well-organized with proper Markdown formatting, clear h
         }
       } else {
         // Regular AI service uses generateNote method - returns structured object
+        progressCallback(70);
         const noteResult = await aiService.generateNote(prompt);
+        progressCallback(72);
         
         // noteResult is already a structured object with title, content, tags, etc.
         const aiResult = {
@@ -320,14 +318,8 @@ Make sure the content is well-organized with proper Markdown formatting, clear h
           confidence: 90
         };
         
-        console.log('Gemini AI Result:', {
-          originalTitle: noteResult.title,
-          originalContent: noteResult.content?.substring(0, 100) + '...',
-          originalTags: noteResult.tags,
-          finalTitle: aiResult.title,
-          finalContentLength: aiResult.content?.length,
-          finalTags: aiResult.tags
-        });
+        logger(`✅ Gemini AI generated note: "${aiResult.title}" (${aiResult.content?.length} chars)`, 'success');
+        logger(`🏷️ Generated tags: [${aiResult.tags?.join(', ')}]`, 'info');
         
         return {
           originalText: extractedText,
@@ -337,7 +329,7 @@ Make sure the content is well-organized with proper Markdown formatting, clear h
       }
 
     } catch (error) {
-      console.error('AI enhancement failed:', error);
+      logger(`❌ AI enhancement failed: ${error.message}`, 'error');
       
       // Fallback: create structured note without AI
       return {
