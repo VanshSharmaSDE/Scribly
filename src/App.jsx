@@ -13,6 +13,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import Landing from "./pages/Landing";
 import About from "./pages/About";
 import ReportBug from "./pages/ReportBug";
+import RequestFeature from "./pages/RequestFeature";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -58,6 +59,7 @@ function AppContent() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/report-bug" element={<ReportBug />} />
+        <Route path="/request-feature" element={<RequestFeature />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

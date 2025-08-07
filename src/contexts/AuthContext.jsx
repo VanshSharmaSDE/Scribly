@@ -24,17 +24,29 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
+      console.log('🔄 AuthContext: Checking authentication status...');
       const currentUser = await authService.getCurrentUser();
       if (currentUser) {
+        console.log('✅ AuthContext: User found:', { 
+          id: currentUser.$id, 
+          email: currentUser.email, 
+          emailVerification: currentUser.emailVerification 
+        });
         setUser(currentUser);
         setIsAuthenticated(true);
 
         // Get user document from database
         const userDocument = await authService.getUserDocument(currentUser.$id);
+        console.log('📄 AuthContext: User document loaded:', {
+          emailVerified: userDocument.emailVerified,
+          hasPreferences: !!userDocument.preferences
+        });
         setUserDoc(userDocument);
+      } else {
+        console.log('❌ AuthContext: No authenticated user found');
       }
     } catch (error) {
-
+      console.log('🚫 AuthContext: Auth check failed:', error.message);
     } finally {
       setLoading(false);
     }
@@ -97,39 +109,68 @@ export const AuthProvider = ({ children }) => {
 
       const result = await authService.confirmEmailVerification(userId, secret);
 
-      // If verification was successful and user is logged in, refresh user data
-      if (result.verified && result.user) {
-        setUser(result.user);
-        setIsAuthenticated(true);
+      // If verification was successful, ALWAYS refresh user data
+      if (result.verified) {
+        console.log('📧 Email verification successful, refreshing user context...');
         
-        const userDocument = await authService.getUserDocument(result.user.$id);
-        setUserDoc(userDocument);
-        
-        return { 
-          success: true, 
-          message: result.message,
-          user: result.user
-        };
+        if (result.user) {
+          // User is logged in, update context immediately
+          console.log('🔄 User is logged in, updating context with verified user');
+          setUser(result.user);
+          setIsAuthenticated(true);
+          
+          // Refresh user document to get updated emailVerified status
+          const userDocument = await authService.getUserDocument(result.user.$id);
+          console.log('📄 Updated user document:', { 
+            emailVerified: userDocument?.emailVerified,
+            userId: userDocument?.$id 
+          });
+          setUserDoc(userDocument);
+          
+          return { 
+            success: true, 
+            message: result.message,
+            user: result.user
+          };
+        } else {
+          // User not logged in but verification successful
+          console.log('🔄 User not logged in, but verification successful');
+          
+          // Try to refresh auth context in case there's a session
+          try {
+            console.log('🔍 Checking for existing session after verification...');
+            await checkAuth();
+            console.log('✅ Auth context refreshed after verification');
+          } catch (error) {
+            console.log('ℹ️ No active session to refresh');
+          }
+          
+          return { 
+            success: true, 
+            message: result.message,
+            needsLogin: true
+          };
+        }
       } else {
-        // Verification successful but user needs to login
         return { 
-          success: true, 
-          message: result.message,
-          needsLogin: true
+          success: false, 
+          message: result.message || 'Verification failed'
         };
       }
     } catch (error) {
-
+      console.error('🚫 Email verification error in AuthContext:', error);
       throw error;
     }
   };
 
   const sendPasswordRecovery = async (email) => {
     try {
-      await authService.sendPasswordRecovery(email);
+      console.log('AuthContext: sendPasswordRecovery called with email:', email);
+      const result = await authService.sendPasswordRecovery(email);
+      console.log('AuthContext: sendPasswordRecovery result:', result);
       return { success: true };
     } catch (error) {
-
+      console.error('AuthContext: sendPasswordRecovery error:', error);
       throw error;
     }
   };
@@ -148,6 +189,38 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
   };
 
+  // Force refresh user data - useful after verification
+  const refreshUserData = async () => {
+    try {
+      console.log('🔄 Manually refreshing user data...');
+      const currentUser = await authService.getCurrentUser();
+      if (currentUser) {
+        console.log('✅ Current user found, updating context');
+        setUser(currentUser);
+        setIsAuthenticated(true);
+
+        // Get updated user document from database
+        const userDocument = await authService.getUserDocument(currentUser.$id);
+        console.log('📄 Refreshed user document:', {
+          emailVerified: userDocument?.emailVerified,
+          userId: userDocument?.$id
+        });
+        setUserDoc(userDocument);
+        
+        return { user: currentUser, userDoc: userDocument };
+      } else {
+        console.log('❌ No current user found during refresh');
+        setUser(null);
+        setUserDoc(null);
+        setIsAuthenticated(false);
+        return null;
+      }
+    } catch (error) {
+      console.error('🚫 Error refreshing user data:', error);
+      return null;
+    }
+  };
+
   const value = {
     user,
     userDoc,
@@ -161,6 +234,7 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     checkAuth,
     updateUserInContext,
+    refreshUserData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

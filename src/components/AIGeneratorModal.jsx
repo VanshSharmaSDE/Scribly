@@ -59,11 +59,8 @@ const AIGeneratorModal = ({
       return;
     }
 
-    if (!isAIConfigured) {
-      toast.error('Please configure AI provider in settings first.');
-      return;
-    }
-
+    // The isAIConfigured prop is already checked by the parent component
+    // so we trust it and proceed with generation
     setIsGenerating(true);
     try {
       // Initialize AI service based on user settings
@@ -84,11 +81,8 @@ const AIGeneratorModal = ({
         
         await aiService.setProvider('local', { modelPath: userSettings.localModelPath });
       } else {
+        // Use settings from context (now immediately available after API key update)
         const apiKey = settings?.geminiApiKey;
-        if (!apiKey) {
-          toast.error('Please set your Gemini API key in settings to use AI features.');
-          return;
-        }
         await aiService.setProvider('gemini', { apiKey });
       }
 

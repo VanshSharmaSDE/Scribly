@@ -1,0 +1,25 @@
+{
+  "name": "scribly-email-function",
+  "version": "1.0.0",
+  "description": "Custom email sending function for Scribly using Nodemailer",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "dependencies": {
+    "node-appwrite": "^13.0.0",
+    "nodemailer": "^6.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "appwrite",
+    "function",
+    "email",
+    "nodemailer",
+    "scribly"
+  ],
+  "author": "Scribly Team",
+  "license": "MIT"
+}

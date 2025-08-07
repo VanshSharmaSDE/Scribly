@@ -5,7 +5,7 @@ import LoadingSkeleton from './LoadingSkeleton';
 import toast from 'react-hot-toast';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading, user, userDoc } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -29,11 +29,21 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check if email is verified (optional - you can remove this if you want)
-  if (!user.emailVerification) {
+  // Check if email is verified using our database field, not just Appwrite's field
+  // Priority: userDoc.emailVerified (our custom verification) > user.emailVerification (Appwrite)
+  const isEmailVerified = userDoc?.emailVerified || user.emailVerification;
+  
+  if (!isEmailVerified) {
+    console.log('🚫 Email not verified - redirecting to verification page');
+    console.log('Verification status:', {
+      userDocEmailVerified: userDoc?.emailVerified,
+      appwriteEmailVerification: user.emailVerification,
+      finalDecision: isEmailVerified
+    });
     return <Navigate to="/verify-email" replace />;
   }
 
+  console.log('✅ User authenticated and email verified, allowing access');
   // User is authenticated and verified, render the protected component
   return children;
 };

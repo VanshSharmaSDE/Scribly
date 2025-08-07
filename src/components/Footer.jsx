@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Github, Heart, Mail, Star, GitFork } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from './Button';
+import emailUpdatesService from '../services/emailUpdatesService';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
@@ -15,17 +16,25 @@ const Footer = () => {
       return;
     }
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     setIsSubscribing(true);
     
-    // Simulate API call for email subscription
     try {
-      // In a real implementation, you'd call your backend API here
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await emailUpdatesService.subscribe(email);
       toast.success('Successfully subscribed for updates!');
       setEmail('');
     } catch (error) {
-      toast.error('Failed to subscribe. Please try again.');
+      if (error.message.includes('already subscribed')) {
+        toast.error('You are already subscribed with this email address');
+      } else {
+        toast.error('Failed to subscribe. Please try again.');
+      }
     } finally {
       setIsSubscribing(false);
     }

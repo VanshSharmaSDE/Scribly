@@ -11,26 +11,32 @@ import Breadcrumb from '../components/Breadcrumb';
 const EmailVerification = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { verifyEmail, user } = useAuth();
+  const { verifyEmail, user, refreshUserData } = useAuth();
   
   const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error', 'resend'
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Debug the full URL first
+    console.log('EmailVerification component loaded');
+    console.log('Current URL:', window.location.href);
+    console.log('Search params:', searchParams.toString());
 
     // Get the secret from URL - Appwrite typically uses 'secret' parameter
     const secret = searchParams.get('secret');
     const userId = searchParams.get('userId');
 
-    // If we have a secret from URL, use it for verification
-    if (secret) {
+    console.log('Extracted params - userId:', userId, 'secret:', secret ? `${secret.substring(0, 8)}...` : 'null');
 
+    // If we have a secret from URL, use it for verification
+    if (secret && userId) {
+      console.log('Starting verification process...');
       handleVerification(userId, secret);
     } else {
-
+      console.error('Missing verification parameters');
+      console.log('Available URL parameters:');
       for (const [key, value] of searchParams.entries()) {
-
+        console.log(`${key}: ${value}`);
       }
       setStatus('error');
     }
@@ -39,11 +45,18 @@ const EmailVerification = () => {
   const handleVerification = async (userId, secret) => {
     try {
       setIsLoading(true);
+      console.log('handleVerification called with:', { userId, secretLength: secret?.length });
 
       // Pass both parameters to verifyEmail
       const result = await verifyEmail(userId, secret);
+      console.log('verifyEmail result:', result);
 
       setStatus('success');
+      
+      // Force refresh user data to ensure UI updates
+      console.log('🔄 Forcing user data refresh after verification...');
+      await refreshUserData();
+      console.log('✅ User data refreshed');
       
       // Show success message
       toast.success(result.message || 'Email verified successfully!', {
@@ -53,23 +66,26 @@ const EmailVerification = () => {
       // Redirect based on result
       if (result.needsLogin) {
         // User needs to login after verification
+        console.log('User needs to login after verification');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else if (result.user) {
         // User is already logged in, go to dashboard
+        console.log('User verified and logged in, redirecting to dashboard');
         setTimeout(() => {
           navigate('/dashboard');
         }, 2000);
       } else {
         // Default: go to login
+        console.log('Default redirect to login');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       }
       
     } catch (error) {
-
+      console.error('Email verification error:', error);
       setStatus('error');
       toast.error(error.message || 'Email verification failed. Please try again.');
     } finally {
@@ -169,7 +185,7 @@ const EmailVerification = () => {
               <Button
                 onClick={handleResendVerification}
                 loading={isLoading}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl mb-4"
               >
                 Send New Verification Email
               </Button>

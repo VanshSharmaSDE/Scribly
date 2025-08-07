@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID } from 'appwrite';
+import { Client, Account, Databases, Functions, ID } from 'appwrite';
 
 // Initialize Appwrite client
 const client = new Client();
@@ -10,6 +10,7 @@ client
 // Initialize services
 export const account = new Account(client);
 export const databases = new Databases(client);
+export const functions = new Functions(client);
 
 // Export constants
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;

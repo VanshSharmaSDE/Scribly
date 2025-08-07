@@ -89,7 +89,7 @@ const About = () => {
               }}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Stable v0.6.1 • Open Source</span>
+              <span className="text-sm font-semibold">Beta v0.6.2 • Open Source</span>
             </motion.div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
@@ -385,18 +385,42 @@ const About = () => {
           </motion.div>
 
           <div className="space-y-8">
-            {/* v0.6.1 - Bug Fixes & Local AI Optimization */}
+            {/* v0.6.2 - Authentication System Overhaul & Domain Migration */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl p-8 relative overflow-hidden"
+              className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-8 relative overflow-hidden"
             >
               <div className="absolute top-4 right-4">
-                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-semibold border border-emerald-500/30">
-                  LATEST
+                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-semibold border border-blue-500/30">
+                  LATEST BETA
                 </span>
               </div>
+              <div className="flex items-center mb-4">
+                <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.6.2
+                </div>
+                <h3 className="text-2xl font-bold text-white">Authentication System Overhaul & Domain Migration</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Request a Feature Page:</strong> New dedicated page for users to submit feature requests and suggestions</li>
+                <li>• <strong>Enhanced Authentication System:</strong> Migrated from localStorage to secure session-based authentication</li>
+                <li>• <strong>Custom Email Signup Process:</strong> Implemented custom signup flow using our domain email system</li>
+                <li>• <strong>Domain Migration:</strong> Official migration to scribly.tech domain with enhanced infrastructure</li>
+                <li>• <strong>Active Support Email:</strong> report@scribly.tech is now active for all user queries and support</li>
+                <li>• <strong>Improved Security:</strong> Enhanced security protocols with session-based user management</li>
+                <li>• <strong>Professional Email System:</strong> Custom branded email communications for all user interactions</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.6.1 - Bug Fixes & Local AI Optimization */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl p-8 relative overflow-hidden"
+            >
               <div className="flex items-center mb-4">
                 <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
                   v0.6.1
@@ -410,7 +434,6 @@ const About = () => {
                 <li>• <strong>Optimized Local AI:</strong> Enhanced local AI models for minimal resource usage and better performance</li>
                 <li>• <strong>Resource Efficiency:</strong> Significantly reduced memory footprint for local AI operations</li>
                 <li>• <strong>Stability Improvements:</strong> Enhanced overall app stability and error handling</li>
-                <li>• <strong>New Feature:</strong> Capture and extract text from images to create notes automatically</li>
               </ul>
             </motion.div>
 

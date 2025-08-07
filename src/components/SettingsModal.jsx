@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import settingsService from '../services/settingsService';
 import aiService from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 // Skeleton Loading Component - Enhanced UX with staggered animations
 const SkeletonLoader = ({ className = '', height = 'h-4', width = 'w-full', delay = '0s' }) => (
@@ -64,6 +65,7 @@ const SkeletonCard = ({ children, isLoading = false }) => {
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const { updateGeminiApiKey } = useSettings();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [aiProvider, setAiProvider] = useState(''); // Start with empty string to avoid false toast
@@ -110,15 +112,26 @@ const SettingsModal = ({ isOpen, onClose }) => {
         const settings = await settingsService.getUserSettings(user.$id);
         
         if (settings) {
-          setApiKey(settings.geminiApiKey || '');
-          // Only set aiProvider if it's different from current to avoid unnecessary toast
+          const newApiKey = settings.geminiApiKey || '';
           const newProvider = settings.aiProvider || 'gemini';
+          
+          setApiKey(newApiKey);
+          // Only set aiProvider if it's different from current to avoid unnecessary toast
           if (aiProvider !== newProvider) {
             setAiProvider(newProvider);
           }
           setLocalModelPath(settings.localModelPath || '');
           setIsAutoSaveEnabled(settings.autoSaveEnabled);
           setAutoSaveInterval(settings.autoSaveInterval);
+          
+          // Initialize AI service if we have the right provider and API key
+          if (newProvider === 'gemini' && newApiKey.trim()) {
+            try {
+              await aiService.initialize(newApiKey.trim());
+            } catch (aiError) {
+              console.warn('Failed to initialize AI service on settings load:', aiError);
+            }
+          }
         } else {
           // Set defaults only if no settings found
           if (!aiProvider) setAiProvider('gemini');
@@ -160,16 +173,33 @@ const SettingsModal = ({ isOpen, onClose }) => {
     loadSettings();
   }, [user, isOpen]);
 
-  // Auto-save API key changes to cloud
+  // Auto-save API key changes to cloud and reinitialize AI service
   const handleApiKeyChange = async (newApiKey) => {
     setApiKey(newApiKey);
     
     if (user && newApiKey.trim() !== '') {
       try {
-        await settingsService.updateGeminiApiKey(user.$id, newApiKey);
+        // Update through context to ensure state sync
+        await updateGeminiApiKey(newApiKey);
+        
+        // Reinitialize AI service with the new API key immediately
+        try {
+          await aiService.initialize(newApiKey.trim());
+        } catch (aiError) {
+          console.warn('API key saved but AI initialization failed:', aiError);
+        }
       } catch (error) {
         console.warn('Failed to save API key to cloud:', error);
         // Don't use localStorage fallback - let the user know it failed
+      }
+    } else if (user && newApiKey.trim() === '') {
+      // Clear AI service when API key is empty
+      try {
+        // Update through context to ensure state sync
+        await updateGeminiApiKey('');
+        aiService.forceCleanup();
+      } catch (error) {
+        console.warn('Failed to clear API key from cloud:', error);
       }
     }
   };
@@ -189,6 +219,19 @@ const SettingsModal = ({ isOpen, onClose }) => {
     if (user) {
       try {
         await settingsService.updateAiProvider(user.$id, provider);
+        
+        // Initialize the appropriate AI service based on provider
+        if (provider === 'gemini' && apiKey.trim()) {
+          try {
+            await aiService.initialize(apiKey.trim());
+          } catch (aiError) {
+            console.warn('Failed to initialize Gemini AI:', aiError);
+          }
+        } else if (provider === 'local') {
+          // Local AI will be initialized when model is selected/loaded
+          aiService.forceCleanup(); // Clear any existing Gemini instance
+        }
+        
         // Only show toast if the provider actually changed
         if (previousProvider !== provider) {
           toast.success(`AI Provider set to ${provider === 'gemini' ? 'Cloud AI (Gemini)' : 'Local AI'}`);
@@ -650,15 +693,28 @@ const SettingsModal = ({ isOpen, onClose }) => {
       
       if (apiKey.trim()) {
         if (user) {
-          await settingsService.updateGeminiApiKey(user.$id, apiKey.trim());
-          toast.success('API key saved successfully!');
+          // Update through context to ensure state sync
+          await updateGeminiApiKey(apiKey.trim());
+          
+          // Reinitialize AI service with the new API key immediately
+          try {
+            await aiService.initialize(apiKey.trim());
+            toast.success('API key saved and AI service updated successfully!');
+          } catch (aiError) {
+            console.warn('API key saved but AI initialization failed:', aiError);
+            toast.success('API key saved successfully! AI service will be updated on next use.');
+          }
         } else {
           toast.error('Please log in to save your API key');
         }
       } else {
         if (user) {
-          await settingsService.updateGeminiApiKey(user.$id, '');
-          toast.success('API key removed');
+          // Update through context to ensure state sync
+          await updateGeminiApiKey('');
+          
+          // Clear AI service when API key is removed
+          aiService.forceCleanup();
+          toast.success('API key removed and AI service cleared');
         } else {
           toast.error('Please log in to manage your API key');
         }

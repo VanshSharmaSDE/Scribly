@@ -92,12 +92,12 @@ const ReportBug = () => {
     {
       icon: Bug,
       title: "Bug Reports",
-      content: "scribly.server@gmail.com",
+      content: "report@scribly.tech",
     },
     {
       icon: AlertTriangle,
       title: "Critical Issues",
-      content: "scribly.server@gmail.com",
+      content: "report@scribly.tech",
     },
     {
       icon: Clock,

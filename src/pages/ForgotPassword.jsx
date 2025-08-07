@@ -26,6 +26,8 @@ const ForgotPassword = () => {
     e.preventDefault();
     setErrors({});
     
+    console.log('Password recovery requested for email:', email);
+    
     if (!email || !validateEmail(email)) {
       setErrors({ email: 'Please enter a valid email address' });
       toast.error('Please enter a valid email address');
@@ -37,7 +39,9 @@ const ForgotPassword = () => {
     try {
       const loadingToast = toast.loading('Sending recovery email...');
       
-      await sendPasswordRecovery(email);
+      console.log('Calling sendPasswordRecovery with email:', email);
+      const result = await sendPasswordRecovery(email);
+      console.log('Password recovery result:', result);
       
       toast.dismiss(loadingToast);
       toast.success('Password recovery email sent! Check your inbox.', {
@@ -47,7 +51,7 @@ const ForgotPassword = () => {
       setEmailSent(true);
       
     } catch (error) {
-
+      console.error('Password recovery error:', error);
       toast.error('Failed to send recovery email. Please try again.');
       setErrors({ general: 'Failed to send recovery email. Please try again.' });
     } finally {
@@ -89,7 +93,7 @@ const ForgotPassword = () => {
               <div className="space-y-4">
                 <Button
                   onClick={() => setEmailSent(false)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-white border-0"
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white border-0 mb-4"
                 >
                   Send Another Email
                 </Button>

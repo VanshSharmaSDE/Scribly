@@ -117,7 +117,7 @@ const Landing = () => {
               }}
             >
               <Star className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Stable v0.6.1 • Open Source</span>
+              <span className="text-sm font-semibold">Beta v0.6.2 • Open Source</span>
             </motion.div>
             
             <motion.h1 
