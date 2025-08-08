@@ -16,6 +16,7 @@ export const functions = new Functions(client);
 export const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 export const NOTES_COLLECTION_ID = import.meta.env.VITE_APPWRITE_NOTES_COLLECTION_ID;
 export const USERS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID;
+export const TASKS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_TASKS_COLLECTION_ID;
 
 export { ID };
 export default client;

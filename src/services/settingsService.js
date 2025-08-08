@@ -37,7 +37,8 @@ class SettingsService {
       aiProvider: 'gemini', // 'gemini' or 'local'
       localModelPath: '',
       autoSaveEnabled: true,
-      autoSaveInterval: 30 // seconds
+      autoSaveInterval: 30, // seconds
+      pinnedActions: ['newNote'] // Default pinned action
     };
   }
 
@@ -59,6 +60,7 @@ class SettingsService {
         localModelPath: settings.localModelPath || '',
         autoSaveEnabled: settings.autoSaveEnabled ?? true,
         autoSaveInterval: settings.autoSaveInterval ?? 30,
+        pinnedActions: settings.pinnedActions || ['newNote'],
         updatedAt: new Date().toISOString()
       };
 

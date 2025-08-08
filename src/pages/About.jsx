@@ -89,7 +89,7 @@ const About = () => {
               }}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              <span className="text-sm font-semibold">Beta v0.6.2 • Open Source</span>
+              <span className="text-sm font-semibold">Beta v0.6.3 • Open Source</span>
             </motion.div>
             
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8">
@@ -178,7 +178,7 @@ const About = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-gray-300 text-lg leading-relaxed"
               >
-                Today, Scribly v0.6.1 represents our latest stable release milestone, trusted by a 
+                Today, Scribly v0.6.3 represents our latest stable release milestone, trusted by a 
                 growing community of creators, students, and professionals. With community 
                 contributions driving innovation, we're building the future of note-taking 
                 together, one commit at a time.
@@ -385,18 +385,43 @@ const About = () => {
           </motion.div>
 
           <div className="space-y-8">
-            {/* v0.6.2 - Authentication System Overhaul & Domain Migration */}
+            {/* v0.6.3 - Daily Task Tracker & Enhanced Dashboard */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-8 relative overflow-hidden"
+              className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-2xl p-8 relative overflow-hidden"
             >
               <div className="absolute top-4 right-4">
-                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-semibold border border-blue-500/30">
+                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-semibold border border-emerald-500/30">
                   LATEST BETA
                 </span>
               </div>
+              <div className="flex items-center mb-4">
+                <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
+                  v0.6.3
+                </div>
+                <h3 className="text-2xl font-bold text-white">Daily Task Tracker & Enhanced Dashboard</h3>
+              </div>
+              <ul className="text-gray-300 space-y-2 leading-relaxed">
+                <li>• <strong>Daily Task Tracker:</strong> Complete task management system with daily reset and analytics</li>
+                <li>• <strong>Task Analytics:</strong> Track completion streaks, productivity insights, and historical data</li>
+                <li>• <strong>Priority System:</strong> Set task priorities (Low, Medium, High) with visual indicators</li>
+                <li>• <strong>Pinned Actions System:</strong> Customize dashboard with pinned action buttons</li>
+                <li>• <strong>Smart Action Menu:</strong> "More" dropdown with New Note, Manage Links, and Task Tracker</li>
+                <li>• <strong>Instant UI Updates:</strong> Optimized pinned actions with localStorage caching for instant loading</li>
+                <li>• <strong>Enhanced Dashboard:</strong> Redesigned action buttons with pin/unpin functionality</li>
+                <li>• <strong>Task Persistence:</strong> Daily tasks reset automatically while preserving analytics data</li>
+              </ul>
+            </motion.div>
+
+            {/* v0.6.2 - Authentication System Overhaul & Domain Migration */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-8 relative overflow-hidden"
+            >
               <div className="flex items-center mb-4">
                 <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold mr-4">
                   v0.6.2
@@ -418,7 +443,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
               className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl p-8 relative overflow-hidden"
             >
               <div className="flex items-center mb-4">
@@ -441,7 +466,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -465,7 +490,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
               className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -488,7 +513,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
               className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -509,7 +534,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
               className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -532,7 +557,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
               className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -554,7 +579,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
               className="bg-gradient-to-r from-teal-500/10 to-green-500/10 border border-teal-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -575,7 +600,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
               className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">
@@ -596,7 +621,7 @@ const About = () => {
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
+              transition={{ duration: 0.6, delay: 1.0 }}
               className="bg-gradient-to-r from-gray-500/10 to-slate-500/10 border border-gray-500/30 rounded-2xl p-8"
             >
               <div className="flex items-center mb-4">

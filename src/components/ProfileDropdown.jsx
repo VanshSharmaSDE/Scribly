@@ -146,10 +146,13 @@ const ProfileDropdown = () => {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              currentUser.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
+              (() => {
+                const initials = currentUser.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("");
+                return initials.length <= 2 ? initials : initials.slice(0, 2);
+              })()
             )}
           </div>
           <span className="text-white font-medium hidden md:block">
@@ -178,10 +181,13 @@ const ProfileDropdown = () => {
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
-                      currentUser.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
+                      (() => {
+                        const initials = currentUser.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("");
+                        return initials.length <= 2 ? initials : initials.slice(0, 2);
+                      })()
                     )}
                   </div>
                   <div>
@@ -281,10 +287,13 @@ const ProfileDropdown = () => {
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (
-                        currentUser.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
+                        (() => {
+                          const initials = currentUser.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("");
+                          return initials.length <= 2 ? initials : initials.slice(0, 2);
+                        })()
                       )}
                     </div>
                   </div>

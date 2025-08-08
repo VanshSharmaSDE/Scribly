@@ -57,7 +57,7 @@ const Navbar = ({ isAuthenticated = false, user = null, onLogout }) => {
                 }}
               >
                 <Sparkles className="w-3 h-3 mr-1" />
-                v0.6.2
+                v0.6.3
               </span>
             </div>
           </Link>

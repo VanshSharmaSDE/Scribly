@@ -17,6 +17,9 @@ import {
   Wand2,
   Share,
   Camera,
+  ChevronDown,
+  Target,
+  Pin,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -33,6 +36,7 @@ import AIGeneratorModal from "../components/AIGeneratorModal";
 import AIFeaturesGuide from "../components/AIFeaturesGuide";
 import SharedLinksManager from "../components/SharedLinksManager";
 import LocalAIStatusBanner from "../components/LocalAIStatusBanner";
+import TaskTracker from "../components/TaskTracker";
 import localAIService from "../services/localAIService";
 import aiService from "../services/aiService";
 import settingsService from "../services/settingsService";
@@ -326,6 +330,18 @@ const Dashboard = () => {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showAIGuide, setShowAIGuide] = useState(false);
   const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
+  const [showTaskTracker, setShowTaskTracker] = useState(false);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
+  // Initialize pinned actions with cached value for instant loading
+  const [pinnedActions, setPinnedActions] = useState(() => {
+    try {
+      const cached = localStorage.getItem('pinnedActions');
+      return cached ? JSON.parse(cached) : ['newNote'];
+    } catch (error) {
+      console.error('Error loading cached pinned actions:', error);
+      return ['newNote'];
+    }
+  });
   const [isAIConfigured, setIsAIConfigured] = useState(false);
   const [aiConfigurationChecked, setAIConfigurationChecked] = useState(false);
 
@@ -362,6 +378,51 @@ const Dashboard = () => {
     settings?.aiProvider,
     settings?.localModelPath,
   ]);
+
+  // Load pinned actions from user settings
+  useEffect(() => {
+    const loadPinnedActions = async () => {
+      if (!user) return;
+      
+      try {
+        const userSettings = await settingsService.getUserSettings();
+        // Set default pinned action to 'newNote' if no pinned actions exist
+        const defaultPinnedActions = userSettings.pinnedActions?.length > 0 
+          ? userSettings.pinnedActions 
+          : ['newNote'];
+        
+        // Only update state if it's different to avoid unnecessary re-renders
+        setPinnedActions(prev => {
+          const isDifferent = JSON.stringify(prev) !== JSON.stringify(defaultPinnedActions);
+          if (isDifferent) {
+            // Cache the loaded settings for next time
+            try {
+              localStorage.setItem('pinnedActions', JSON.stringify(defaultPinnedActions));
+            } catch (error) {
+              console.error('Error caching loaded pinned actions:', error);
+            }
+          }
+          return isDifferent ? defaultPinnedActions : prev;
+        });
+        
+        // Save default if it's a new user (do this in background)
+        if (!userSettings.pinnedActions || userSettings.pinnedActions.length === 0) {
+          settingsService.saveUserSettings({
+            ...userSettings,
+            pinnedActions: defaultPinnedActions
+          }).catch(error => {
+            console.error("Error saving default pinned actions:", error);
+          });
+        }
+      } catch (error) {
+        console.error("Error loading pinned actions:", error);
+        // Set default on error only if current state is empty
+        setPinnedActions(prev => prev.length === 0 ? ['newNote'] : prev);
+      }
+    };
+
+    loadPinnedActions();
+  }, [user]);
 
   // Define fetchNotes function before useEffect hooks that depend on it
   const fetchNotes = useCallback(async () => {
@@ -560,6 +621,78 @@ const Dashboard = () => {
     });
   };
 
+  // Pinned actions management
+  const togglePinnedAction = async (actionKey) => {
+    try {
+      const isCurrentlyPinned = pinnedActions.includes(actionKey);
+      const newPinnedActions = isCurrentlyPinned
+        ? pinnedActions.filter(key => key !== actionKey)
+        : [...pinnedActions, actionKey];
+      
+      // Update state immediately for instant UI feedback
+      setPinnedActions(newPinnedActions);
+      
+      // Cache in localStorage for instant loading on next visit
+      try {
+        localStorage.setItem('pinnedActions', JSON.stringify(newPinnedActions));
+      } catch (error) {
+        console.error('Error caching pinned actions:', error);
+      }
+      
+      // Save to user settings in background
+      try {
+        const currentSettings = await settingsService.getUserSettings();
+        await settingsService.saveUserSettings({
+          ...currentSettings,
+          pinnedActions: newPinnedActions
+        });
+        
+        toast.success(
+          isCurrentlyPinned 
+            ? 'Action unpinned' 
+            : 'Action pinned'
+        );
+      } catch (saveError) {
+        // Revert state if save fails
+        setPinnedActions(pinnedActions);
+        // Also revert localStorage
+        try {
+          localStorage.setItem('pinnedActions', JSON.stringify(pinnedActions));
+        } catch (error) {
+          console.error('Error reverting cached pinned actions:', error);
+        }
+        throw saveError;
+      }
+    } catch (error) {
+      console.error('Error updating pinned actions:', error);
+      toast.error('Failed to update pinned actions');
+    }
+  };
+
+  const actionItems = [
+    {
+      key: 'newNote',
+      label: 'New Note',
+      icon: Plus,
+      action: handleCreateNote,
+      className: 'bg-blue-600 hover:bg-blue-700 text-white'
+    },
+    {
+      key: 'manageLinks',
+      label: 'Manage Links', 
+      icon: Share,
+      action: () => setShowSharedLinksManager(true),
+      className: 'bg-green-500 hover:bg-green-600 text-white'
+    },
+    {
+      key: 'taskTracker',
+      label: 'Task Tracker',
+      icon: Target,
+      action: () => setShowTaskTracker(true),
+      className: 'bg-purple-500 hover:bg-purple-600 text-white'
+    }
+  ];
+
   if (!user) {
     return (
       <ProfessionalBackground>
@@ -631,7 +764,7 @@ const Dashboard = () => {
                     }}
                   >
                     <Sparkles className="w-3 h-3 mr-2" />
-                    <span className="text-xs font-semibold">v0.6.2</span>
+                    <span className="text-xs font-semibold">v0.6.3</span>
                   </motion.div>
 
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4">
@@ -765,7 +898,7 @@ const Dashboard = () => {
                   }}
                 >
                   <Sparkles className="w-3 h-3 mr-2" />
-                  <span className="text-xs font-semibold">v0.6.1</span>
+                  <span className="text-xs font-semibold">v0.6.3</span>
                 </motion.div>
 
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-4">
@@ -900,20 +1033,90 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                  <Button
-                    onClick={() => setShowSharedLinksManager(true)}
-                    className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/20 hover:shadow-green-500/30 transition-all duration-300 hover:scale-105 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
-                  >
-                    <Share className="h-4 w-4 mr-2" />
-                    Manage Links
-                  </Button>
-                  <Button
-                    onClick={handleCreateNote}
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-300 hover:scale-105 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Note
-                  </Button>
+                  {/* Pinned Actions */}
+                  {pinnedActions.length > 0 && (
+                    <div className="flex space-x-2">
+                      {pinnedActions.map(actionKey => {
+                        const action = actionItems.find(item => item.key === actionKey);
+                        if (!action) return null;
+                        
+                        const Icon = action.icon;
+                        return (
+                          <button
+                            key={actionKey}
+                            onClick={action.action}
+                            className={`flex items-center px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-medium transition-all duration-300 hover:scale-105 shadow-lg ${action.className}`}
+                            title={action.label}
+                          >
+                            <Icon className="h-4 w-4 mr-2" />
+                            <span className="hidden sm:inline">{action.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* More Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                      className="w-full sm:w-auto bg-gray-700 hover:bg-gray-600 text-white border-0 shadow-lg hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-medium rounded-xl"
+                    >
+                      {pinnedActions.length > 0 ? 'More' : 'Actions'}
+                      <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showMoreDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {showMoreDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0 mt-2 w-56 bg-gray-800/95 backdrop-blur-sm border border-gray-600/50 rounded-xl shadow-2xl z-50"
+                          onMouseLeave={() => setShowMoreDropdown(false)}
+                        >
+                          <div className="p-2">
+                            {actionItems.map(action => {
+                              const Icon = action.icon;
+                              const isPinned = pinnedActions.includes(action.key);
+                              
+                              return (
+                                <div key={action.key} className="group">
+                                  <div className="flex items-center">
+                                    <button
+                                      onClick={() => {
+                                        action.action();
+                                        setShowMoreDropdown(false);
+                                      }}
+                                      className="flex-1 flex items-center px-3 py-2 text-sm text-gray-200 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors"
+                                    >
+                                      <Icon className="h-4 w-4 mr-3" />
+                                      {action.label}
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        togglePinnedAction(action.key);
+                                      }}
+                                      className={`p-1 rounded-md transition-colors ${
+                                        isPinned 
+                                          ? 'text-blue-400 hover:text-blue-300' 
+                                          : 'text-gray-500 hover:text-gray-300'
+                                      }`}
+                                      title={isPinned ? 'Unpin' : 'Pin'}
+                                    >
+                                      <Pin className={`h-4 w-4 transition-transform ${isPinned ? 'rotate-45' : ''}`} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1011,6 +1214,12 @@ const Dashboard = () => {
         isOpen={showSharedLinksManager}
         onClose={() => setShowSharedLinksManager(false)}
         notes={notes}
+      />
+
+      {/* Task Tracker */}
+      <TaskTracker
+        isOpen={showTaskTracker}
+        onClose={() => setShowTaskTracker(false)}
       />
     </>
   );
