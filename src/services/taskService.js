@@ -2,6 +2,7 @@ import { databases, Query } from '../lib/appwrite';
 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 const TASKS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_TASKS_COLLECTION_ID;
+const TASKS_ANALYTICS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_TASKS_ANALYTICS_COLLECTION_ID;
 
 class TaskService {
   // Create a new permanent task
@@ -63,11 +64,6 @@ class TaskService {
         completed
       };
       
-      // Only add completedAt if the attribute exists in your database
-      if (completed) {
-        updateData.completedAt = new Date().toISOString();
-      }
-      
       console.log('Update data:', updateData);
       
       const updatedTask = await databases.updateDocument(
@@ -110,30 +106,40 @@ class TaskService {
       
       // Get all user tasks
       const tasks = await this.getUserTasks(userId);
+      console.log('Resetting tasks for new day. Found tasks:', tasks.length);
       
-      // Save completed tasks to history (filter by completedAt date)
-      const completedToday = tasks.filter(task => {
-        if (!task.completed || !task.completedAt) return false;
-        const completedDate = task.completedAt.split('T')[0];
-        return completedDate === today;
-      });
+      // Save completed tasks to history
+      const completedTasks = tasks.filter(task => task.completed);
+      console.log('Completed tasks to save:', completedTasks.length);
 
-      if (completedToday.length > 0 || tasks.length > 0) {
-        // Save to localStorage as history
+      if (tasks.length > 0) {
+        // Save to database instead of localStorage
         const historyEntry = {
           userId,
           date: today,
           totalTasks: tasks.length,
-          completedCount: completedToday.length,
-          tasks: tasks.map(task => ({
+          completedCount: completedTasks.length,
+          taskDetails: JSON.stringify(tasks.map(task => ({
             title: task.title,
             priority: task.priority,
-            completed: task.completed && task.completedAt && task.completedAt.split('T')[0] === today
-          }))
+            completed: task.completed
+          }))),
+          createdAt: new Date().toISOString()
         };
 
-        localStorage.setItem(`taskHistory_${userId}_${today}`, JSON.stringify(historyEntry));
-        console.log('History saved for:', today, historyEntry);
+        try {
+          await databases.createDocument(
+            DATABASE_ID,
+            TASKS_ANALYTICS_COLLECTION_ID,
+            'unique()',
+            historyEntry
+          );
+          console.log('History saved to database for:', today, historyEntry);
+        } catch (error) {
+          console.error('Error saving history to database:', error);
+          // Fallback to localStorage if database fails
+          localStorage.setItem(`taskHistory_${userId}_${today}`, JSON.stringify(historyEntry));
+        }
       }
 
       // Reset all tasks to uncompleted
@@ -143,8 +149,7 @@ class TaskService {
           TASKS_COLLECTION_ID,
           task.$id,
           {
-            completed: false,
-            completedAt: null
+            completed: false
           }
         )
       );
@@ -152,7 +157,7 @@ class TaskService {
       await Promise.all(resetPromises);
       console.log('All tasks reset for new day');
       
-      return { tasksReset: tasks.length, completedToday: completedToday.length };
+      return { tasksReset: tasks.length, completedToday: completedTasks.length };
     } catch (error) {
       console.error('Error resetting daily tasks:', error);
       throw error;
@@ -165,13 +170,21 @@ class TaskService {
       const today = new Date().toISOString().split('T')[0];
       const lastResetDate = localStorage.getItem(`lastResetDate_${userId}`);
       
+      console.log('Checking reset - Today:', today, 'Last reset:', lastResetDate);
+      
       if (lastResetDate !== today) {
-        // New day detected, reset tasks
+        // New day detected, save yesterday's progress and reset tasks
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        console.log('New day detected, resetting from:', lastResetDate, 'to:', today);
         await this.resetDailyTasks(userId);
         localStorage.setItem(`lastResetDate_${userId}`, today);
         return true; // Tasks were reset
       }
       
+      console.log('Same day, no reset needed');
       return false; // No reset needed
     } catch (error) {
       console.error('Error checking daily reset:', error);
@@ -187,11 +200,7 @@ class TaskService {
       // Get current day completion
       const today = new Date().toISOString().split('T')[0];
       const tasks = await this.getUserTasks(userId);
-      const completedToday = tasks.filter(task => {
-        if (!task.completed || !task.completedAt) return false;
-        const completedDate = task.completedAt.split('T')[0];
-        return completedDate === today;
-      });
+      const completedToday = tasks.filter(task => task.completed);
 
       analytics[today] = {
         total: tasks.length,
@@ -199,21 +208,48 @@ class TaskService {
         tasks: tasks.map(task => ({
           title: task.title,
           priority: task.priority,
-          completed: task.completed && task.completedAt && task.completedAt.split('T')[0] === today
+          completed: task.completed
         }))
       };
 
-      // Add historical data from localStorage
-      for (let i = 1; i <= 14; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
+      // Get historical data from database
+      try {
+        const historyResponse = await databases.listDocuments(
+          DATABASE_ID,
+          TASKS_ANALYTICS_COLLECTION_ID,
+          [
+            Query.equal('userId', userId),
+            Query.orderDesc('date'),
+            Query.limit(30) // Last 30 days
+          ]
+        );
+
+        console.log('Found analytics records:', historyResponse.documents.length);
+
+        historyResponse.documents.forEach(record => {
+          if (record.date !== today) { // Don't override today's live data
+            analytics[record.date] = {
+              total: record.totalTasks,
+              completed: record.completedCount,
+              tasks: JSON.parse(record.taskDetails || '[]')
+            };
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching analytics from database:', error);
         
-        const historyKey = `taskHistory_${userId}_${dateStr}`;
-        const dayHistory = localStorage.getItem(historyKey);
-        
-        if (dayHistory) {
-          analytics[dateStr] = JSON.parse(dayHistory);
+        // Fallback to localStorage for existing data
+        for (let i = 1; i <= 14; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          
+          const historyKey = `taskHistory_${userId}_${dateStr}`;
+          const dayHistory = localStorage.getItem(historyKey);
+          
+          if (dayHistory) {
+            analytics[dateStr] = JSON.parse(dayHistory);
+          }
         }
       }
 

@@ -101,7 +101,7 @@ const TaskTracker = ({ isOpen, onClose }) => {
       setTasks(prev => 
         prev.map(task => 
           task.$id === taskId 
-            ? { ...task, completed, completedAt: completed ? new Date().toISOString() : null }
+            ? { ...task, completed }
             : task
         )
       );
