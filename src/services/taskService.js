@@ -1,28 +1,31 @@
-import { databases, DATABASE_ID, TASKS_COLLECTION_ID, ID } from '../lib/appwrite';
-import { Query } from 'appwrite';
+import { databases, Query } from '../lib/appwrite';
+
+const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const TASKS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_TASKS_COLLECTION_ID;
 
 class TaskService {
-  // Create a new task
-  async createTask({ title, priority = 'medium', userId }) {
+  // Create a new permanent task
+  async createTask({ title, priority, userId }) {
     try {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      
       const taskData = {
         title,
-        priority, // low, medium, high
-        completed: false,
+        priority,
         userId,
-        date: today,
+        completed: false,
+        date: '', // Empty string for permanent tasks
+        isTemplate: true, // Mark as template since it's permanent
+        isActive: true,
         createdAt: new Date().toISOString()
       };
 
       const task = await databases.createDocument(
         DATABASE_ID,
         TASKS_COLLECTION_ID,
-        ID.unique(),
+        'unique()',
         taskData
       );
 
+      console.log('Task created:', task);
       return task;
     } catch (error) {
       console.error('Error creating task:', error);
@@ -30,193 +33,195 @@ class TaskService {
     }
   }
 
-  // Get tasks for today for a specific user
-  async getTodayTasks(userId) {
+  // Get all user's tasks
+  async getUserTasks(userId) {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        TASKS_COLLECTION_ID,
+        [
+          Query.equal('userId', userId),
+          Query.equal('isActive', true),
+          Query.orderDesc('createdAt')
+        ]
+      );
+
+      console.log('Fetched user tasks:', response.documents);
+      return response.documents;
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      throw error;
+    }
+  }
+
+  // Toggle task completion
+  async toggleTask(taskId, completed) {
+    try {
+      console.log('Toggling task:', taskId, 'to completed:', completed);
       
-      const tasks = await databases.listDocuments(
-        DATABASE_ID,
-        TASKS_COLLECTION_ID,
-        [
-          Query.equal('userId', userId),
-          Query.equal('date', today),
-          Query.orderDesc('createdAt')
-        ]
-      );
-
-      return tasks.documents;
-    } catch (error) {
-      console.error('Error fetching today tasks:', error);
-      throw error;
-    }
-  }
-
-  // Get tasks for a specific date
-  async getTasksByDate(userId, date) {
-    try {
-      const tasks = await databases.listDocuments(
-        DATABASE_ID,
-        TASKS_COLLECTION_ID,
-        [
-          Query.equal('userId', userId),
-          Query.equal('date', date),
-          Query.orderDesc('createdAt')
-        ]
-      );
-
-      return tasks.documents;
-    } catch (error) {
-      console.error('Error fetching tasks by date:', error);
-      throw error;
-    }
-  }
-
-  // Update task completion status
-  async toggleTaskCompletion(taskId, completed) {
-    try {
+      const updateData = {
+        completed
+      };
+      
+      // Only add completedAt if the attribute exists in your database
+      if (completed) {
+        updateData.completedAt = new Date().toISOString();
+      }
+      
+      console.log('Update data:', updateData);
+      
       const updatedTask = await databases.updateDocument(
         DATABASE_ID,
         TASKS_COLLECTION_ID,
         taskId,
-        { 
-          completed,
-          completedAt: completed ? new Date().toISOString() : null
-        }
+        updateData
       );
 
+      console.log('Task updated successfully:', updatedTask);
       return updatedTask;
     } catch (error) {
-      console.error('Error updating task completion:', error);
+      console.error('Error updating task:', error);
+      console.error('TaskId:', taskId, 'Completed:', completed);
       throw error;
     }
   }
 
-  // Update task priority
-  async updateTaskPriority(taskId, priority) {
-    try {
-      const updatedTask = await databases.updateDocument(
-        DATABASE_ID,
-        TASKS_COLLECTION_ID,
-        taskId,
-        { priority }
-      );
-
-      return updatedTask;
-    } catch (error) {
-      console.error('Error updating task priority:', error);
-      throw error;
-    }
-  }
-
-  // Delete a task
+  // Delete a task permanently
   async deleteTask(taskId) {
     try {
-      await databases.deleteDocument(
+      await databases.updateDocument(
         DATABASE_ID,
         TASKS_COLLECTION_ID,
-        taskId
+        taskId,
+        { isActive: false }
       );
-
-      return true;
+      
+      console.log('Task deleted:', taskId);
     } catch (error) {
       console.error('Error deleting task:', error);
       throw error;
     }
   }
 
-  // Get task analytics for the last 30 days
-  async getTaskAnalytics(userId) {
+  // Save today's progress to history and reset all tasks
+  async resetDailyTasks(userId) {
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-
-      const tasks = await databases.listDocuments(
-        DATABASE_ID,
-        TASKS_COLLECTION_ID,
-        [
-          Query.equal('userId', userId),
-          Query.greaterThanEqual('date', thirtyDaysAgoStr),
-          Query.orderDesc('date')
-        ]
-      );
-
-      // Group tasks by date and calculate completion rates
-      const analytics = {};
-      tasks.documents.forEach(task => {
-        const date = task.date;
-        if (!analytics[date]) {
-          analytics[date] = {
-            total: 0,
-            completed: 0,
-            high: 0,
-            medium: 0,
-            low: 0
-          };
-        }
-        
-        analytics[date].total++;
-        if (task.completed) analytics[date].completed++;
-        analytics[date][task.priority]++;
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get all user tasks
+      const tasks = await this.getUserTasks(userId);
+      
+      // Save completed tasks to history (filter by completedAt date)
+      const completedToday = tasks.filter(task => {
+        if (!task.completed || !task.completedAt) return false;
+        const completedDate = task.completedAt.split('T')[0];
+        return completedDate === today;
       });
 
-      return analytics;
+      if (completedToday.length > 0 || tasks.length > 0) {
+        // Save to localStorage as history
+        const historyEntry = {
+          userId,
+          date: today,
+          totalTasks: tasks.length,
+          completedCount: completedToday.length,
+          tasks: tasks.map(task => ({
+            title: task.title,
+            priority: task.priority,
+            completed: task.completed && task.completedAt && task.completedAt.split('T')[0] === today
+          }))
+        };
+
+        localStorage.setItem(`taskHistory_${userId}_${today}`, JSON.stringify(historyEntry));
+        console.log('History saved for:', today, historyEntry);
+      }
+
+      // Reset all tasks to uncompleted
+      const resetPromises = tasks.map(task => 
+        databases.updateDocument(
+          DATABASE_ID,
+          TASKS_COLLECTION_ID,
+          task.$id,
+          {
+            completed: false,
+            completedAt: null
+          }
+        )
+      );
+
+      await Promise.all(resetPromises);
+      console.log('All tasks reset for new day');
+      
+      return { tasksReset: tasks.length, completedToday: completedToday.length };
     } catch (error) {
-      console.error('Error fetching task analytics:', error);
+      console.error('Error resetting daily tasks:', error);
       throw error;
     }
   }
 
-  // Get completion streak (consecutive days with all tasks completed)
-  async getCompletionStreak(userId) {
+  // Check if tasks need to be reset (call this when app loads)
+  async checkAndResetIfNewDay(userId) {
     try {
-      const tasks = await databases.listDocuments(
-        DATABASE_ID,
-        TASKS_COLLECTION_ID,
-        [
-          Query.equal('userId', userId),
-          Query.orderDesc('date'),
-          Query.limit(100) // Last 100 days max
-        ]
-      );
+      const today = new Date().toISOString().split('T')[0];
+      const lastResetDate = localStorage.getItem(`lastResetDate_${userId}`);
+      
+      if (lastResetDate !== today) {
+        // New day detected, reset tasks
+        await this.resetDailyTasks(userId);
+        localStorage.setItem(`lastResetDate_${userId}`, today);
+        return true; // Tasks were reset
+      }
+      
+      return false; // No reset needed
+    } catch (error) {
+      console.error('Error checking daily reset:', error);
+      throw error;
+    }
+  }
 
-      // Group by date and check completion
-      const dateGroups = {};
-      tasks.documents.forEach(task => {
-        if (!dateGroups[task.date]) {
-          dateGroups[task.date] = { total: 0, completed: 0 };
-        }
-        dateGroups[task.date].total++;
-        if (task.completed) dateGroups[task.date].completed++;
+  // Get analytics/history
+  async getTaskAnalytics(userId) {
+    try {
+      const analytics = {};
+      
+      // Get current day completion
+      const today = new Date().toISOString().split('T')[0];
+      const tasks = await this.getUserTasks(userId);
+      const completedToday = tasks.filter(task => {
+        if (!task.completed || !task.completedAt) return false;
+        const completedDate = task.completedAt.split('T')[0];
+        return completedDate === today;
       });
 
-      // Calculate streak
-      let streak = 0;
-      const today = new Date();
-      
-      for (let i = 0; i < 100; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() - i);
-        const dateStr = checkDate.toISOString().split('T')[0];
+      analytics[today] = {
+        total: tasks.length,
+        completed: completedToday.length,
+        tasks: tasks.map(task => ({
+          title: task.title,
+          priority: task.priority,
+          completed: task.completed && task.completedAt && task.completedAt.split('T')[0] === today
+        }))
+      };
+
+      // Add historical data from localStorage
+      for (let i = 1; i <= 14; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
         
-        const dayData = dateGroups[dateStr];
-        if (!dayData || dayData.total === 0) {
-          // No tasks for this day, continue
-          continue;
-        }
+        const historyKey = `taskHistory_${userId}_${dateStr}`;
+        const dayHistory = localStorage.getItem(historyKey);
         
-        if (dayData.completed === dayData.total) {
-          streak++;
-        } else {
-          break;
+        if (dayHistory) {
+          analytics[dateStr] = JSON.parse(dayHistory);
         }
       }
 
-      return streak;
+      console.log('Analytics:', analytics);
+      return analytics;
     } catch (error) {
-      console.error('Error calculating completion streak:', error);
-      return 0;
+      console.error('Error fetching analytics:', error);
+      throw error;
     }
   }
 }

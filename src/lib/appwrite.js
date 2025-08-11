@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Functions, ID } from 'appwrite';
+import { Client, Account, Databases, Functions, ID, Query } from 'appwrite';
 
 // Initialize Appwrite client
 const client = new Client();
@@ -18,6 +18,6 @@ export const NOTES_COLLECTION_ID = import.meta.env.VITE_APPWRITE_NOTES_COLLECTIO
 export const USERS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID;
 export const TASKS_COLLECTION_ID = import.meta.env.VITE_APPWRITE_TASKS_COLLECTION_ID;
 
-export { ID };
+export { ID, Query };
 export default client;
 

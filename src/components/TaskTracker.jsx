@@ -9,7 +9,8 @@ import {
   Trash2,
   Calendar,
   Target,
-  TrendingUp
+  TrendingUp,
+  RefreshCw,
 } from 'lucide-react';
 import taskService from '../services/taskService';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,22 +23,33 @@ const TaskTracker = ({ isOpen, onClose }) => {
   const [newTaskPriority, setNewTaskPriority] = useState('medium');
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState(null);
-  const [streak, setStreak] = useState(0);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
-      fetchTodayTasks();
+      handleDailyReset();
+      fetchUserTasks();
       fetchAnalytics();
-      fetchStreak();
     }
   }, [isOpen, user]);
 
-  const fetchTodayTasks = async () => {
+  const handleDailyReset = async () => {
+    try {
+      const wasReset = await taskService.checkAndResetIfNewDay(user.$id);
+      if (wasReset) {
+        toast.info('Tasks reset for the new day!');
+      }
+    } catch (error) {
+      console.error('Error checking daily reset:', error);
+    }
+  };
+
+  const fetchUserTasks = async () => {
     try {
       setLoading(true);
-      const todayTasks = await taskService.getTodayTasks(user.$id);
-      setTasks(todayTasks);
+      const userTasks = await taskService.getUserTasks(user.$id);
+      console.log('Fetched user tasks:', userTasks);
+      setTasks(userTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast.error('Failed to load tasks');
@@ -55,15 +67,6 @@ const TaskTracker = ({ isOpen, onClose }) => {
     }
   };
 
-  const fetchStreak = async () => {
-    try {
-      const streakCount = await taskService.getCompletionStreak(user.$id);
-      setStreak(streakCount);
-    } catch (error) {
-      console.error('Error fetching streak:', error);
-    }
-  };
-
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTask.trim()) return;
@@ -75,19 +78,26 @@ const TaskTracker = ({ isOpen, onClose }) => {
         userId: user.$id
       });
 
-      setTasks(prev => [task, ...prev]);
+      console.log('Task created:', task);
+
+      // Refresh tasks from database
+      await fetchUserTasks();
+      
       setNewTask('');
       setNewTaskPriority('medium');
-      toast.success('Task added successfully!');
+      toast.success('Task created successfully!');
+      
+      // Refresh analytics
+      fetchAnalytics();
     } catch (error) {
       console.error('Error adding task:', error);
-      toast.error('Failed to add task');
+      toast.error('Failed to create task');
     }
   };
 
   const handleToggleTask = async (taskId, completed) => {
     try {
-      await taskService.toggleTaskCompletion(taskId, completed);
+      await taskService.toggleTask(taskId, completed);
       setTasks(prev => 
         prev.map(task => 
           task.$id === taskId 
@@ -100,9 +110,8 @@ const TaskTracker = ({ isOpen, onClose }) => {
         toast.success('Task completed! 🎉');
       }
       
-      // Refresh analytics and streak
+      // Refresh analytics
       fetchAnalytics();
-      fetchStreak();
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
@@ -114,6 +123,9 @@ const TaskTracker = ({ isOpen, onClose }) => {
       await taskService.deleteTask(taskId);
       setTasks(prev => prev.filter(task => task.$id !== taskId));
       toast.success('Task deleted');
+      
+      // Refresh analytics since task count changed
+      fetchAnalytics();
     } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Failed to delete task');
@@ -162,7 +174,7 @@ const TaskTracker = ({ isOpen, onClose }) => {
             <div>
               <h2 className="text-2xl font-bold text-white">Daily Tasks</h2>
               <p className="text-sm text-gray-400">
-                Today • {getCompletionRate()}% Complete
+                Today • {getCompletionRate()}% Complete • {tasks.length} Task Templates
               </p>
             </div>
           </div>
@@ -178,7 +190,7 @@ const TaskTracker = ({ isOpen, onClose }) => {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <div className="text-2xl font-bold text-white">{tasks.length}</div>
-            <div className="text-sm text-gray-400">Total Tasks</div>
+            <div className="text-sm text-gray-400">Task Templates</div>
           </div>
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <div className="text-2xl font-bold text-green-400">
@@ -187,8 +199,10 @@ const TaskTracker = ({ isOpen, onClose }) => {
             <div className="text-sm text-gray-400">Completed</div>
           </div>
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="text-2xl font-bold text-blue-400">{streak}</div>
-            <div className="text-sm text-gray-400">Day Streak</div>
+            <div className="text-2xl font-bold text-blue-400">
+              {Math.round((tasks.filter(task => task.completed).length / Math.max(tasks.length, 1)) * 100)}%
+            </div>
+            <div className="text-sm text-gray-400">Today Progress</div>
           </div>
         </div>
 
@@ -200,7 +214,7 @@ const TaskTracker = ({ isOpen, onClose }) => {
                 type="text"
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Add a new task..."
+                placeholder="Add a new task template..."
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/10"
                 maxLength={100}
               />
@@ -231,7 +245,8 @@ const TaskTracker = ({ isOpen, onClose }) => {
           ) : tasks.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No tasks for today. Add your first task above!</p>
+              <p>No task templates yet. Create your first template above!</p>
+              <p className="text-xs mt-2">Templates will appear as daily tasks that reset each day.</p>
             </div>
           ) : (
             <AnimatePresence>
@@ -311,27 +326,110 @@ const TaskTracker = ({ isOpen, onClose }) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10"
+              className="mt-4 space-y-4"
             >
-              <h3 className="text-lg font-semibold text-white mb-4">Last 30 Days</h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {Object.entries(analytics)
-                  .sort(([a], [b]) => new Date(b) - new Date(a))
-                  .slice(0, 10)
-                  .map(([date, data]) => (
-                    <div key={date} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">{new Date(date).toLocaleDateString()}</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-white">{data.completed}/{data.total}</span>
-                        <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-green-500 transition-all"
-                            style={{ width: `${(data.completed / data.total) * 100}%` }}
-                          />
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Total Tasks Card */}
+                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-4 rounded-xl border border-blue-500/30">
+                  <div className="text-2xl font-bold text-blue-400">
+                    {Object.values(analytics).reduce((sum, day) => sum + day.total, 0)}
+                  </div>
+                  <div className="text-sm text-blue-300">Total Tasks</div>
+                  <div className="text-xs text-blue-200 mt-1">Last 30 days</div>
+                </div>
+
+                {/* Completed Tasks Card */}
+                <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-4 rounded-xl border border-green-500/30">
+                  <div className="text-2xl font-bold text-green-400">
+                    {Object.values(analytics).reduce((sum, day) => sum + day.completed, 0)}
+                  </div>
+                  <div className="text-sm text-green-300">Completed</div>
+                  <div className="text-xs text-green-200 mt-1">
+                    {Object.values(analytics).length > 0 ? 
+                      Math.round((Object.values(analytics).reduce((sum, day) => sum + day.completed, 0) / 
+                                Object.values(analytics).reduce((sum, day) => sum + day.total, 0)) * 100) : 0}% success rate
+                  </div>
+                </div>
+
+                {/* Current Streak Card */}
+                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-4 rounded-xl border border-purple-500/30">
+                  <div className="text-2xl font-bold text-purple-400">
+                    {(() => {
+                      const sortedDates = Object.keys(analytics).sort((a, b) => new Date(b) - new Date(a));
+                      let streak = 0;
+                      for (const date of sortedDates) {
+                        const dayData = analytics[date];
+                        if (dayData.total > 0 && dayData.completed === dayData.total) {
+                          streak++;
+                        } else {
+                          break;
+                        }
+                      }
+                      return streak;
+                    })()}
+                  </div>
+                  <div className="text-sm text-purple-300">Day Streak</div>
+                  <div className="text-xs text-purple-200 mt-1">100% completion</div>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-white/5 rounded-xl border border-white/10 p-4">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                  Recent Activity
+                </h3>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {Object.entries(analytics)
+                    .sort(([a], [b]) => new Date(b) - new Date(a))
+                    .slice(0, 7)
+                    .map(([date, data]) => (
+                      <div key={date} className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-white font-medium">
+                            {new Date(date).toLocaleDateString('en-US', { 
+                              weekday: 'short', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
+                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-300">{data.completed}/{data.total}</span>
+                            <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all ${
+                                  data.total > 0 && data.completed === data.total ? 'bg-green-500' : 
+                                  data.completed > 0 ? 'bg-yellow-500' : 'bg-gray-600'
+                                }`}
+                                style={{ width: `${data.total > 0 ? (data.completed / data.total) * 100 : 0}%` }}
+                              />
+                            </div>
+                            {data.total > 0 && data.completed === data.total && (
+                              <div className="text-green-400 text-xs">✓</div>
+                            )}
+                          </div>
                         </div>
+                        {data.tasks && data.tasks.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {data.tasks.map((task, index) => (
+                              <span 
+                                key={index} 
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                                  task.completed 
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                                }`}
+                              >
+                                {task.completed && <span className="mr-1">✓</span>}
+                                {task.title}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </motion.div>
           )}
