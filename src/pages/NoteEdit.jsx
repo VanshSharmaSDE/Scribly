@@ -62,7 +62,10 @@ import notesService from "../services/notesService";
 import aiService from "../services/aiService";
 import settingsService from "../services/settingsService";
 import ocrService from "../services/ocrService";
+import assetService from "../services/assetService";
 import { parseMarkdown } from "../utils/markdown";
+import AssetUpload from "../components/AssetUpload";
+import AssetDisplay from "../components/AssetDisplay";
 
 const NoteEdit = () => {
   const { id } = useParams();
@@ -79,6 +82,8 @@ const NoteEdit = () => {
   const [content, setContent] = useState("");
   const [emoji, setEmoji] = useState("📝");
   const [tags, setTags] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [tempSessionKey, setTempSessionKey] = useState(null);
   const [customStyle, setCustomStyle] = useState({
     backgroundColor: "#1e3a8a",
     textColor: "#ffffff",
@@ -135,7 +140,14 @@ const NoteEdit = () => {
     if (user) {
       loadAutoSaveSettings();
     }
-  }, [user]);
+    
+    // Initialize temp session key for new notes
+    if (!id) {
+      const sessionKey = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      setTempSessionKey(sessionKey);
+      console.log('Initialized temp session key for new note:', sessionKey);
+    }
+  }, [user, id]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -301,6 +313,18 @@ const NoteEdit = () => {
     };
   }, []);
 
+  // Cleanup temporary assets on unmount if note wasn't saved
+  useEffect(() => {
+    return () => {
+      if (tempSessionKey && !currentNoteId) {
+        console.log('Cleaning up temporary assets on unmount');
+        assetService.cleanupTemporaryAssets(tempSessionKey).catch(error => {
+          console.error('Error cleaning up temporary assets:', error);
+        });
+      }
+    };
+  }, [tempSessionKey, currentNoteId]);
+
   const handleBackNavigation = () => {
     if (hasUnsavedChanges) {
       // Store the navigation target and show modal
@@ -451,8 +475,19 @@ const NoteEdit = () => {
         fontFamily: "Inter, sans-serif",
       });
       setLoading(false);
+      
+      // Load temporary assets if we have a temp session key
+      if (tempSessionKey) {
+        try {
+          const tempAssets = assetService.getTemporaryAssets(tempSessionKey);
+          setAssets(tempAssets);
+          console.log(`Loaded ${tempAssets.length} temporary assets for new note`);
+        } catch (error) {
+          console.error('Error loading temporary assets:', error);
+        }
+      }
     }
-  }, [id, location.state]);
+  }, [id, location.state, tempSessionKey]);
 
   const loadNote = async () => {
     try {
@@ -481,6 +516,15 @@ const NoteEdit = () => {
       setOriginalEmoji(noteEmoji);
       setOriginalTags([...noteTags]);
       setOriginalCustomStyle({ ...noteCustomStyle });
+
+      // Load assets for this note
+      try {
+        const noteAssets = await assetService.getNoteAssets(id);
+        setAssets(noteAssets);
+      } catch (error) {
+        console.error('Error loading assets:', error);
+        setAssets([]);
+      }
 
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -527,6 +571,20 @@ const NoteEdit = () => {
         // Create new note
         savedNote = await notesService.createNote(noteData);
         setCurrentNoteId(savedNote.$id);
+        
+        // Commit temporary assets if this is a new note
+        if (tempSessionKey) {
+          try {
+            console.log('Committing temporary assets for new note:', savedNote.$id);
+            const committedAssets = await assetService.commitTemporaryAssets(tempSessionKey, savedNote.$id);
+            setAssets(prev => [...prev, ...committedAssets]);
+            setTempSessionKey(null); // Clear temp session
+            console.log(`Committed ${committedAssets.length} temporary assets`);
+          } catch (assetError) {
+            console.error('Error committing temporary assets:', assetError);
+            // Don't fail the note save for asset errors
+          }
+        }
       }
 
       // Update original values to current values after successful save
@@ -3034,6 +3092,48 @@ Brief description of what you're researching
                     color: customStyle.textColor,
                   }}
                 />
+              </div>
+
+              {/* Assets Section */}
+              <div className="p-4 sm:p-6 border-t border-gray-700/50">
+                <div className="mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-gray-400 mb-2 gap-2">
+                    <span>Attachments</span>
+                    <span className="text-xs">Max file size: 50MB</span>
+                  </div>
+                </div>
+                
+                {/* Asset Upload */}
+                <div className="mb-6">
+                  <AssetUpload 
+                    noteId={id || tempSessionKey}
+                    isTemporary={!id}
+                    onUploadSuccess={(newAsset) => {
+                      setAssets(prev => [...prev, newAsset]);
+                    }}
+                  />
+                </div>
+
+                {/* Asset Display */}
+                {assets.length > 0 && (
+                  <div className="space-y-3">
+                    <AssetDisplay 
+                      assets={assets}
+                      onAssetDelete={(deletedAssetId) => {
+                        setAssets(prev => prev.filter(asset => 
+                          (asset.$id !== deletedAssetId) && (asset.fileId !== deletedAssetId)
+                        ));
+                      }}
+                      onAssetUpdate={(assetId, updatedAsset) => {
+                        setAssets(prev => prev.map(asset => 
+                          asset.$id === assetId ? updatedAsset : asset
+                        ));
+                      }}
+                      readOnly={false}
+                      sessionKey={tempSessionKey}
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

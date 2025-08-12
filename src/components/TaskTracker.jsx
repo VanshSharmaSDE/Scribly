@@ -1,54 +1,31 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Plus, 
-  Check, 
-  Clock, 
-  AlertCircle, 
-  ChevronDown,
-  Trash2,
-  Calendar,
-  Target,
-  TrendingUp,
-  RefreshCw,
-} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { CheckSquare, Square, Trash2, Plus, BarChart3, X } from 'lucide-react';
 import taskService from '../services/taskService';
-import { useAuth } from '../contexts/AuthContext';
-import toast from 'react-hot-toast';
+import Button from './Button';
+import TaskAnalyticsModal from './TaskAnalyticsModal';
 
-const TaskTracker = ({ isOpen, onClose }) => {
-  const { user } = useAuth();
+const TaskTracker = ({ isOpen, onClose, user }) => {
   const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState('medium');
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsReload, setAnalyticsReload] = useState(0);
 
   useEffect(() => {
     if (isOpen && user) {
-      handleDailyReset();
-      fetchUserTasks();
+      fetchTasks();
       fetchAnalytics();
     }
   }, [isOpen, user]);
 
-  const handleDailyReset = async () => {
-    try {
-      const wasReset = await taskService.checkAndResetIfNewDay(user.$id);
-      if (wasReset) {
-        toast.info('Tasks reset for the new day!');
-      }
-    } catch (error) {
-      console.error('Error checking daily reset:', error);
-    }
-  };
-
-  const fetchUserTasks = async () => {
+  const fetchTasks = async () => {
     try {
       setLoading(true);
       const userTasks = await taskService.getUserTasks(user.$id);
-      console.log('Fetched user tasks:', userTasks);
       setTasks(userTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -60,8 +37,12 @@ const TaskTracker = ({ isOpen, onClose }) => {
 
   const fetchAnalytics = async () => {
     try {
+      console.log('Fetching analytics for user:', user.$id);
       const analyticsData = await taskService.getTaskAnalytics(user.$id);
+      console.log('Analytics data received:', analyticsData);
       setAnalytics(analyticsData);
+      // also nudge modal to reload when open
+      setAnalyticsReload((c) => c + 1);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     }
@@ -69,64 +50,110 @@ const TaskTracker = ({ isOpen, onClose }) => {
 
   const handleAddTask = async (e) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
+    if (!newTaskTitle.trim()) return;
+
+    if (!user || !user.$id) {
+      toast.error('User not authenticated');
+      console.error('User object is missing or invalid:', user);
+      return;
+    }
+
+    const taskTitle = newTaskTitle.trim();
+    const taskPriority = newTaskPriority;
+
+    // Clear form immediately for better UX
+    setNewTaskTitle('');
+    setNewTaskPriority('medium');
 
     try {
-      const task = await taskService.createTask({
-        title: newTask.trim(),
-        priority: newTaskPriority,
+      console.log('Creating task with data:', {
+        title: taskTitle,
+        priority: taskPriority,
         userId: user.$id
       });
 
-      console.log('Task created:', task);
+      const newTask = await taskService.createTask({
+        title: taskTitle,
+        priority: taskPriority,
+        userId: user.$id
+      });
 
-      // Refresh tasks from database
-      await fetchUserTasks();
-      
-      setNewTask('');
-      setNewTaskPriority('medium');
-      toast.success('Task created successfully!');
-      
-      // Refresh analytics
-      fetchAnalytics();
+      console.log('Task created successfully:', newTask);
+
+      if (newTask && newTask.$id) {
+        // Add the new task to the list
+        setTasks(prev => [...prev, newTask]);
+        toast.success('Task created successfully!');
+        
+        // Fetch updated analytics
+        fetchAnalytics();
+      } else {
+        console.error('Created task is missing $id:', newTask);
+        toast.error('Task created but missing ID');
+        // Restore form values if task creation failed
+        setNewTaskTitle(taskTitle);
+        setNewTaskPriority(taskPriority);
+      }
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error('Error creating task:', error);
       toast.error('Failed to create task');
+      // Restore form values if task creation failed
+      setNewTaskTitle(taskTitle);
+      setNewTaskPriority(taskPriority);
     }
   };
 
   const handleToggleTask = async (taskId, completed) => {
+    // Optimistic update - update UI immediately
+    setTasks(prev => 
+      prev.map(task => 
+        task.$id === taskId 
+          ? { ...task, completed }
+          : task
+      )
+    );
+    
+    if (completed) {
+      toast.success('Task completed! 🎉');
+    } else {
+      toast.success('Task unmarked');
+    }
+
     try {
       await taskService.toggleTask(taskId, completed);
+      // Update analytics immediately after successful toggle
+      fetchAnalytics();
+    } catch (error) {
+      // Revert the optimistic update if the request failed
       setTasks(prev => 
         prev.map(task => 
           task.$id === taskId 
-            ? { ...task, completed }
+            ? { ...task, completed: !completed }
             : task
         )
       );
-      
-      if (completed) {
-        toast.success('Task completed! 🎉');
-      }
-      
-      // Refresh analytics
-      fetchAnalytics();
-    } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
     }
   };
 
   const handleDeleteTask = async (taskId) => {
+    // Store the task for potential rollback
+    const taskToDelete = tasks.find(task => task.$id === taskId);
+    
+    // Optimistic update - remove task immediately from UI
+    setTasks(prev => prev.filter(task => task.$id !== taskId));
+    toast.success('Task deleted');
+
     try {
       await taskService.deleteTask(taskId);
-      setTasks(prev => prev.filter(task => task.$id !== taskId));
-      toast.success('Task deleted');
-      
-      // Refresh analytics since task count changed
+      // Update analytics immediately after successful deletion
       fetchAnalytics();
     } catch (error) {
+      // Restore the task if deletion failed
+      if (taskToDelete) {
+        setTasks(prev => [...prev, taskToDelete]);
+      }
       console.error('Error deleting task:', error);
       toast.error('Failed to delete task');
     }
@@ -141,302 +168,148 @@ const TaskTracker = ({ isOpen, onClose }) => {
     }
   };
 
-  const getPriorityIcon = (priority) => {
-    switch (priority) {
-      case 'high': return <AlertCircle className="w-4 h-4" />;
-      case 'medium': return <Clock className="w-4 h-4" />;
-      case 'low': return <Check className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const getCompletionRate = () => {
-    if (tasks.length === 0) return 0;
-    return Math.round((tasks.filter(task => task.completed).length / tasks.length) * 100);
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-gray-900/95 backdrop-blur-sm rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/10"
+        className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-              <Target className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Daily Tasks</h2>
-              <p className="text-sm text-gray-400">
-                Today • {getCompletionRate()}% Complete • {tasks.length} Task Templates
-              </p>
-            </div>
+            <CheckSquare className="h-6 w-6 text-blue-400" />
+            <h2 className="text-xl font-semibold text-white">Task Tracker</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="text-2xl font-bold text-white">{tasks.length}</div>
-            <div className="text-sm text-gray-400">Task Templates</div>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="text-2xl font-bold text-green-400">
-              {tasks.filter(task => task.completed).length}
-            </div>
-            <div className="text-sm text-gray-400">Completed</div>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="text-2xl font-bold text-blue-400">
-              {Math.round((tasks.filter(task => task.completed).length / Math.max(tasks.length, 1)) * 100)}%
-            </div>
-            <div className="text-sm text-gray-400">Today Progress</div>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={() => setShowAnalytics(true)}
+              variant="outline"
+              className="border-gray-600 flex items-center text-gray-400 hover:bg-gray-800"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Stats
+            </Button>
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="border-gray-600 text-gray-400 hover:bg-gray-800"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
         {/* Add Task Form */}
         <form onSubmit={handleAddTask} className="mb-6">
-          <div className="flex space-x-2">
-            <div className="flex-1">
-              <input
-                type="text"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Add a new task template..."
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500/50 focus:bg-white/10"
-                maxLength={100}
-              />
-            </div>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="What needs to be done?"
+              className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
             <select
               value={newTaskPriority}
               onChange={(e) => setNewTaskPriority(e.target.value)}
-              className="px-4 py-2 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white focus:outline-none focus:border-blue-500/50"
+              className="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
-            <button
-              type="submit"
-              disabled={!newTask.trim()}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl transition-colors flex items-center space-x-2"
+            <Button 
+              type="submit" 
+              disabled={!newTaskTitle.trim()}
+              className="bg-blue-600 flex items-center hover:bg-blue-700 text-white"
             >
-              <Plus className="w-5 h-5" />
-            </button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add
+            </Button>
           </div>
         </form>
 
-        {/* Tasks List */}
-        <div className="space-y-3 mb-6">
+        {/* Tasks List (scrollable) */}
+        <div className="overflow-y-auto max-h-96">
           {loading ? (
-            <div className="text-center py-8 text-gray-400">Loading tasks...</div>
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+              <p className="text-gray-400 mt-4">Loading tasks...</p>
+            </div>
           ) : tasks.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No task templates yet. Create your first template above!</p>
-              <p className="text-xs mt-2">Templates will appear as daily tasks that reset each day.</p>
+            <div className="text-center py-12">
+              <CheckSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">No tasks yet</p>
+              <p className="text-gray-500 text-sm">Create your first task above to get started!</p>
             </div>
           ) : (
-            <AnimatePresence>
-              {tasks.map((task) => (
-                <motion.div
-                  key={task.$id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={`p-4 rounded-xl border transition-all ${
-                    task.completed
-                      ? 'bg-green-500/10 border-green-500/30'
-                      : 'bg-white/5 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
+            <div className="space-y-3">
+              <AnimatePresence>
+                {tasks.map((task) => (
+                  <motion.div
+                    key={task.$id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`group flex items-center gap-4 p-4 rounded-lg border transition-all duration-200 ${
+                      task.completed 
+                        ? 'bg-gray-800/30 border-gray-700/50' 
+                        : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800/70'
+                    }`}
+                  >
                     <button
                       onClick={() => handleToggleTask(task.$id, !task.completed)}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        task.completed
-                          ? 'bg-green-500 border-green-500 text-white'
-                          : 'border-gray-400 hover:border-green-500'
+                      className={`transition-colors duration-200 ${
+                        task.completed ? 'text-green-400' : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      {task.completed && <Check className="w-4 h-4" />}
+                      {task.completed ? (
+                        <CheckSquare className="h-5 w-5" />
+                      ) : (
+                        <Square className="h-5 w-5" />
+                      )}
                     </button>
                     
                     <div className="flex-1">
-                      <p className={`font-medium ${
+                      <span className={`block transition-all duration-200 ${
                         task.completed 
-                          ? 'text-gray-400 line-through' 
+                          ? 'line-through text-gray-500' 
                           : 'text-white'
                       }`}>
                         {task.title}
-                      </p>
-                      {task.completedAt && (
-                        <p className="text-xs text-gray-500">
-                          Completed at {new Date(task.completedAt).toLocaleTimeString()}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className={`px-2 py-1 rounded-lg border text-xs font-medium flex items-center space-x-1 ${getPriorityColor(task.priority)}`}>
-                      {getPriorityIcon(task.priority)}
-                      <span className="capitalize">{task.priority}</span>
+                      </span>
+                      <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority)}`}>
+                        {task.priority}
+                      </span>
                     </div>
                     
                     <button
                       onClick={() => handleDeleteTask(task.$id)}
-                      className="w-8 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/30 flex items-center justify-center text-red-400 hover:text-red-300 transition-colors"
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all duration-200"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </div>
-
-        {/* Analytics Toggle */}
-        <button
-          onClick={() => setShowAnalytics(!showAnalytics)}
-          className="w-full px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-colors flex items-center justify-between"
-        >
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5 text-blue-400" />
-            <span>View Analytics</span>
-          </div>
-          <ChevronDown className={`w-5 h-5 transition-transform ${showAnalytics ? 'rotate-180' : ''}`} />
-        </button>
-
-        {/* Analytics Section */}
-        <AnimatePresence>
-          {showAnalytics && analytics && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 space-y-4"
-            >
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Total Tasks Card */}
-                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-4 rounded-xl border border-blue-500/30">
-                  <div className="text-2xl font-bold text-blue-400">
-                    {Object.values(analytics).reduce((sum, day) => sum + day.total, 0)}
-                  </div>
-                  <div className="text-sm text-blue-300">Total Tasks</div>
-                  <div className="text-xs text-blue-200 mt-1">Last 30 days</div>
-                </div>
-
-                {/* Completed Tasks Card */}
-                <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-4 rounded-xl border border-green-500/30">
-                  <div className="text-2xl font-bold text-green-400">
-                    {Object.values(analytics).reduce((sum, day) => sum + day.completed, 0)}
-                  </div>
-                  <div className="text-sm text-green-300">Completed</div>
-                  <div className="text-xs text-green-200 mt-1">
-                    {Object.values(analytics).length > 0 ? 
-                      Math.round((Object.values(analytics).reduce((sum, day) => sum + day.completed, 0) / 
-                                Object.values(analytics).reduce((sum, day) => sum + day.total, 0)) * 100) : 0}% success rate
-                  </div>
-                </div>
-
-                {/* Current Streak Card */}
-                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 p-4 rounded-xl border border-purple-500/30">
-                  <div className="text-2xl font-bold text-purple-400">
-                    {(() => {
-                      const sortedDates = Object.keys(analytics).sort((a, b) => new Date(b) - new Date(a));
-                      let streak = 0;
-                      for (const date of sortedDates) {
-                        const dayData = analytics[date];
-                        if (dayData.total > 0 && dayData.completed === dayData.total) {
-                          streak++;
-                        } else {
-                          break;
-                        }
-                      }
-                      return streak;
-                    })()}
-                  </div>
-                  <div className="text-sm text-purple-300">Day Streak</div>
-                  <div className="text-xs text-purple-200 mt-1">100% completion</div>
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white/5 rounded-xl border border-white/10 p-4">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                  Recent Activity
-                </h3>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {Object.entries(analytics)
-                    .sort(([a], [b]) => new Date(b) - new Date(a))
-                    .slice(0, 7)
-                    .map(([date, data]) => (
-                      <div key={date} className="bg-white/5 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-white font-medium">
-                            {new Date(date).toLocaleDateString('en-US', { 
-                              weekday: 'short', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })}
-                          </span>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-300">{data.completed}/{data.total}</span>
-                            <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all ${
-                                  data.total > 0 && data.completed === data.total ? 'bg-green-500' : 
-                                  data.completed > 0 ? 'bg-yellow-500' : 'bg-gray-600'
-                                }`}
-                                style={{ width: `${data.total > 0 ? (data.completed / data.total) * 100 : 0}%` }}
-                              />
-                            </div>
-                            {data.total > 0 && data.completed === data.total && (
-                              <div className="text-green-400 text-xs">✓</div>
-                            )}
-                          </div>
-                        </div>
-                        {data.tasks && data.tasks.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {data.tasks.map((task, index) => (
-                              <span 
-                                key={index} 
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                                  task.completed 
-                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                                }`}
-                              >
-                                {task.completed && <span className="mr-1">✓</span>}
-                                {task.title}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
+
+      {/* Analytics Modal */}
+      <TaskAnalyticsModal
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        userId={user?.$id}
+        reloadTrigger={analyticsReload}
+      />
     </div>
   );
-};
+}
 
 export default TaskTracker;

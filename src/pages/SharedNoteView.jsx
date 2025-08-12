@@ -16,14 +16,17 @@ import {
   Image
 } from 'lucide-react';
 import notesService from '../services/notesService';
+import assetService from '../services/assetService';
 import Button from '../components/Button';
 import ProfessionalBackground from '../components/ProfessionalBackground';
+import AssetDisplay from '../components/AssetDisplay';
 import { parseMarkdown } from '../utils/markdown';
 
 const SharedNoteView = () => {
   const { shareToken } = useParams();
   const navigate = useNavigate();
   const [note, setNote] = useState(null);
+  const [assets, setAssets] = useState([]);
   const [creator, setCreator] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,6 +47,15 @@ const SharedNoteView = () => {
         // Fetch creator info
         const creatorInfo = await notesService.getCreatorInfo(sharedNote.userId);
         setCreator(creatorInfo);
+
+        // Load assets for this shared note
+        try {
+          const noteAssets = await assetService.getNoteAssets(sharedNote.$id);
+          setAssets(noteAssets);
+        } catch (error) {
+          console.error('Error loading assets:', error);
+          setAssets([]);
+        }
         
       } catch (error) {
 
@@ -426,6 +438,17 @@ const SharedNoteView = () => {
                 __html: parseMarkdown(note.content)
               }} 
             />
+
+            {/* Assets Section */}
+            {assets.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-gray-700/50">
+                <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Attachments ({assets.length})
+                </h3>
+                <AssetDisplay assets={assets} readOnly={true} />
+              </div>
+            )}
           </div>
         </motion.div>
 

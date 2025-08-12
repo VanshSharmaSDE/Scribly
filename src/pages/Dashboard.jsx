@@ -847,7 +847,7 @@ const Dashboard = () => {
           onClose={() => setShowDeleteModal(false)}
           onConfirm={() => handleDeleteNote(noteToDelete?.$id)}
           title="Delete Note"
-          message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+          message={`Are you sure you want to delete "${noteToDelete?.title}"? This will also delete all attachments associated with this note. This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           type="danger"
@@ -1190,7 +1190,7 @@ const Dashboard = () => {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={() => handleDeleteNote(noteToDelete?.$id)}
         title="Delete Note"
-        message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${noteToDelete?.title}"? This will also delete all attachments associated with this note. This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"
@@ -1220,6 +1220,7 @@ const Dashboard = () => {
       <TaskTracker
         isOpen={showTaskTracker}
         onClose={() => setShowTaskTracker(false)}
+        user={user}
       />
     </>
   );

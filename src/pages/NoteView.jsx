@@ -19,11 +19,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import notesService from '../services/notesService';
+import assetService from '../services/assetService';
 import Button from '../components/Button';
 import ProfessionalBackground from '../components/ProfessionalBackground';
 import Breadcrumb from '../components/Breadcrumb';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ShareModal from '../components/ShareModal';
+import AssetDisplay from '../components/AssetDisplay';
 import { parseMarkdown } from '../utils/markdown';
 
 const NoteView = () => {
@@ -31,6 +33,7 @@ const NoteView = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [note, setNote] = useState(null);
+  const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -75,6 +78,15 @@ const NoteView = () => {
         }
         
         setNote(fetchedNote);
+
+        // Load assets for this note
+        try {
+          const noteAssets = await assetService.getNoteAssets(id);
+          setAssets(noteAssets);
+        } catch (error) {
+          console.error('Error loading assets:', error);
+          setAssets([]);
+        }
       } catch (error) {
 
         toast.error('Failed to load note');
@@ -469,6 +481,17 @@ const NoteView = () => {
               }} 
             />
           </div>
+
+          {/* Assets Section */}
+          {assets.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-gray-700/50">
+              <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center">
+                <FileText className="h-5 w-5 mr-2" />
+                Attachments ({assets.length})
+              </h3>
+              <AssetDisplay assets={assets} readOnly={true} />
+            </div>
+          )}
         </motion.div>
 
         {/* Preview Banner */}
@@ -495,7 +518,7 @@ const NoteView = () => {
       onClose={() => setShowDeleteModal(false)}
       onConfirm={handleDelete}
       title="Delete Note"
-      message={`Are you sure you want to delete "${note?.title}"? This action cannot be undone.`}
+      message={`Are you sure you want to delete "${note?.title}"? This will also delete all attachments associated with this note. This action cannot be undone.`}
       confirmText="Delete"
       cancelText="Cancel"
       type="danger"

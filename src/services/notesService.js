@@ -1,6 +1,7 @@
 import { databases, DATABASE_ID, NOTES_COLLECTION_ID, ID } from '../lib/appwrite';
 import { Query } from 'appwrite';
 import userService from './userService';
+import assetService from './assetService';
 
 class NotesService {
   // Create new note
@@ -144,13 +145,28 @@ class NotesService {
   // Delete note
   async deleteNote(noteId) {
     try {
+      console.log('Deleting note and associated assets:', noteId);
+      
+      // First, delete all associated assets
+      try {
+        const deletedAssetsCount = await assetService.deleteNoteAssets(noteId);
+        console.log(`Deleted ${deletedAssetsCount} assets for note:`, noteId);
+      } catch (assetError) {
+        console.error('Error deleting assets, but continuing with note deletion:', assetError);
+        // Continue with note deletion even if asset deletion fails
+      }
+      
+      // Then delete the note itself
       const result = await databases.deleteDocument(
         DATABASE_ID,
         NOTES_COLLECTION_ID,
         noteId
       );
+      
+      console.log('Note deleted successfully:', noteId);
       return result;
     } catch (error) {
+      console.error('Error deleting note:', error);
       throw error;
     }
   }
