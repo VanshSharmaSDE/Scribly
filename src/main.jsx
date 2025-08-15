@@ -7,8 +7,8 @@ import Maintenance from './Maintenance.jsx'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
   {/* Swap to Maintenance page during downtime */}
-   {/* <App/> */}
-  <Maintenance />
+   <App/>
+  {/* <Maintenance /> */}
   </StrictMode>,
 )
 

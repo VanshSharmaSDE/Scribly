@@ -1,315 +1,587 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-hot-toast';
-import { CheckSquare, Square, Trash2, Plus, BarChart3, X } from 'lucide-react';
-import taskService from '../services/taskService';
+import { 
+  Plus, 
+  Calendar, 
+  CheckCircle2, 
+  Circle, 
+  BarChart3, 
+  AlertTriangle,
+  Target,
+  TrendingUp,
+  Clock,
+  X
+} from 'lucide-react';
 import Button from './Button';
+import taskService from '../services/taskService';
+import { useAuth } from '../contexts/AuthContext';
+import ConfirmationModal from './ConfirmationModal';
 import TaskAnalyticsModal from './TaskAnalyticsModal';
+import LoadingSkeleton from './LoadingSkeleton';
 
-const TaskTracker = ({ isOpen, onClose, user }) => {
-  const [tasks, setTasks] = useState([]);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState('medium');
-  const [loading, setLoading] = useState(false);
-  const [analytics, setAnalytics] = useState(null);
+const TaskTracker = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
+  const [activePlan, setActivePlan] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analyticsReload, setAnalyticsReload] = useState(0);
+  const [showBetaWarning, setShowBetaWarning] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [creatingPlan, setCreatingPlan] = useState(false);
+
+  // Form state
+  const [planName, setPlanName] = useState('');
+  const [tasks, setTasks] = useState([
+    { taskName: '', priority: 'medium' }
+  ]); // Array of task objects with name and priority
+
+  // Custom modal state
+  const [customModal, setCustomModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' // 'info', 'error', 'success'
+  });
 
   useEffect(() => {
     if (isOpen && user) {
-      fetchTasks();
-      fetchAnalytics();
+      loadActivePlan();
     }
   }, [isOpen, user]);
 
-  const fetchTasks = async () => {
+  const loadActivePlan = async () => {
     try {
       setLoading(true);
-      const userTasks = await taskService.getUserTasks(user.$id);
-      setTasks(userTasks);
+      const plan = await taskService.getActivePlan(user.$id);
+      setActivePlan(plan);
     } catch (error) {
-      console.error('Error fetching tasks:', error);
-      toast.error('Failed to load tasks');
+      console.error('Error loading active plan:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAnalytics = async () => {
-    try {
-      console.log('Fetching analytics for user:', user.$id);
-      const analyticsData = await taskService.getTaskAnalytics(user.$id);
-      console.log('Analytics data received:', analyticsData);
-      setAnalytics(analyticsData);
-      // also nudge modal to reload when open
-      setAnalyticsReload((c) => c + 1);
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
+  const handleCreatePlan = () => {
+    setShowBetaWarning(true);
+  };
+
+  const confirmCreatePlan = () => {
+    setShowBetaWarning(false);
+    setShowCreateModal(true);
+  };
+
+  const addTask = () => {
+    setTasks([...tasks, { taskName: '', priority: 'medium' }]);
+  };
+
+  const removeTask = (index) => {
+    if (tasks.length > 1) {
+      setTasks(tasks.filter((_, i) => i !== index));
     }
   };
 
-  const handleAddTask = async (e) => {
-    e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-
-    if (!user || !user.$id) {
-      toast.error('User not authenticated');
-      console.error('User object is missing or invalid:', user);
-      return;
-    }
-
-    const taskTitle = newTaskTitle.trim();
-    const taskPriority = newTaskPriority;
-
-    // Clear form immediately for better UX
-    setNewTaskTitle('');
-    setNewTaskPriority('medium');
-
-    try {
-      console.log('Creating task with data:', {
-        title: taskTitle,
-        priority: taskPriority,
-        userId: user.$id
-      });
-
-      const newTask = await taskService.createTask({
-        title: taskTitle,
-        priority: taskPriority,
-        userId: user.$id
-      });
-
-      console.log('Task created successfully:', newTask);
-
-      if (newTask && newTask.$id) {
-        // Add the new task to the list
-        setTasks(prev => [...prev, newTask]);
-        toast.success('Task created successfully!');
-        
-        // Fetch updated analytics
-        fetchAnalytics();
-      } else {
-        console.error('Created task is missing $id:', newTask);
-        toast.error('Task created but missing ID');
-        // Restore form values if task creation failed
-        setNewTaskTitle(taskTitle);
-        setNewTaskPriority(taskPriority);
-      }
-    } catch (error) {
-      console.error('Error creating task:', error);
-      toast.error('Failed to create task');
-      // Restore form values if task creation failed
-      setNewTaskTitle(taskTitle);
-      setNewTaskPriority(taskPriority);
-    }
-  };
-
-  const handleToggleTask = async (taskId, completed) => {
-    // Optimistic update - update UI immediately
-    setTasks(prev => 
-      prev.map(task => 
-        task.$id === taskId 
-          ? { ...task, completed }
-          : task
-      )
+  const updateTask = (index, field, value) => {
+    const updatedTasks = tasks.map((task, i) => 
+      i === index ? { ...task, [field]: value } : task
     );
-    
-    if (completed) {
-      toast.success('Task completed! 🎉');
-    } else {
-      toast.success('Task unmarked');
-    }
+    setTasks(updatedTasks);
+  };
 
+  const submitPlan = async () => {
     try {
-      await taskService.toggleTask(taskId, completed);
-      // Update analytics immediately after successful toggle
-      fetchAnalytics();
+      if (!planName.trim()) {
+        setCustomModal({
+          isOpen: true,
+          title: 'Validation Error',
+          message: 'Please enter a plan name',
+          type: 'error'
+        });
+        return;
+      }
+
+      const validTasks = tasks.filter(task => task.taskName.trim());
+      if (validTasks.length === 0) {
+        setCustomModal({
+          isOpen: true,
+          title: 'Validation Error',
+          message: 'Please add at least one task',
+          type: 'error'
+        });
+        return;
+      }
+
+      // Show creating state and close modal
+      setCreatingPlan(true);
+      setShowCreateModal(false);
+      setPlanName('');
+      setTasks([{ taskName: '', priority: 'medium' }]);
+
+      // Create plan in background
+      await taskService.createPlan(user.$id, {
+        planName: planName.trim(),
+        tasks: validTasks
+      });
+
+      // Refresh plan data
+      await loadActivePlan();
+      setCreatingPlan(false);
     } catch (error) {
-      // Revert the optimistic update if the request failed
-      setTasks(prev => 
-        prev.map(task => 
-          task.$id === taskId 
-            ? { ...task, completed: !completed }
-            : task
-        )
-      );
-      console.error('Error updating task:', error);
-      toast.error('Failed to update task');
+      setCustomModal({
+        isOpen: true,
+        title: 'Error',
+        message: error.message || 'Failed to create plan',
+        type: 'error'
+      });
+      setCreatingPlan(false);
+      // Reopen modal if there was an error
+      setShowCreateModal(true);
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
-    // Store the task for potential rollback
-    const taskToDelete = tasks.find(task => task.$id === taskId);
-    
-    // Optimistic update - remove task immediately from UI
-    setTasks(prev => prev.filter(task => task.$id !== taskId));
-    toast.success('Task deleted');
-
+  const toggleTask = async (task) => {
     try {
-      await taskService.deleteTask(taskId);
-      // Update analytics immediately after successful deletion
-      fetchAnalytics();
-    } catch (error) {
-      // Restore the task if deletion failed
-      if (taskToDelete) {
-        setTasks(prev => [...prev, taskToDelete]);
+      // Optimistic update - update UI immediately
+      const updatedTasks = activePlan.tasks.map(t => 
+        t.taskName === task.taskName 
+          ? { ...t, isCompleted: !t.isCompleted }
+          : t
+      );
+      setActivePlan(prev => ({
+        ...prev,
+        tasks: updatedTasks
+      }));
+
+      // Update backend
+      await taskService.toggleTaskCompletion(
+        user.$id, 
+        activePlan.planId, 
+        task.taskName, 
+        task.priority,
+        !task.isCompleted
+      );
+      
+      // Refresh from backend to ensure consistency (silent update)
+      const refreshedPlan = await taskService.getActivePlan(user.$id);
+      if (refreshedPlan) {
+        setActivePlan(refreshedPlan);
       }
-      console.error('Error deleting task:', error);
-      toast.error('Failed to delete task');
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      // Revert optimistic update on error
+      const revertedTasks = activePlan.tasks.map(t => 
+        t.taskName === task.taskName 
+          ? { ...t, isCompleted: task.isCompleted }
+          : t
+      );
+      setActivePlan(prev => ({
+        ...prev,
+        tasks: revertedTasks
+      }));
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return 'text-red-400 bg-red-500/10 border-red-500/30';
-      case 'medium': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
-      case 'low': return 'text-green-400 bg-green-500/10 border-green-500/30';
-      default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
+      case 'high': return 'text-red-400 bg-red-500/20 border-red-500/30';
+      case 'medium': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
+      case 'low': return 'text-green-400 bg-green-500/20 border-green-500/30';
+      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
     }
   };
 
   if (!isOpen) return null;
 
+  if (loading) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header skeleton */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+              <div className="flex items-center">
+                <LoadingSkeleton variant="default" className="w-6 h-6 mr-3" />
+                <LoadingSkeleton variant="title" className="w-32" />
+                <LoadingSkeleton variant="default" className="ml-3 w-16 h-6 rounded-full" />
+              </div>
+              <LoadingSkeleton variant="default" className="w-8 h-8 rounded-lg" />
+            </div>
+            
+            {/* Content skeleton */}
+            <div className="p-6 space-y-6">
+              <LoadingSkeleton variant="planHeader" />
+              <LoadingSkeleton variant="tasksSection" />
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <CheckSquare className="h-6 w-6 text-blue-400" />
-            <h2 className="text-xl font-semibold text-white">Task Tracker</h2>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => setShowAnalytics(true)}
-              variant="outline"
-              className="border-gray-600 flex items-center text-gray-400 hover:bg-gray-800"
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Stats
-            </Button>
-            <Button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center">
+                <Target className="w-6 h-6 mr-3 text-purple-400" />
+                Task Tracker
+                <span className="ml-3 px-3 py-1 text-sm bg-blue-500/20 text-blue-400 rounded-full border border-blue-500/30">
+                  Beta
+                </span>
+              </h1>
+              <p className="text-gray-400 mt-1">Create daily plans and track your progress</p>
+            </div>
+            <button
               onClick={onClose}
-              variant="outline"
-              className="border-gray-600 text-gray-400 hover:bg-gray-800"
+              className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800/50"
             >
-              <X className="h-4 w-4" />
-            </Button>
+              <X className="w-5 h-5" />
+            </button>
           </div>
-        </div>
 
-        {/* Add Task Form */}
-        <form onSubmit={handleAddTask} className="mb-6">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="What needs to be done?"
-              className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <select
-              value={newTaskPriority}
-              onChange={(e) => setNewTaskPriority(e.target.value)}
-              className="px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-            <Button 
-              type="submit" 
-              disabled={!newTaskTitle.trim()}
-              className="bg-blue-600 flex items-center hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </div>
-        </form>
-
-        {/* Tasks List (scrollable) */}
-        <div className="overflow-y-auto max-h-96">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
-              <p className="text-gray-400 mt-4">Loading tasks...</p>
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No tasks yet</p>
-              <p className="text-gray-500 text-sm">Create your first task above to get started!</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <AnimatePresence>
-                {tasks.map((task) => (
-                  <motion.div
-                    key={task.$id}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className={`group flex items-center gap-4 p-4 rounded-lg border transition-all duration-200 ${
-                      task.completed 
-                        ? 'bg-gray-800/30 border-gray-700/50' 
-                        : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800/70'
-                    }`}
-                  >
-                    <button
-                      onClick={() => handleToggleTask(task.$id, !task.completed)}
-                      className={`transition-colors duration-200 ${
-                        task.completed ? 'text-green-400' : 'text-gray-400 hover:text-white'
-                      }`}
+          {/* Content */}
+          <div className="p-6">
+            {creatingPlan ? (
+              /* Creating Plan Skeleton */
+              <div className="space-y-6">
+                <LoadingSkeleton variant="planHeader" />
+                <LoadingSkeleton variant="tasksSection" />
+              </div>
+            ) : !activePlan ? (
+              /* No Plan State */
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-12"
+              >
+                <Target className="w-16 h-16 text-blue-400 mx-auto mb-6" />
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Ready to start tracking?
+                </h2>
+                <p className="text-gray-400 mb-8 leading-relaxed">
+                  Create your first plan with daily tasks. Track your progress and build better habits.
+                </p>
+                <Button onClick={handleCreatePlan} className="px-8 py-4 flex items-center justify-center mx-auto bg-blue-500 hover:bg-blue-600">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Your First Plan
+                </Button>
+              </motion.div>
+            ) : (
+              /* Active Plan State */
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                {/* Plan Header */}
+                <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-white flex items-center">
+                      <Calendar className="w-5 h-5 mr-3 text-blue-400" />
+                      {activePlan.planName}
+                    </h2>
+                    <Button 
+                      onClick={() => setShowAnalytics(true)}
+                      variant="outline"
+                      className="bg-gray-800/50 flex items-center hover:bg-gray-700/50"
                     >
-                      {task.completed ? (
-                        <CheckSquare className="h-5 w-5" />
-                      ) : (
-                        <Square className="h-5 w-5" />
-                      )}
-                    </button>
-                    
-                    <div className="flex-1">
-                      <span className={`block transition-all duration-200 ${
-                        task.completed 
-                          ? 'line-through text-gray-500' 
-                          : 'text-white'
-                      }`}>
-                        {task.title}
-                      </span>
-                      <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full border ${getPriorityColor(task.priority)}`}>
-                        {task.priority}
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Analytics
+                    </Button>
+                  </div>
+                  <div className="text-sm text-gray-400 flex items-center">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Plan resets daily at midnight
+                  </div>
+                </div>
+
+                {/* Tasks List */}
+                <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
+                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
+                    Today's Tasks
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {activePlan.tasks.map((task, index) => (
+                      <motion.div
+                        key={`${task.id}-${task.taskName || index}`}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`
+                          group p-4 rounded-xl border transition-all duration-300 cursor-pointer hover:scale-[1.02]
+                          ${task.isCompleted 
+                            ? 'bg-green-500/10 border-green-500/30 hover:border-green-400/50' 
+                            : 'bg-gray-800/30 border-gray-600/30 hover:border-gray-500/50'
+                          }
+                        `}
+                        onClick={() => toggleTask(task)}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            {task.isCompleted ? (
+                              <CheckCircle2 className="w-6 h-6 text-green-400" />
+                            ) : (
+                              <Circle className="w-6 h-6 text-gray-400 group-hover:text-green-400" />
+                            )}
+                          </motion.div>
+                          
+                          <div className="flex-1">
+                            <div className={`
+                              font-medium transition-all duration-300
+                              ${task.isCompleted 
+                                ? 'text-green-400 line-through' 
+                                : 'text-white group-hover:text-green-400'
+                              }
+                            `}>
+                              {task.taskName}
+                            </div>
+                          </div>
+                          
+                          <span className={`
+                            px-3 py-1 rounded-full text-xs font-medium border
+                            ${getPriorityColor(task.priority)}
+                          `}>
+                            {task.priority}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Progress Summary */}
+                  <div className="mt-6 pt-6 border-t border-gray-700/50">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">Today's Progress</span>
+                      <span className="text-white font-medium">
+                        {activePlan.tasks.filter(t => t.isCompleted).length} / {activePlan.tasks.length} completed
                       </span>
                     </div>
-                    
-                    <button
-                      onClick={() => handleDeleteTask(task.$id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all duration-200"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-        </div>
-      </motion.div>
+                    <div className="mt-2 h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ 
+                          width: `${(activePlan.tasks.filter(t => t.isCompleted).length / activePlan.tasks.length) * 100}%` 
+                        }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Beta Warning Modal */}
+      <ConfirmationModal
+        isOpen={showBetaWarning}
+        onClose={() => setShowBetaWarning(false)}
+        onConfirm={confirmCreatePlan}
+        title="Beta Feature Notice"
+        message="This feature is currently in beta. You can create only one plan, and tasks cannot be updated or deleted later. Please be careful when creating your plan."
+        confirmText="I Understand"
+        cancelText="Cancel"
+        type="warning"
+      />
+
+      {/* Create Plan Modal */}
+      {showCreateModal && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+            onClick={() => setShowCreateModal(false)}
+          />
+
+          <div className="fixed inset-0 flex items-center justify-center z-[60] p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-semibold text-white mb-6">Create New Plan</h2>
+              
+              {/* Plan Name */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Plan Name
+                </label>
+                <input
+                  type="text"
+                  value={planName}
+                  onChange={(e) => setPlanName(e.target.value)}
+                  placeholder="e.g., Morning Routine, Work Tasks..."
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Tasks */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-4">
+                  Tasks
+                </label>
+                <div className="space-y-3">
+                  {tasks.map((task, index) => (
+                    <div key={`task-input-${index}`} className="flex gap-3">
+                      <input
+                        type="text"
+                        value={task.taskName}
+                        onChange={(e) => updateTask(index, 'taskName', e.target.value)}
+                        placeholder="Enter task name..."
+                        className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <select
+                        value={task.priority}
+                        onChange={(e) => updateTask(index, 'priority', e.target.value)}
+                        className="px-4 py-3 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                      </select>
+                      {tasks.length > 1 && (
+                        <Button
+                          onClick={() => removeTask(index)}
+                          variant="outline"
+                          className="px-3 py-3 bg-red-500/20 hover:bg-red-500/30 border-red-500/30 text-red-400"
+                        >
+                          ×
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <Button
+                  onClick={addTask}
+                  variant="outline"
+                  className="mt-3 w-full flex items-center justify-center bg-gray-800/50 hover:bg-gray-700/50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Task
+                </Button>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowCreateModal(false)}
+                  variant="outline"
+                  className="flex-1 bg-gray-800/50 hover:bg-gray-700/50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={submitPlan}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                >
+                  Create Plan
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
 
       {/* Analytics Modal */}
-      <TaskAnalyticsModal
-        isOpen={showAnalytics}
-        onClose={() => setShowAnalytics(false)}
-        userId={user?.$id}
-        reloadTrigger={analyticsReload}
-      />
-    </div>
+      {showAnalytics && activePlan && (
+        <TaskAnalyticsModal
+          isOpen={showAnalytics}
+          onClose={() => setShowAnalytics(false)}
+          planId={activePlan.planId}
+          planName={activePlan.planName}
+          userId={user.$id}
+        />
+      )}
+
+      {/* Custom Modal */}
+      {customModal.isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70]"
+            onClick={() => setCustomModal({ ...customModal, isOpen: false })}
+          />
+
+          <div className="fixed inset-0 flex items-center justify-center z-[70] p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-2xl max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center mb-4">
+                {customModal.type === 'error' && (
+                  <AlertTriangle className="w-6 h-6 text-red-400 mr-3" />
+                )}
+                {customModal.type === 'success' && (
+                  <CheckCircle2 className="w-6 h-6 text-green-400 mr-3" />
+                )}
+                {customModal.type === 'info' && (
+                  <Target className="w-6 h-6 text-blue-400 mr-3" />
+                )}
+                <h3 className="text-lg font-semibold text-white">{customModal.title}</h3>
+              </div>
+              
+              <p className="text-gray-300 mb-6">{customModal.message}</p>
+              
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setCustomModal({ ...customModal, isOpen: false })}
+                  className={`
+                    px-6 py-2
+                    ${customModal.type === 'error' 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : customModal.type === 'success'
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                    }
+                  `}
+                >
+                  OK
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
-}
+};
 
 export default TaskTracker;

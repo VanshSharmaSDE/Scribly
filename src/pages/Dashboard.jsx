@@ -1220,7 +1220,6 @@ const Dashboard = () => {
       <TaskTracker
         isOpen={showTaskTracker}
         onClose={() => setShowTaskTracker(false)}
-        user={user}
       />
     </>
   );
