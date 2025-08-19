@@ -174,50 +174,42 @@ class TaskService {
   // Create daily records for all days since plan creation
   async createHistoricalRecords(userId, planId, tasks, planCreatedAt) {
     try {
-      const startDate = dayjs(planCreatedAt);
       const today = dayjs();
+      const todayStr = today.format('YYYY-MM-DD');
       
-      // Get all existing records to avoid duplicates
+      // Get existing records for today to avoid duplicates
       const existingRecords = await databases.listDocuments(
         DATABASE_ID,
         TASKS_ANALYTICS_COLLECTION_ID,
         [
           Query.equal('userId', userId),
-          Query.equal('planId', planId)
+          Query.equal('planId', planId),
+          Query.equal('date', todayStr)
         ]
       );
 
-      const existingKeys = new Set(
-        existingRecords.documents.map(record => `${record.date}-${record.taskName}`)
+      const existingTaskNames = new Set(
+        existingRecords.documents.map(record => record.taskName)
       );
 
-      // Create records for each day from plan creation to today
-      let currentDate = startDate;
-      while (currentDate.isSameOrBefore(today, 'day')) {
-        const dateStr = currentDate.format('YYYY-MM-DD');
-        
-        for (const task of tasks) {
-          const key = `${dateStr}-${task.taskName}`;
-          
-          if (!existingKeys.has(key)) {
-            await databases.createDocument(
-              DATABASE_ID,
-              TASKS_ANALYTICS_COLLECTION_ID,
-              ID.unique(),
-              {
-                planId,
-                userId,
-                taskName: task.taskName,
-                priority: task.priority,
-                isCompleted: false,
-                date: dateStr,
-                createdAt: dayjs().toISOString()
-              }
-            );
-          }
+      // Create records only for today for tasks that don't exist yet
+      for (const task of tasks) {
+        if (!existingTaskNames.has(task.taskName)) {
+          await databases.createDocument(
+            DATABASE_ID,
+            TASKS_ANALYTICS_COLLECTION_ID,
+            ID.unique(),
+            {
+              planId,
+              userId,
+              taskName: task.taskName,
+              priority: task.priority,
+              isCompleted: false,
+              date: todayStr,
+              createdAt: dayjs().toISOString()
+            }
+          );
         }
-        
-        currentDate = currentDate.add(1, 'day');
       }
     } catch (error) {
       console.error('Error creating historical records:', error);
@@ -251,11 +243,12 @@ class TaskService {
           recordId,
           {
             isCompleted,
+            priority, // Update priority as well in case it changed
             updatedAt: dayjs().toISOString()
           }
         );
       } else {
-        // Create new record (fallback if record doesn't exist)
+        // Create new record - this handles both today and previous days
         await databases.createDocument(
           DATABASE_ID,
           TASKS_ANALYTICS_COLLECTION_ID,
@@ -293,7 +286,8 @@ class TaskService {
           Query.equal('planId', planId),
           Query.greaterThanEqual('date', startDate.format('YYYY-MM-DD')),
           Query.lessThanEqual('date', endDate.format('YYYY-MM-DD')),
-          Query.orderDesc('date')
+          Query.orderDesc('date'),
+          Query.limit(1000) // Increase limit to fetch all records
         ]
       );
 
@@ -313,6 +307,59 @@ class TaskService {
       return groupedData;
     } catch (error) {
       console.error('Error getting task analytics:', error);
+      throw error;
+    }
+  }
+
+  // Utility function to clean up incorrect historical data
+  async cleanupHistoricalData(userId, planId) {
+    try {
+      // Get all records for this plan
+      const allRecords = await databases.listDocuments(
+        DATABASE_ID,
+        TASKS_ANALYTICS_COLLECTION_ID,
+        [
+          Query.equal('userId', userId),
+          Query.equal('planId', planId),
+          Query.orderDesc('date'),
+          Query.limit(100000) // Increase limit to get all records
+        ]
+      );
+
+      // Group by date
+      const recordsByDate = {};
+      allRecords.documents.forEach(record => {
+        if (!recordsByDate[record.date]) {
+          recordsByDate[record.date] = [];
+        }
+        recordsByDate[record.date].push(record);
+      });
+
+      // Only keep records that have at least one completed task per date
+      // Remove dates where all tasks are false (these are likely incorrect historical records)
+      const today = dayjs().format('YYYY-MM-DD');
+      
+      for (const [date, records] of Object.entries(recordsByDate)) {
+        if (date === today) {
+          continue; // Keep today's records regardless
+        }
+
+        const hasCompletedTask = records.some(record => record.isCompleted === true);
+        
+        if (!hasCompletedTask) {
+          // Delete all records for this date since they're all false (likely historical placeholders)
+          for (const record of records) {
+            await databases.deleteDocument(
+              DATABASE_ID,
+              TASKS_ANALYTICS_COLLECTION_ID,
+              record.$id
+            );
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error cleaning up historical data:', error);
       throw error;
     }
   }

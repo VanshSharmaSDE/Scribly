@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, TrendingUp, CheckCircle2, XCircle, BarChart3, Download, AlertTriangle } from 'lucide-react';
 import taskService from '../services/taskService';
 import LoadingSkeleton from './LoadingSkeleton';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+// Configure dayjs with timezone support
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const TaskAnalyticsModal = ({ isOpen, onClose, planId, planName, userId, embedded = false, defaultDays = 7 }) => {
   const [analyticsData, setAnalyticsData] = useState({});
@@ -44,14 +51,19 @@ const TaskAnalyticsModal = ({ isOpen, onClose, planId, planName, userId, embedde
 
   const getDayLabels = () => {
     const days = [];
-    for (let i = selectedDays - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      days.push({
-        date: date.toISOString().split('T')[0],
-        label: i === 0 ? 'Today' : i === 1 ? 'Yesterday' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    // Use local timezone instead of UTC
+    const endDate = dayjs();
+    
+    for (let i = 0; i < selectedDays; i++) {
+      const date = endDate.subtract(i, 'day');
+      const dateString = date.format('YYYY-MM-DD');
+      
+      days.unshift({
+        date: dateString,
+        label: i === 0 ? 'Today' : i === 1 ? 'Yesterday' : date.format('ddd, MMM D')
       });
     }
+    
     return days;
   };
 
@@ -120,10 +132,10 @@ const TaskAnalyticsModal = ({ isOpen, onClose, planId, planName, userId, embedde
       // Add date range
       ctx.font = '16px Arial';
       ctx.fillStyle = '#9ca3af';
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - (selectedDays - 1));
-      ctx.fillText(`Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`, 50, 120);
+      const endDate = dayjs();
+      const startDate = endDate.subtract(selectedDays - 1, 'day');
+      
+      ctx.fillText(`Period: ${startDate.format('MM/DD/YYYY')} - ${endDate.format('MM/DD/YYYY')}`, 50, 120);
       
       // Add overall completion rate
       const completionRate = calculateOverallCompletion();
@@ -147,7 +159,8 @@ const TaskAnalyticsModal = ({ isOpen, onClose, planId, planName, userId, embedde
       ctx.fillStyle = '#9ca3af';
       ctx.fillText('Task \\ Date', 50, yPos);
       days.slice(0, 10).forEach((day, index) => { // Show first 10 days to fit
-        const shortDate = day.date.split('-').slice(1).join('/'); // MM/DD format
+        const dateParts = day.date.split('-'); // YYYY-MM-DD format
+        const shortDate = `${dateParts[1]}/${dateParts[2]}`; // MM/DD format
         ctx.fillText(shortDate, 200 + index * 80, yPos);
       });
       
@@ -200,7 +213,7 @@ const TaskAnalyticsModal = ({ isOpen, onClose, planId, planName, userId, embedde
       
       // Download
       const link = document.createElement('a');
-      link.download = `task-analytics-${selectedDays}days-${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `task-analytics-${selectedDays}days-${dayjs().format('YYYY-MM-DD')}.png`;
       link.href = canvas.toDataURL();
       link.click();
       
